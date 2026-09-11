@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# sledger
 
-## Getting Started
+Simple ledger — a personal finance app used on a phone, once a week. The build
+specification this project was created from is [PROMPT.md](PROMPT.md); read it
+before changing anything.
 
-First, run the development server:
+**Status:** stage 1 of 13 — Next.js, Tailwind, shadcn/ui and the initial
+database schema ([PROMPT.md §11](PROMPT.md#11-build-order)).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Run it locally
+
+Only **Docker** is needed; Node runs in a container.
+
+```sh
+docker compose up        # or `make dev` → http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The first run installs dependencies. If port 3000 is taken:
+`APP_PORT=3001 docker compose up`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+All run inside the container; `make help` lists them.
 
-## Learn More
+| Command | |
+|---|---|
+| `make check` | lint + typecheck + tests |
+| `make test` | Vitest |
+| `make build` | `next build` |
+| `make npm args="install zod"` | any npm command |
+| `make sh` | shell in the container |
 
-To learn more about Next.js, take a look at the following resources:
+## Database
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Postgres is storage, not logic: tables, constraints, indexes and RLS — no views,
+no RPC, no triggers except `updated_at`
+([PROMPT.md §4.1](PROMPT.md#41-postgres-is-storage-not-logic)). The schema lives
+in `supabase/migrations/`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Nothing talks to the database yet. Auth (stage 3) needs a Supabase instance,
+local or hosted; `.env.example` lists the two variables the app reads.
 
-## Deploy on Vercel
+## Deploy
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Vercel, with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` set,
+and `https://<your-app>/auth/callback` added to Supabase's redirect URLs.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Layout
+
+```
+app/                screens, server actions, route handlers — call services only
+lib/services/       validate → apply rules → persist → return DTO
+lib/domain/         pure TypeScript: every business rule, unit tested
+lib/repositories/   the only code that talks to the database
+lib/auth/, lib/db/  the only Supabase-specific code — see PORTABILITY.md
+supabase/           config and migrations
+```
