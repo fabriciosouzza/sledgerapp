@@ -4,7 +4,7 @@ Simple ledger — a personal finance app used on a phone, once a week. The build
 specification this project was created from is [PROMPT.md](PROMPT.md); read it
 before changing anything.
 
-**Status:** stage 5 of 13 — `/add` and `/entries` with installments, settling
+**Status:** stage 6 of 13 — `/month` (summary, both savings rates, category caps, still-planned list) after `/add` and `/entries` with installments, settling
 (optimistic, with undo), bulk settle, filters and scoped edit/delete; on top of
 settings and seed, auth, the app shell, the domain rules and the schema
 ([PROMPT.md §11](PROMPT.md#11-build-order)).

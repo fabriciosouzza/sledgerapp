@@ -156,8 +156,15 @@ describe("spendingByCategory", () => {
     );
 
     expect(rows).toEqual([
-      { categoryId: "food", settledCents: 110_000, plannedCents: 10_000, capCents: 100_000, capUsage: 1.1 },
-      { categoryId: "misc", settledCents: 5_000, plannedCents: 0, capCents: null, capUsage: null },
+      {
+        categoryId: "food",
+        settledCents: 110_000,
+        plannedCents: 10_000,
+        capCents: 100_000,
+        capUsage: 1.1,
+        children: [{ categoryId: "food-out", settledCents: 50_000, plannedCents: 0, capCents: null, capUsage: null, children: [] }],
+      },
+      { categoryId: "misc", settledCents: 5_000, plannedCents: 0, capCents: null, capUsage: null, children: [] },
     ]);
   });
 });

@@ -113,34 +113,48 @@ export interface CategorySpending {
   capCents: number | null;
   /** settled / cap, `null` without a cap. Above 1 means overflow. */
   capUsage: number | null;
+  /** Sub-categories with their own spending and caps; a root's totals include them. */
+  children: CategorySpending[];
 }
 
-/** Expense per category for the cap table on /month. Sub-categories roll up into their parent. */
+/** Expense per category for the cap table on /month: roots roll up their children, each child keeps its own cap. */
 export function spendingByCategory(
   entries: Entry[],
   categories: Pick<Category, "id" | "parentId" | "monthlyCapCents">[],
 ): CategorySpending[] {
   const byId = new Map(categories.map((c) => [c.id, c]));
-  const totals = new Map<string, { settled: number; planned: number }>();
+  const own = new Map<string, { settled: number; planned: number }>();
 
   for (const e of entries) {
     if (e.kind !== "expense" || e.categoryId === null) continue;
-    const category = byId.get(e.categoryId);
-    const rootId = category?.parentId ?? e.categoryId;
-    const t = totals.get(rootId) ?? { settled: 0, planned: 0 };
+    const t = own.get(e.categoryId) ?? { settled: 0, planned: 0 };
     if (e.status === "settled") t.settled += e.amountCents;
     else t.planned += e.amountCents;
-    totals.set(rootId, t);
+    own.set(e.categoryId, t);
   }
 
-  return [...totals].map(([categoryId, t]) => {
+  const line = (categoryId: string, settled: number, planned: number, children: CategorySpending[]): CategorySpending => {
     const capCents = byId.get(categoryId)?.monthlyCapCents ?? null;
-    return {
-      categoryId,
-      settledCents: t.settled,
-      plannedCents: t.planned,
-      capCents,
-      capUsage: capCents === null ? null : t.settled / capCents,
-    };
+    return { categoryId, settledCents: settled, plannedCents: planned, capCents, capUsage: capCents === null ? null : settled / capCents, children };
+  };
+
+  const roots = new Map<string, CategorySpending[]>();
+  const rootOrder: string[] = [];
+  for (const [categoryId, t] of own) {
+    const parentId = byId.get(categoryId)?.parentId ?? null;
+    const rootId = parentId ?? categoryId;
+    if (!roots.has(rootId)) {
+      roots.set(rootId, []);
+      rootOrder.push(rootId);
+    }
+    if (parentId !== null) roots.get(rootId)!.push(line(categoryId, t.settled, t.planned, []));
+  }
+
+  return rootOrder.map((rootId) => {
+    const children = roots.get(rootId) ?? [];
+    const self = own.get(rootId) ?? { settled: 0, planned: 0 };
+    const settled = self.settled + children.reduce((sum, c) => sum + c.settledCents, 0);
+    const planned = self.planned + children.reduce((sum, c) => sum + c.plannedCents, 0);
+    return line(rootId, settled, planned, children);
   });
 }
