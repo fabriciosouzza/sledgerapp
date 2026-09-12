@@ -13,16 +13,25 @@ type CookieStore = Awaited<ReturnType<typeof cookies>>;
 
 /**
  * PostgREST answers 401 "JWT issued at future" when a token's `iat` is more
- * than 30 s ahead of its own clock. It has happened here with every clock
- * aligned — right after a sign-in or a token refresh — and passes a moment
- * later, so one retry after a short pause covers it. Every other 401 is real.
+ * than 30 s ahead of its own clock — a token minted before the machine slept,
+ * checked by a Docker VM whose clock is still behind. The proxy refreshes
+ * such tokens up front (lib/auth/proxy.ts); this is the second net: mint a
+ * fresh token and retry once. Every other 401 is real.
  */
-async function fetchWithSkewRetry(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
-  const response = await fetch(input, init);
-  if (response.status !== 401 || !/issued at future/i.test(response.headers.get("www-authenticate") ?? "")) return response;
-  console.warn("[db] JWT issued at future; retrying once");
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-  return fetch(input, init);
+function withSkewRetry(getClient: () => DbClient | undefined): typeof fetch {
+  return async (input, init) => {
+    const response = await fetch(input, init);
+    if (response.status !== 401 || !/issued at future/i.test(response.headers.get("www-authenticate") ?? "")) return response;
+    const client = getClient();
+    if (!client) return response;
+    console.warn("[db] JWT issued at future; refreshing the session and retrying");
+    const { data } = await client.auth.refreshSession();
+    const token = data.session?.access_token;
+    if (!token) return response;
+    const headers = new Headers(init?.headers);
+    headers.set("authorization", `Bearer ${token}`);
+    return fetch(input, { ...init, headers });
+  };
 }
 
 
@@ -53,8 +62,10 @@ export async function createClient(): Promise<DbClient> {
   // sign-in is never followed by a read of the stale session it replaced.
   const written = new Map<string, string | null>();
 
+  // Referenced by the fetch wrapper before it is assigned; only called after.
+  const holder: { client?: DbClient } = {};
   const client = createServerClient<Database>(url, anonKey, {
-    global: { fetch: fetchWithSkewRetry },
+    global: { fetch: withSkewRetry(() => holder.client) },
     cookies: {
       getAll() {
         const merged = new Map(cookieStore.getAll().map((c) => [c.name, c.value]));
@@ -78,6 +89,7 @@ export async function createClient(): Promise<DbClient> {
       },
     },
   });
+  holder.client = client;
   clients.set(cookieStore, client);
   return client;
 }

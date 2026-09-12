@@ -7,6 +7,18 @@ import { supabaseEnv } from "@/lib/db/env";
 
 const PUBLIC_PATHS = ["/login", "/auth/callback"];
 
+/** PostgREST allows 30 s of skew; refresh well before that. */
+const SKEW_SECONDS = 15;
+
+export function issuedInTheFuture(accessToken: string): boolean {
+  try {
+    const claims = JSON.parse(Buffer.from(accessToken.split(".")[1] ?? "", "base64url").toString()) as { iat?: number };
+    return typeof claims.iat === "number" && claims.iat > Math.floor(Date.now() / 1000) + SKEW_SECONDS;
+  } catch {
+    return false;
+  }
+}
+
 export function isPublicPath(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
 }
@@ -29,8 +41,15 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     },
   });
 
-  // Do not put code between createServerClient and getUser: the call is what
-  // refreshes an expired session and writes the new cookie back.
+  // A token minted before the machine slept can be "from the future" for a
+  // Docker VM whose clock is still catching up; PostgREST rejects it. Mint a
+  // fresh one against the same clock before anything else runs.
+  const { data: sessionData } = await supabase.auth.getSession();
+  if (sessionData.session && issuedInTheFuture(sessionData.session.access_token)) {
+    await supabase.auth.refreshSession();
+  }
+
+  // The call refreshes an expired session and writes the new cookie back.
   const {
     data: { user },
   } = await supabase.auth.getUser();
