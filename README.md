@@ -4,10 +4,10 @@ Simple ledger — a personal finance app used on a phone, once a week. The build
 specification this project was created from is [PROMPT.md](PROMPT.md); read it
 before changing anything.
 
-**Status:** stage 12 of 13 — route handlers under `app/api/`, Today (`/`), `/net-worth` (monthly snapshots, empty months stay empty), `/portfolio` (assets, movements, contributed vs earned), `/cards` (per-card statement cycles, pay statement as a transfer), `/recurrences` with fixed cost and idempotent month generation, `/month` (summary, both savings rates, category caps, still-planned list), `/add` and `/entries` with installments, settling
-(optimistic, with undo), bulk settle, filters and scoped edit/delete; on top of
-settings and seed, auth, the app shell, the domain rules and the schema
-([PROMPT.md §11](PROMPT.md#11-build-order)).
+**Status:** all 13 stages of [PROMPT.md §11](PROMPT.md#11-build-order) are
+in: auth, settings and seed, entries with installments and settling, month,
+recurrences and generation, cards, portfolio, net worth, Today, the API, and
+polish (dark mode, skeletons, empty states, 360px).
 
 ## Run it locally
 
@@ -27,7 +27,8 @@ All run inside the container; `make help` lists them.
 | Command | |
 |---|---|
 | `make check` | lint + typecheck + tests |
-| `make test` | Vitest |
+| `make test` | Vitest (unit tests; the RLS test is skipped) |
+| `make test-db` | Vitest including the RLS test against the local Supabase |
 | `make build` | `next build` |
 | `make npm args="install zod"` | any npm command |
 | `make sh` | shell in the container |
@@ -79,10 +80,23 @@ cookies; without a session they answer `401`.
 | `GET /api/summary?period=2026-11` | the month's metrics, categories and planned entries |
 | `GET /api/statements` | every card with open and past statements |
 
+## Tests
+
+`lib/domain/__tests__` cover the rules in PROMPT.md §5 without a database;
+`lib/services/__tests__` run the services against in-memory fake repositories
+(`fakes.ts`); `lib/db/__tests__/rls.test.ts` needs the local Supabase and two
+users, and only runs under `make test-db`. Together they prove every item of
+[PROMPT.md §12](PROMPT.md#12-acceptance-criteria).
+
 ## Deploy
 
-Vercel, with `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` set,
-and `https://<your-app>/auth/callback` added to Supabase's redirect URLs.
+1. Create a Supabase project and run the migrations against it:
+   `supabase link --project-ref <ref>` then `supabase db push`.
+2. In the Supabase dashboard, add `https://<your-app>/auth/callback` to
+   Authentication → URL configuration → Redirect URLs, and set the site URL.
+3. On Vercel, set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   (the project's URL and anon/publishable key) and deploy; `next build` needs
+   nothing else.
 
 ## Layout
 

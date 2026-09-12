@@ -35,4 +35,10 @@ sh: ## Shell in the node container
 dev-user: ## Create the local test user (dev@sledger.local / sledger-dev-1234); needs `supabase start`
 	@./scripts/dev-user.sh
 
-.PHONY: help dev install test typecheck lint check build npm sh dev-user
+test-db: ## Vitest including the RLS test against the running local Supabase
+	@STATUS="$$(supabase status -o json 2>/dev/null)" || { echo "Supabase is not running. Run: supabase start" >&2; exit 1; }; \
+	ANON="$$(printf '%s' "$$STATUS" | python3 -c 'import sys,json; print(json.load(sys.stdin)["ANON_KEY"])')"; \
+	SERVICE="$$(printf '%s' "$$STATUS" | python3 -c 'import sys,json; print(json.load(sys.stdin)["SERVICE_ROLE_KEY"])')"; \
+	docker compose run --rm --no-deps -e SUPABASE_TEST_URL=http://host.docker.internal:54321 -e SUPABASE_TEST_ANON_KEY="$$ANON" -e SUPABASE_TEST_SERVICE_ROLE_KEY="$$SERVICE" app npm test
+
+.PHONY: help dev install test typecheck lint check build npm sh dev-user test-db
