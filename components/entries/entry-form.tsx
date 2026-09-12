@@ -68,12 +68,15 @@ export function EntryForm({
   categories,
   today,
   entry,
+  defaultKind,
 }: {
   accounts: Account[];
   categories: Category[];
   today: string;
   /** Present when editing. */
   entry?: Entry;
+  /** Pre-selected kind (from the add sheet). */
+  defaultKind?: EntryKind;
 }) {
   const router = useRouter();
   const editing = entry !== undefined;
@@ -81,7 +84,7 @@ export function EntryForm({
   const [error, setError] = useState<string>();
   const [formKey, setFormKey] = useState(0);
 
-  const [kind, setKind] = useState<EntryKind>(entry?.kind ?? "expense");
+  const [kind, setKind] = useState<EntryKind>(entry?.kind ?? defaultKind ?? "expense");
   const [categoryId, setCategoryId] = useState(entry?.categoryId ?? "");
   const [accountId, setAccountId] = useState(entry?.accountId ?? accounts[0]?.id ?? "");
   const [counterAccountId, setCounterAccountId] = useState(entry?.counterAccountId ?? "");

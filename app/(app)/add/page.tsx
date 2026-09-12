@@ -8,7 +8,11 @@ import { listAccounts } from "@/lib/services/accounts";
 import { listCategories } from "@/lib/services/categories";
 import { getContext } from "@/lib/services/context";
 
-export default async function AddPage() {
+const KINDS = ["expense", "income", "transfer", "contribution"] as const;
+
+export default async function AddPage(props: PageProps<"/add">) {
+  const sp = await props.searchParams;
+  const kind = KINDS.find((k) => k === sp.kind);
   const { userId, repos } = await getContext();
   const [accounts, categories] = await Promise.all([listAccounts(repos, userId), listCategories(repos, userId)]);
   const activeAccounts = accounts.filter((a) => a.isActive);
@@ -34,7 +38,7 @@ export default async function AddPage() {
   return (
     <>
       <PageHeader title="Add" />
-      <EntryForm accounts={activeAccounts} categories={activeCategories} today={today()} />
+      <EntryForm key={kind ?? "any"} accounts={activeAccounts} categories={activeCategories} today={today()} defaultKind={kind} />
     </>
   );
 }

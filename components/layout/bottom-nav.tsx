@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { AddSheet } from "./add-sheet";
 import { NAV_ITEMS, isNavActive } from "./nav-items";
 
 export function BottomNav() {
@@ -14,6 +15,13 @@ export function BottomNav() {
     >
       <ul className="grid grid-cols-5">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+          if (href === "/add") {
+            return (
+              <li key={href} className="flex items-start justify-center">
+                <AddSheet />
+              </li>
+            );
+          }
           const active = isNavActive(href, pathname);
           return (
             <li key={href}>
@@ -25,7 +33,7 @@ export function BottomNav() {
                   active ? "text-foreground" : "text-muted-foreground",
                 )}
               >
-                <Icon className={cn("size-5", href === "/add" && "rounded-full bg-primary p-0.5 text-primary-foreground")} aria-hidden />
+                <Icon className="size-5" aria-hidden />
                 {label}
               </Link>
             </li>
