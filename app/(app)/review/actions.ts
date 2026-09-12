@@ -5,18 +5,35 @@ import { isPeriod } from "@/lib/domain/dates";
 import { parseBRL } from "@/lib/domain/money";
 import { getContext } from "@/lib/services/context";
 import { ServiceError } from "@/lib/services/errors";
-import { generateMonth } from "@/lib/services/recurrences";
+import { generateMonth, generateMonths } from "@/lib/services/recurrences";
 
 export type GenerateResult = { ok: true; created: number; skipped: number } | { ok: false; error: string };
 
-/** Fields: `period`, and `amount:<recurrenceId>` as pt-BR amounts for this month's overrides. */
+/** Every pending month at once, template amounts (the Today chip). */
+export async function generateMonthsAction(periods: string[]): Promise<GenerateResult> {
+  const { userId, repos } = await getContext();
+  const valid = periods.filter(isPeriod);
+  if (valid.length === 0) return { ok: false, error: "Pick a month." };
+  try {
+    const results = await generateMonths(repos, userId, valid);
+    for (const path of ["/review", "/", "/entries", "/recurrences"]) revalidatePath(path);
+    return { ok: true, created: results.reduce((n, r) => n + r.created, 0), skipped: results.reduce((n, r) => n + r.skipped, 0) };
+  } catch (error) {
+    if (error instanceof ServiceError) return { ok: false, error: error.message };
+    throw error;
+  }
+}
+
+/** Fields: `period`, `amount:<recurrenceId>` as pt-BR amounts for this month's overrides, `skip:<recurrenceId>` to leave one out. */
 export async function generateMonthWithAmountsAction(formData: FormData): Promise<GenerateResult> {
   const { userId, repos } = await getContext();
   const period = String(formData.get("period") ?? "");
   if (!isPeriod(period)) return { ok: false, error: "Pick a month." };
 
   const amounts: Record<string, number> = {};
+  const skip: string[] = [];
   for (const [key, value] of formData.entries()) {
+    if (key.startsWith("skip:")) skip.push(key.slice("skip:".length));
     if (!key.startsWith("amount:") || typeof value !== "string" || value.trim() === "") continue;
     const cents = parseBRL(value);
     if (cents === null) return { ok: false, error: "Enter amounts like 1.234,56." };
@@ -24,7 +41,7 @@ export async function generateMonthWithAmountsAction(formData: FormData): Promis
   }
 
   try {
-    const result = await generateMonth(repos, userId, period, amounts);
+    const result = await generateMonth(repos, userId, period, amounts, skip);
     for (const path of ["/review", "/", "/entries", "/recurrences"]) revalidatePath(path);
     return { ok: true, created: result.created, skipped: result.skipped };
   } catch (error) {

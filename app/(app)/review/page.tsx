@@ -15,7 +15,7 @@ import { formatBRL } from "@/lib/domain/money";
 import { listAccounts } from "@/lib/services/accounts";
 import { listCategories } from "@/lib/services/categories";
 import { getContext } from "@/lib/services/context";
-import { previewGeneration } from "@/lib/services/recurrences";
+import { pendingMonths, previewGeneration } from "@/lib/services/recurrences";
 import { monthSummary, yearSummary } from "@/lib/services/summary";
 
 /** "+5% vs last month · + R$ 100,00 planned", or whichever half exists; `—` is never faked as 0%. */
@@ -58,11 +58,12 @@ export default async function MonthPage(props: PageProps<"/review">) {
     );
   }
 
-  const [summary, accounts, categories, generation] = await Promise.all([
+  const [summary, accounts, categories, generation, pendingAll] = await Promise.all([
     monthSummary(repos, userId, month),
     listAccounts(repos, userId),
     listCategories(repos, userId),
     previewGeneration(repos, userId, month),
+    pendingMonths(repos, userId, now),
   ]);
   const m = summary.metrics;
   const isCurrent = month === periodOf(now);
@@ -90,6 +91,7 @@ export default async function MonthPage(props: PageProps<"/review">) {
             isVariable: r.recurrence.isVariable,
           }))}
           existingCount={generation.existing.length}
+          otherPending={pendingAll.filter((m) => m.period !== month)}
         />
 
         <section aria-label="Summary" className="grid grid-cols-2 gap-2 md:grid-cols-3">

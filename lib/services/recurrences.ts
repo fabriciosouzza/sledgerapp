@@ -5,7 +5,8 @@ import { isCreditCard } from "@/lib/domain/accounts";
 import { appliesToKind } from "@/lib/domain/categories";
 import { needsCategory, needsCounterAccount } from "@/lib/domain/entries";
 import { expandRecurrences, monthlyFixedCost } from "@/lib/domain/recurrences";
-import type { Entry, NewEntry, Period, Recurrence } from "@/lib/domain/types";
+import { addMonths, periodOf } from "@/lib/domain/dates";
+import type { Entry, IsoDate, NewEntry, Period, Recurrence } from "@/lib/domain/types";
 import type { Repositories } from "@/lib/repositories";
 import type { RecurrenceInput } from "@/lib/schemas/recurrences";
 import { ServiceError } from "./errors";
@@ -98,6 +99,30 @@ export async function previewGeneration(repos: Repositories, userId: string, per
   return { period, toCreate, existing };
 }
 
+export interface PendingMonth {
+  period: Period;
+  count: number;
+}
+
+/** Months from `lookback` ago up to the current one that still have recurring entries to apply, oldest first. */
+export async function pendingMonths(repos: Repositories, userId: string, today: IsoDate, lookback = 3): Promise<PendingMonth[]> {
+  const current = periodOf(today);
+  const out: PendingMonth[] = [];
+  for (let i = lookback; i >= 0; i--) {
+    const period = addMonths(current, -i);
+    const preview = await previewGeneration(repos, userId, period);
+    if (preview.toCreate.length > 0) out.push({ period, count: preview.toCreate.length });
+  }
+  return out;
+}
+
+/** Template amounts, every pending month at once — the catch-up after weeks away. */
+export async function generateMonths(repos: Repositories, userId: string, periods: Period[]): Promise<GenerationResult[]> {
+  const results: GenerationResult[] = [];
+  for (const period of periods) results.push(await generateMonth(repos, userId, period));
+  return results;
+}
+
 export interface GenerationResult {
   period: Period;
   created: number;
@@ -114,14 +139,18 @@ export async function generateMonth(
   userId: string,
   period: Period,
   amounts: Record<string, number> = {},
+  skip: string[] = [],
 ): Promise<GenerationResult> {
   const recurrences = await repos.recurrences.list(userId);
-  const rows = expandRecurrences(recurrences, period).map((row) => {
+  const skipped = new Set(skip);
+  const rows = expandRecurrences(recurrences, period)
+    .filter((row) => row.recurrenceId === null || !skipped.has(row.recurrenceId))
+    .map((row) => {
     const override = row.recurrenceId === null ? undefined : amounts[row.recurrenceId];
     if (override === undefined) return row;
     if (!Number.isInteger(override) || override <= 0) throw new ServiceError("invalid", "Amounts must be positive.");
     return { ...row, amountCents: override };
-  });
+    });
   const inserted = await repos.entries.insertMany(userId, rows, { ignoreConflicts: true });
   return { period, created: inserted.length, skipped: rows.length - inserted.length };
 }

@@ -10,7 +10,7 @@ import type { Account, Entry, IsoDate, Period } from "@/lib/domain/types";
 import type { Repositories } from "@/lib/repositories";
 import { cardsOverview, type CardsOverview, type StatementDue } from "./cards";
 import { netWorthOverview } from "./netWorth";
-import { previewGeneration } from "./recurrences";
+import { pendingMonths, type PendingMonth } from "./recurrences";
 import { monthSummary } from "./summary";
 
 export interface AccountTile {
@@ -34,7 +34,8 @@ export interface TodayOverview {
   insight: Insight | null;
   accounts: AccountTile[];
   /** Recurrences this month still to generate. */
-  toGenerate: number;
+  /** Months (last 3 + current) with recurring entries still to apply. */
+  pendingGeneration: PendingMonth[];
   overdue: Entry[];
   upcoming: Entry[];
   cards: CardsOverview;
@@ -53,7 +54,7 @@ export async function todayOverview(repos: Repositories, userId: string, today: 
     // Planned rows only: whatever is still due, however old, plus the next days.
     repos.entries.list(userId, { status: "planned", to: addDays(today, UPCOMING_DAYS) }),
     cardsOverview(repos, userId, today, { ensure: "open" }),
-    previewGeneration(repos, userId, period),
+    pendingMonths(repos, userId, today),
     repos.categories.list(userId),
   ]);
 
@@ -78,7 +79,7 @@ export async function todayOverview(repos: Repositories, userId: string, today: 
     accounts: netWorth.balances
       .filter((b) => b.account.isActive)
       .sort((a, b) => Number(b.balanceCents !== null && b.balanceCents !== 0) - Number(a.balanceCents !== null && a.balanceCents !== 0)),
-    toGenerate: generation.toCreate.length,
+    pendingGeneration: generation,
     overdue,
     upcoming,
     cards,

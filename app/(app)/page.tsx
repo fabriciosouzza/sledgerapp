@@ -141,7 +141,7 @@ export default async function TodayPage() {
 
           <QuickActions
             dueTodayIds={overview.dueTodayIds}
-            toGenerate={overview.toGenerate}
+            pending={overview.pendingGeneration}
           />
         </div>
 

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { recurrenceInputSchema } from "@/lib/schemas/recurrences";
-import { createRecurrence, deleteRecurrence, fixedCost, generateMonth, previewGeneration } from "../recurrences";
+import { createRecurrence, deleteRecurrence, fixedCost, generateMonth, generateMonths, pendingMonths, previewGeneration } from "../recurrences";
 import { seedUserIfEmpty } from "../seed";
 import { fakeRepositories, type FakeRepositories } from "./fakes";
 
@@ -29,6 +29,26 @@ const input = (overrides: Record<string, unknown> = {}) =>
   });
 
 describe("generateMonth", () => {
+  it("leaves skipped templates out", async () => {
+    const rent = await createRecurrence(repos, U, input());
+    await createRecurrence(repos, U, input({ description: "Internet", amountCents: "120,00", dueDay: "10" }));
+    expect(await generateMonth(repos, U, "2026-02", {}, [rent.id])).toEqual({ period: "2026-02", created: 1, skipped: 0 });
+    expect((await repos.entries.list(U, { period: "2026-02" })).map((e) => e.description)).toEqual(["Internet"]);
+  });
+
+  it("lists the recent months still to apply and applies them at once", async () => {
+    await createRecurrence(repos, U, input({ startsOn: "2026-05-01" }));
+    await generateMonth(repos, U, "2026-07");
+    expect(await pendingMonths(repos, U, "2026-09-12")).toEqual([
+      { period: "2026-06", count: 1 },
+      { period: "2026-08", count: 1 },
+      { period: "2026-09", count: 1 },
+    ]);
+    const results = await generateMonths(repos, U, ["2026-06", "2026-08"]);
+    expect(results.map((r) => r.created)).toEqual([1, 1]);
+    expect(await pendingMonths(repos, U, "2026-09-12")).toEqual([{ period: "2026-09", count: 1 }]);
+  });
+
   // Acceptance 6: generating the same month twice creates nothing the second time.
   it("is idempotent", async () => {
     await createRecurrence(repos, U, input());
