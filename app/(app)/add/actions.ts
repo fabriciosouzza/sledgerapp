@@ -9,7 +9,7 @@ import { createEntry } from "@/lib/services/entries";
 import { ServiceError } from "@/lib/services/errors";
 
 export type CreateEntryActionResult =
-  | { ok: true; count: number; recurrence: boolean }
+  | { ok: true; count: number; recurrence: boolean; firstId: string }
   | { ok: false; error: string };
 
 export async function createEntryAction(formData: FormData): Promise<CreateEntryActionResult> {
@@ -20,7 +20,7 @@ export async function createEntryAction(formData: FormData): Promise<CreateEntry
   try {
     const result = await createEntry(repos, userId, parsed.data, { today: today() });
     revalidateEntries();
-    return { ok: true, count: result.entries.length, recurrence: result.recurrence !== null };
+    return { ok: true, count: result.entries.length, recurrence: result.recurrence !== null, firstId: result.entries[0]?.id ?? "" };
   } catch (error) {
     if (error instanceof ServiceError) return { ok: false, error: error.message };
     throw error;
