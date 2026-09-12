@@ -32,6 +32,7 @@ export function EntryList({
   infinite = true,
   selectable = true,
   ascending = false,
+  title,
   emptyMessage = "Nothing here.",
 }: {
   initial: Entry[];
@@ -45,6 +46,8 @@ export function EntryList({
   selectable?: boolean;
   /** Oldest day first (for what is coming up) instead of newest first. */
   ascending?: boolean;
+  /** Section title, rendered on the same row as the bulk-settle trigger. */
+  title?: string;
   emptyMessage?: string;
 }) {
   const [entries, setEntries] = useState(initial);
@@ -121,27 +124,56 @@ export function EntryList({
     byMonth.set(p, [...(byMonth.get(p) ?? []), e]);
   }
   const months = [...byMonth.keys()].sort((a, b) => (a < b ? 1 : -1) * (ascending ? -1 : 1));
-  const plannedCount = optimistic.filter((e) => e.status === "planned").length;
+  const plannedIds = optimistic.filter((e) => e.status === "planned").map((e) => e.id);
+  // Bulk settle earns its control only when there is more than one thing to settle.
+  const canSelect = selectable && plannedIds.length > 1;
+
+  function stopSelecting() {
+    setSelecting(false);
+    setSelected(new Set());
+  }
 
   return (
     <div className="space-y-4">
-      {selectable && plannedCount > 0 && (
-        <div className="flex items-center justify-end gap-2">
-          {selecting ? (
-            <>
-              <Button variant="ghost" className="h-11" onClick={() => { setSelecting(false); setSelected(new Set()); }}>
-                Cancel
-              </Button>
-              <Button className="h-11" onClick={settleSelected} disabled={selected.size === 0 || pending}>
-                <CheckCheck data-icon="inline-start" aria-hidden />
-                Settle {selected.size > 0 ? selected.size : ""}
-              </Button>
-            </>
-          ) : (
-            <Button variant="outline" className="h-11" onClick={() => setSelecting(true)}>
-              Select
+      {(title || canSelect) && (
+        <div className="flex min-h-9 items-center justify-between gap-2">
+          {title ? <h2 className="text-sm font-semibold">{title}</h2> : <span />}
+          {canSelect && (
+            <Button
+              variant={selecting ? "secondary" : "ghost"}
+              size="sm"
+              className="h-9"
+              aria-pressed={selecting}
+              onClick={() => (selecting ? stopSelecting() : setSelecting(true))}
+            >
+              <CheckCheck data-icon="inline-start" aria-hidden />
+              Settle several…
             </Button>
           )}
+        </div>
+      )}
+
+      {selecting && (
+        <div
+          role="toolbar"
+          aria-label="Bulk settle"
+          className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-border bg-background/95 px-4 py-2 backdrop-blur md:bottom-0 md:left-56"
+        >
+          <div className="mx-auto flex max-w-3xl items-center gap-2">
+            <span className="min-w-0 flex-1 truncate text-sm">
+              {selected.size === 0 ? "Tap the entries to settle" : `${selected.size} selected`}
+            </span>
+            <Button variant="ghost" className="h-11" onClick={() => setSelected(new Set(selected.size === plannedIds.length ? [] : plannedIds))}>
+              {selected.size === plannedIds.length ? "None" : "All"}
+            </Button>
+            <Button variant="ghost" className="h-11" onClick={stopSelecting}>
+              Cancel
+            </Button>
+            <Button className="h-11" onClick={settleSelected} disabled={selected.size === 0 || pending}>
+              <CheckCheck data-icon="inline-start" aria-hidden />
+              Settle{selected.size > 0 ? ` ${selected.size}` : ""}
+            </Button>
+          </div>
         </div>
       )}
 
@@ -180,6 +212,8 @@ export function EntryList({
           </div>
         </section>
       ))}
+
+      {selecting && <div className="h-16" aria-hidden />}
 
       {infinite && (
         <Button variant="outline" className="h-11 w-full" onClick={loadEarlier} disabled={loadingMore}>

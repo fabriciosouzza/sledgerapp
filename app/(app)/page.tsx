@@ -48,7 +48,7 @@ export default async function TodayPage() {
             <h2 className="mb-2 text-sm font-semibold text-red-600 dark:text-red-400">
               Overdue · {overview.overdue.length} · {formatBRL(overview.overdue.filter((e) => e.kind === "expense").reduce((s, e) => s + e.amountCents, 0))}
             </h2>
-            <EntryList initial={overview.overdue} period={period} filters={{ status: "planned" }} lookups={lookups} today={now} infinite={false} ascending />
+            <EntryList initial={overview.overdue} period={period} filters={{ status: "planned" }} lookups={lookups} today={now} infinite={false} selectable={false} ascending />
           </section>
         )}
 

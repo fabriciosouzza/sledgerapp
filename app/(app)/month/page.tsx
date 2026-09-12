@@ -51,9 +51,9 @@ export default async function MonthPage(props: PageProps<"/month">) {
         </section>
 
         <section>
-          <h2 className="mb-2 text-sm font-semibold">Still planned</h2>
           <EntryList
             key={month}
+            title="Still planned"
             initial={summary.planned}
             period={month}
             filters={{ status: "planned" }}
