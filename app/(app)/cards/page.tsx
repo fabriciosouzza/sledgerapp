@@ -16,7 +16,8 @@ import { cardsOverview, type StatementView } from "@/lib/services/cards";
 import { listCategories } from "@/lib/services/categories";
 import { getContext } from "@/lib/services/context";
 
-export default async function CardsPage() {
+export default async function CardsPage(props: PageProps<"/cards">) {
+  const sp = await props.searchParams;
   const now = today();
   const { userId, repos } = await getContext();
   const [overview, accounts, categories] = await Promise.all([
@@ -41,18 +42,28 @@ export default async function CardsPage() {
     );
   }
 
+  const selected = overview.cards.find((c) => c.account.id === sp.card) ?? overview.cards[0];
+
   return (
     <>
       <PageHeader title="Cards" />
-      <div className="space-y-8">
-        <div className="grid grid-cols-2 gap-2">
-          <Stat label="Total card debt" cents={overview.totalDebtCents} tone="negative" hint="unpaid statements, all cards" className="col-span-2" />
-          {overview.cards.map((card) => (
-            <CardTile key={card.account.id} card={card} />
-          ))}
-        </div>
+      <div className="space-y-6">
+        <Stat label="Total card debt" cents={overview.totalDebtCents} tone="negative" hint="unpaid statements, all cards" />
 
-        {overview.cards.map((card) => (
+        <nav aria-label="Card" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-hide md:mx-0 md:px-0">
+          {overview.cards.map((card) => (
+            <Link
+              key={card.account.id}
+              href={`/cards?card=${card.account.id}`}
+              aria-current={card === selected ? "page" : undefined}
+              className={`block shrink-0 rounded-xl transition-shadow focus-visible:outline-2 focus-visible:outline-ring ${card === selected ? "ring-2 ring-primary" : "opacity-80 hover:opacity-100"}`}
+            >
+              <CardTile card={card} />
+            </Link>
+          ))}
+        </nav>
+
+        {[selected].map((card) => (
           <section key={card.account.id} className="space-y-4">
             <header>
               <h2 className="text-lg font-semibold">{card.account.name}</h2>

@@ -10,7 +10,7 @@ const SECTIONS: Section[] = [
       "sledger is built for one sitting a week: open Today, settle what was paid, add what is new, glance at the month. Nothing updates itself from a bank — every number comes from what you typed, so the app never pretends to know something it does not.",
     terms: [
       { term: "Today", meaning: "What needs doing now: cash on hand, what is overdue, what is due in the next 7 days, the cards, and one sentence about the month." },
-      { term: "Month", meaning: "How the month is going: income, expense, contributions, both savings rates, spending by category against caps, and what is still planned." },
+      { term: "Review", meaning: "How the month, the year or the last 12 months went: income, expense, contributions, both savings rates, spending by category against caps, recurring entries still to apply, and what is still planned." },
       { term: "Portfolio", meaning: "Your investments as the sum of their movements — no market quotes." },
       { term: "More", meaning: "Everything else: the full list of entries, cards, recurrences, net worth, settings and this guide." },
     ],

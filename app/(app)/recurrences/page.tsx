@@ -2,22 +2,25 @@ import Link from "next/link";
 import { ChevronRight, Plus } from "lucide-react";
 import { Amount } from "@/components/entries/amount";
 import { PageHeader } from "@/components/layout/page-header";
-import { MonthPicker } from "@/components/month/month-picker";
 import { Stat } from "@/components/month/stat";
-import { GenerateMonth } from "@/components/recurrences/generate-month";
+import { MonthsStatus } from "@/components/recurrences/months-status";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatDate, isPeriod, periodOf, today } from "@/lib/domain/dates";
+import { addMonths, formatDate, periodOf, today } from "@/lib/domain/dates";
 import { monthlyFixedCost } from "@/lib/domain/recurrences";
 import { formatBRL } from "@/lib/domain/money";
 import { getContext } from "@/lib/services/context";
 import { listRecurrences, previewGeneration } from "@/lib/services/recurrences";
 
-export default async function RecurrencesPage(props: PageProps<"/recurrences">) {
-  const sp = await props.searchParams;
-  const period = typeof sp.month === "string" && isPeriod(sp.month) ? sp.month : periodOf(today());
+export default async function RecurrencesPage() {
+  const current = periodOf(today());
   const { userId, repos } = await getContext();
-  const [recurrences, preview] = await Promise.all([listRecurrences(repos, userId), previewGeneration(repos, userId, period)]);
+  const [recurrences, ...previews] = await Promise.all([
+    listRecurrences(repos, userId),
+    previewGeneration(repos, userId, current),
+    previewGeneration(repos, userId, addMonths(current, 1)),
+  ]);
+  const months = previews.map((p) => ({ period: p.period, applied: p.existing.length, pending: p.toCreate.length }));
   const fixed = monthlyFixedCost(recurrences);
   const active = recurrences.filter((r) => r.isActive);
   const inactive = recurrences.filter((r) => !r.isActive);
@@ -36,22 +39,10 @@ export default async function RecurrencesPage(props: PageProps<"/recurrences">) 
       <div className="space-y-6">
         <Stat label="Monthly fixed cost" cents={fixed} hint="Σ active expense recurrences — what sizes the emergency fund" />
 
-        <div className="space-y-3">
-          <MonthPicker period={period} basePath="/recurrences" />
-          <GenerateMonth
-            key={period}
-            period={period}
-            toCreate={preview.toCreate.map((r) => ({
-              recurrenceId: r.recurrence.id,
-              description: r.description,
-              kind: r.kind,
-              amountCents: r.amountCents,
-              date: r.date,
-              isVariable: r.recurrence.isVariable,
-            }))}
-            existingCount={preview.existing.length}
-          />
-        </div>
+        <section>
+          <h2 className="mb-2 text-sm font-semibold">This month and next</h2>
+          <MonthsStatus months={months} />
+        </section>
 
         {recurrences.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-6 text-center">

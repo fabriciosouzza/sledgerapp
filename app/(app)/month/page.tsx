@@ -42,7 +42,7 @@ export default async function MonthPage(props: PageProps<"/month">) {
     const summary = await yearSummary(repos, userId, from, to);
     return (
       <>
-        <PageHeader title="Month" />
+        <PageHeader title="Review" />
         <div className="space-y-6">
           <ViewSwitch view={view} hrefs={hrefs} />
           <YearView
@@ -70,7 +70,7 @@ export default async function MonthPage(props: PageProps<"/month">) {
 
   return (
     <>
-      <PageHeader title="Month" />
+      <PageHeader title="Review" />
       <div className="space-y-6">
         <ViewSwitch view={view} hrefs={hrefs} />
         <MonthPicker period={month} basePath="/month" />

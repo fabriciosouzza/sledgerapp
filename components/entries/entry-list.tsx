@@ -60,6 +60,8 @@ export function EntryList({
   const [oldest, setOldest] = useState(period);
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Settled from this list, this visit: these rows keep a "settled" badge as confirmation.
+  const [recent, setRecent] = useState<Set<string>>(new Set());
   const [pending, startTransition] = useTransition();
   const [loadingMore, startLoading] = useTransition();
 
@@ -72,6 +74,7 @@ export function EntryList({
         return;
       }
       setEntries((prev) => applyPatch(prev, { id, status: "settled", settledOn: today }));
+      setRecent((prev) => new Set(prev).add(id));
       toast.success("Settled", { action: { label: "Undo", onClick: () => unsettle(id) } });
     });
   }
@@ -85,6 +88,11 @@ export function EntryList({
         return;
       }
       setEntries((prev) => applyPatch(prev, { id, status: "planned", settledOn: null }));
+      setRecent((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     });
   }
 
@@ -99,6 +107,7 @@ export function EntryList({
         return;
       }
       setEntries((prev) => ids.reduce((list, id) => applyPatch(list, { id, status: "settled", settledOn: today }), prev));
+      setRecent((prev) => new Set([...prev, ...ids]));
       setSelected(new Set());
       setSelecting(false);
       toast.success(`Settled ${ids.length} ${ids.length === 1 ? "entry" : "entries"}`);
@@ -220,6 +229,7 @@ export function EntryList({
                       today={today}
                       selecting={selecting}
                       selected={selected.has(entry.id)}
+                      justSettled={recent.has(entry.id)}
                       onToggle={() => toggle(entry.id)}
                       onSettle={() => settle(entry.id)}
                       onUnsettle={() => unsettle(entry.id)}
@@ -252,6 +262,7 @@ function EntryRow({
   today,
   selecting,
   selected,
+  justSettled,
   onToggle,
   onSettle,
   onUnsettle,
@@ -261,6 +272,7 @@ function EntryRow({
   today: string;
   selecting: boolean;
   selected: boolean;
+  justSettled: boolean;
   onToggle: () => void;
   onSettle: () => void;
   onUnsettle: () => void;
@@ -345,7 +357,7 @@ function EntryRow({
                 overdue
               </span>
             )}
-            {timing === "settled" && (
+            {timing === "settled" && justSettled && (
               <span className="shrink-0 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 uppercase dark:text-emerald-400">
                 settled
               </span>

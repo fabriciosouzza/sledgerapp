@@ -9,7 +9,7 @@ export interface NavItem {
 /** Bottom nav on mobile, sidebar on desktop (PROMPT.md §7); the add button sits in the middle as a FAB. */
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Today", icon: Home },
-  { href: "/month", label: "Month", icon: CalendarDays },
+  { href: "/month", label: "Review", icon: CalendarDays },
   { href: "/add", label: "Add", icon: Plus },
   { href: "/portfolio", label: "Portfolio", icon: PieChart },
   { href: "/more", label: "More", icon: MoreHorizontal },

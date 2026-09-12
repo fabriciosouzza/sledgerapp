@@ -15,7 +15,7 @@ export function AccountStrip({ accounts, cards, period }: { accounts: AccountTil
       key: c.account.id,
       known: c.open.totalCents > 0 || c.debtCents > 0,
       node: (
-        <Link href="/cards" className="block w-40 focus-visible:outline-2 focus-visible:outline-ring">
+        <Link href={`/cards?card=${c.account.id}`} className="block focus-visible:outline-2 focus-visible:outline-ring">
           <CardTile card={c} />
         </Link>
       ),
@@ -37,7 +37,7 @@ function CashTile({ account: { account, balanceCents }, period }: { account: Acc
   return (
     <Link
       href={`/net-worth?month=${period}`}
-      className="block w-36 rounded-xl bg-card p-3 ring-1 ring-foreground/10 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring"
+      className="block h-24 w-36 rounded-xl bg-card p-3 ring-1 ring-foreground/10 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring"
     >
       <p className="truncate text-xs text-muted-foreground">{account.name}</p>
       <p className="mt-0.5 text-lg font-semibold tabular-nums">{balanceCents === null ? "—" : formatBRL(balanceCents)}</p>
