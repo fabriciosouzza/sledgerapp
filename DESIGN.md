@@ -242,6 +242,17 @@ Each step ships on its own commit; 360px pass on every screen touched (§8).
 - Budget = sum of category caps (no new column).
 - The FAB opens a kind picker sheet, then `/add?kind=…`.
 - Yearly view offers both a calendar year and the last 12 months.
+- The review screen is called Review and lives at `/review` (`/month` redirects).
+- **Balances are derived, snapshots are gone** (deviation from `PROMPT.md`
+  §5.9, decided by the owner). A cash account has `opening_balance_cents` on
+  `opening_on`; its balance is that plus every settled entry since. Net worth
+  for any month = Σ cash balances + investments − card debt at that month's
+  end (open statements included for what was bought by then). A forgotten
+  expense is recorded as an entry, not through a correction table or an
+  automatic category. A "fix balance" helper (type the bank's number, get
+  the difference as an entry) was discussed and left out for now.
+- Recurring entries are applied from Review (with per-month amounts);
+  `/recurrences` only reports where each month stands.
 
 ## Done
 

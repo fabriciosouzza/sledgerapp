@@ -10,7 +10,7 @@ const DESCRIPTIONS: Record<string, string> = {
   "/entries": "Every entry, filter and bulk settle",
   "/cards": "Statements per credit card",
   "/recurrences": "Fixed cost and month generation",
-  "/net-worth": "Monthly snapshots",
+  "/net-worth": "Cash, investments and debt over time",
   "/settings": "Accounts, categories, assets, profile",
   "/guide": "The terms and the weekly routine",
 };

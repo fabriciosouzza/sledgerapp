@@ -15,6 +15,8 @@ export interface EntryFilters {
   kind?: EntryKind;
   status?: EntryStatus;
   accountId?: string;
+  /** Entries where the account is either side (source or counter). */
+  touchingAccountIds?: string[];
   categoryId?: string;
   /** Case-insensitive substring of the description. */
   search?: string;
@@ -102,6 +104,10 @@ export function supabaseEntriesRepo(db: DbClient): EntriesRepo {
       if (filters.kind) q = q.eq("kind", filters.kind);
       if (filters.status) q = q.eq("status", filters.status);
       if (filters.accountId) q = q.eq("account_id", filters.accountId);
+      if (filters.touchingAccountIds && filters.touchingAccountIds.length > 0) {
+        const ids = filters.touchingAccountIds.join(",");
+        q = q.or(`account_id.in.(${ids}),counter_account_id.in.(${ids})`);
+      }
       if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
       if (filters.statementId) q = q.eq("statement_id", filters.statementId);
       if (filters.installmentGroupId) q = q.eq("installment_group_id", filters.installmentGroupId);

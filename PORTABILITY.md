@@ -25,4 +25,6 @@ every screen, every server action, every component.
 
 The schema needs Postgres 15+ (`unique nulls not distinct` on categories) and
 uses nothing else host-specific: enums, check constraints, unique indexes,
-`gen_random_uuid()`, and a plain `updated_at` trigger.
+`gen_random_uuid()`, and a plain `updated_at` trigger. `entries.list` uses
+PostgREST's `or=(account_id.in.(…),counter_account_id.in.(…))` for the
+"entries touching these accounts" filter behind derived balances.

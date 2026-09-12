@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Camera } from "lucide-react";
+import { ArrowRight, Landmark } from "lucide-react";
 import { NetWorthLine } from "@/components/charts/net-worth-line";
 import { EntryList } from "@/components/entries/entry-list";
 import { buildLookups } from "@/components/entries/lookups";
@@ -8,8 +8,7 @@ import { AccountStrip } from "@/components/today/account-strip";
 import { OverdueBlock } from "@/components/today/overdue-block";
 import { QuickActions } from "@/components/today/quick-actions";
 import { Ring } from "@/components/today/ring";
-import { formatDate, formatPeriodLong } from "@/lib/domain/dates";
-import { today } from "@/lib/domain/dates";
+import { formatDate, today } from "@/lib/domain/dates";
 import { formatBRL } from "@/lib/domain/money";
 import { listAccounts } from "@/lib/services/accounts";
 import { listCategories } from "@/lib/services/categories";
@@ -44,17 +43,17 @@ export default async function TodayPage() {
 
       <section aria-label="Cash on hand">
         <p className="text-sm text-muted-foreground">Cash on hand</p>
-        {overview.cash ? (
+        {overview.cashCents !== null ? (
           <>
-            <p className="text-4xl font-semibold tracking-tight tabular-nums">{formatBRL(overview.cash.cents)}</p>
-            <p className="text-xs text-muted-foreground">as of {formatPeriodLong(overview.cash.asOf)} snapshot</p>
+            <p className="text-4xl font-semibold tracking-tight tabular-nums">{formatBRL(overview.cashCents)}</p>
+            <p className="text-xs text-muted-foreground">across your cash accounts, from what you recorded</p>
           </>
         ) : (
           <>
             <p className="text-4xl font-semibold tracking-tight text-muted-foreground">—</p>
-            <Link href="/net-worth" className="mt-1 inline-flex min-h-9 items-center gap-1 text-sm text-primary hover:underline">
-              <Camera className="size-4" aria-hidden />
-              Take a snapshot to know it
+            <Link href="/settings/accounts/new" className="mt-1 inline-flex min-h-9 items-center gap-1 text-sm text-primary hover:underline">
+              <Landmark className="size-4" aria-hidden />
+              Add a cash account with its balance
             </Link>
           </>
         )}
@@ -93,7 +92,7 @@ export default async function TodayPage() {
         <Stat label="Leftover this month" cents={m.leftoverCents} tone="signed" />
       </section>
 
-      <AccountStrip accounts={overview.accounts} cards={overview.cards.cards} period={overview.period} />
+      <AccountStrip accounts={overview.accounts} cards={overview.cards.cards} />
 
       <QuickActions dueTodayIds={overview.dueTodayIds} toGenerate={overview.toGenerate} />
 

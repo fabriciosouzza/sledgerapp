@@ -61,11 +61,11 @@ const SECTIONS: Section[] = [
     ],
   },
   {
-    title: "Net worth and snapshots",
+    title: "Balances and net worth",
     terms: [
-      { term: "Snapshot", meaning: "Once a month, type the balance of each cash account and the debt of each card. It takes a minute and it is the only way the app knows your cash." },
-      { term: "Cash on hand", meaning: "The cash from your latest snapshot, shown with the month it was taken in." },
-      { term: "Net worth", meaning: "cash + investments − debt. A month without a snapshot stays empty, never zero." },
+      { term: "Starting point", meaning: "Each cash account has a balance on the day you start tracking it (in its settings). From then on, every settled entry moves it: income in, expenses out, transfers between accounts." },
+      { term: "Cash on hand", meaning: "The sum of your cash accounts today, derived from what you recorded. If the bank shows something else, an entry is missing — add it." },
+      { term: "Net worth", meaning: "cash + investments − debt, for any month. Months before your first account stay empty, never zero." },
     ],
   },
   {
@@ -76,7 +76,7 @@ const SECTIONS: Section[] = [
       { term: "Savings rate ex-benefits", meaning: "The same, but benefits (meal voucher, allowances) are removed from income. Mark a category as a benefit in settings." },
       { term: "Budget", meaning: "The sum of the caps you set on categories. Within under 80%, at risk up to 100%, over beyond." },
       { term: "Months of runway", meaning: "cash on hand ÷ fixed cost: how long the cash would last with no income." },
-      { term: "—", meaning: "Unknown. It appears when a number cannot be computed yet (no snapshot, no income this month). It is never a zero in disguise." },
+      { term: "—", meaning: "Unknown. It appears when a number cannot be computed yet (no cash account yet, no income this month). It is never a zero in disguise." },
     ],
   },
 ];

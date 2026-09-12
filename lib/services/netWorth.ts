@@ -1,89 +1,78 @@
-// Net worth (PROMPT.md §5.9): a manual monthly snapshot of cash and debt
-// accounts plus investments derived from movements. A month without a
-// snapshot is null, never zero.
+// Net worth (DESIGN.md, replacing PROMPT.md §5.9's snapshots): every part is
+// derived. Cash from accounts and their settled entries, investments from
+// asset movements, debt from unpaid card statements — for any month.
 
 import { isCashAccount, isCreditCard } from "@/lib/domain/accounts";
-import { addMonths, periodOf, periodRange, periodStart } from "@/lib/domain/dates";
-import { latestCash, netWorthFor, netWorthSeries, type NetWorthPoint } from "@/lib/domain/netWorth";
+import { addMonths, periodEnd, periodOf, periodRange, periodStart } from "@/lib/domain/dates";
+import { balancesAt, cashAt, type AccountBalance } from "@/lib/domain/balances";
+import { netWorthSeries, type NetWorthPoint } from "@/lib/domain/netWorth";
 import { investmentsAt } from "@/lib/domain/portfolio";
-import type { Account, BalanceKind, BalanceSnapshot, IsoDate, Period } from "@/lib/domain/types";
+import { debtAt, groupByCycle } from "@/lib/domain/statements";
+import type { Account, Entry, IsoDate, Period } from "@/lib/domain/types";
 import type { Repositories } from "@/lib/repositories";
-import { ServiceError } from "./errors";
-
-export interface SnapshotLine {
-  account: Account;
-  kind: BalanceKind;
-  amountCents: number | null;
-}
 
 export interface NetWorthOverview {
   series: NetWorthPoint[];
-  current: NetWorthPoint | null;
-  /** Latest known cash at `today`'s period, for runway; `null` with no snapshot yet. */
+  current: NetWorthPoint;
+  /** Each cash account today; `null` before its opening date. */
+  balances: AccountBalance[];
   cashCents: number | null;
-  /** What the form lists for `period`: every active cash or card account with its saved value, if any. */
-  form: { period: Period; lines: SnapshotLine[]; hasSnapshot: boolean };
 }
 
-function kindOf(account: Account): BalanceKind | null {
-  if (isCreditCard(account)) return "debt";
-  if (isCashAccount(account)) return "cash";
-  return null; // brokerage: derived from movements, never snapshotted (§5.9)
+/** Cash accounts' entries from the earliest opening date: one bounded query. */
+async function cashEntries(repos: Repositories, userId: string, accounts: Account[], until: IsoDate): Promise<Entry[]> {
+  const cash = accounts.filter(isCashAccount);
+  if (cash.length === 0) return [];
+  const from = cash.reduce((min, a) => (a.openingOn < min ? a.openingOn : min), cash[0].openingOn);
+  return repos.entries.list(userId, { touchingAccountIds: cash.map((a) => a.id), from, to: until, status: "settled" });
 }
 
-export async function netWorthOverview(repos: Repositories, userId: string, today: IsoDate, period?: Period, months = 12): Promise<NetWorthOverview> {
+/** Card statements with totals over the range, for debt at any month end. */
+async function cardStatements(repos: Repositories, userId: string, accounts: Account[], from: IsoDate, until: IsoDate) {
+  const cards = accounts.filter(isCreditCard);
+  if (cards.length === 0) return [];
+  const [entries, statements] = await Promise.all([
+    repos.entries.list(userId, { touchingAccountIds: cards.map((c) => c.id), from, to: until }),
+    repos.statements.listByUser(userId),
+  ]);
+  const paidOn = new Map(statements.map((s) => [`${s.accountId}:${s.cycleStart}`, s.paidOn]));
+  return cards.flatMap((card) =>
+    groupByCycle(card, entries.filter((e) => e.accountId === card.id)).map((g) => ({
+      paidOn: paidOn.get(`${card.id}:${g.cycle.cycleStart}`) ?? null,
+      entries: g.entries,
+    })),
+  );
+}
+
+export async function netWorthOverview(repos: Repositories, userId: string, today: IsoDate, months = 12): Promise<NetWorthOverview> {
   const current = periodOf(today);
-  const formPeriod = period ?? current;
   const from = addMonths(current, -(months - 1));
-  const to = formPeriod > current ? formPeriod : current;
-
-  const [accounts, snapshots, movements] = await Promise.all([
-    repos.accounts.list(userId),
-    repos.snapshots.listBetween(userId, from, to),
+  const accounts = await repos.accounts.list(userId);
+  const [entries, movements, statements] = await Promise.all([
+    cashEntries(repos, userId, accounts, today),
     repos.movements.list(userId),
+    cardStatements(repos, userId, accounts, periodStart(addMonths(from, -2)), today),
   ]);
 
-  const series = netWorthSeries(periodRange(from, current), snapshots, (p) => investmentsAt(movements, p));
-  const forPeriod = snapshots.filter((s) => periodOf(s.period) === formPeriod);
-  const byAccount = new Map(forPeriod.map((s) => [s.accountId, s]));
-  const lines = accounts
-    .map((account) => ({ account, kind: kindOf(account) }))
-    .filter((l): l is { account: Account; kind: BalanceKind } => l.kind !== null && (l.account.isActive || byAccount.has(l.account.id)))
-    .map(({ account, kind }) => ({ account, kind, amountCents: byAccount.get(account.id)?.amountCents ?? null }));
+  const endOf = (p: Period) => (p === current ? today : periodEnd(p));
+  const series = netWorthSeries(periodRange(from, current), {
+    cashAt: (p) => cashAt(accounts, entries, endOf(p)),
+    investmentsAt: (p) => investmentsAt(movements, p),
+    debtAt: (p) => debtAt(statements, endOf(p)),
+  });
 
   return {
     series,
-    current: series[series.length - 1] ?? null,
-    cashCents: latestCash(snapshots, current),
-    form: { period: formPeriod, lines, hasSnapshot: forPeriod.length > 0 },
+    current: series[series.length - 1],
+    balances: balancesAt(accounts, entries, today),
+    cashCents: cashAt(accounts, entries, today),
   };
 }
 
-export interface SnapshotInput {
-  period: Period;
-  balances: { accountId: string; amountCents: number }[];
-}
-
-/** Replaces the month's snapshot with every account at once (§7 /net-worth). */
-export async function saveSnapshot(repos: Repositories, userId: string, input: SnapshotInput): Promise<BalanceSnapshot[]> {
+/** Σ cash balances at the end of `period` (today when it is the current month). */
+export async function cashAtPeriod(repos: Repositories, userId: string, period: Period, today: IsoDate): Promise<number | null> {
   const accounts = await repos.accounts.list(userId);
-  const byId = new Map(accounts.map((a) => [a.id, a]));
-  const rows = input.balances.map(({ accountId, amountCents }) => {
-    const account = byId.get(accountId);
-    if (!account) throw new ServiceError("invalid", "Account not found.");
-    const kind = kindOf(account);
-    if (kind === null) throw new ServiceError("invalid", `${account.name} is a brokerage: its balance comes from movements.`);
-    if (!Number.isInteger(amountCents) || amountCents < 0) throw new ServiceError("invalid", "Balances are zero or positive; a card's balance is its debt.");
-    return { period: periodStart(input.period), accountId, kind, amountCents };
-  });
-  if (rows.length === 0) throw new ServiceError("invalid", "Nothing to save.");
-  return repos.snapshots.upsertMany(userId, rows);
+  const until = period >= periodOf(today) ? today : periodEnd(period);
+  const entries = await cashEntries(repos, userId, accounts, until);
+  return cashAt(accounts, entries, until);
 }
-
-export async function cashOnHand(repos: Repositories, userId: string, today: IsoDate): Promise<number | null> {
-  const current = periodOf(today);
-  const snapshots = await repos.snapshots.listBetween(userId, addMonths(current, -12), current);
-  return latestCash(snapshots, current);
-}
-
-export { netWorthFor };

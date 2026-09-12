@@ -2,6 +2,7 @@
 // Names are user data, hence Portuguese. Runs from the app after sign-up —
 // never from a database trigger (§4.1) — and only for an empty user.
 
+import { today } from "@/lib/domain/dates";
 import type { AccountType } from "@/lib/domain/types";
 import type { NewAccount, NewCategory, Repositories } from "@/lib/repositories";
 
@@ -18,6 +19,9 @@ export const SEED_ACCOUNTS: NewAccount[] = ACCOUNTS.map((a, i) => ({
   closingDay: null,
   dueDay: null,
   creditLimitCents: null,
+  // Starts empty today; the user sets the real opening balance in settings.
+  openingBalanceCents: 0,
+  openingOn: today(),
   isActive: true,
   sortOrder: i,
 }));

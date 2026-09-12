@@ -3,6 +3,7 @@ import { Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/forms/confirm-dialog";
 import { PageHeader } from "@/components/layout/page-header";
 import { AccountForm } from "@/components/settings/account-form";
+import { today } from "@/lib/domain/dates";
 import { Button } from "@/components/ui/button";
 import { getAccount } from "@/lib/services/accounts";
 import { getContext } from "@/lib/services/context";
@@ -36,7 +37,7 @@ export default async function EditAccountPage(props: PageProps<"/settings/accoun
           />
         }
       />
-      <AccountForm account={account} action={updateAccountAction} />
+      <AccountForm account={account} action={updateAccountAction} today={today()} />
     </>
   );
 }

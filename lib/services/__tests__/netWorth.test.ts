@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { accountInputSchema } from "@/lib/schemas/accounts";
 import { assetInputSchema, movementInputSchema } from "@/lib/schemas/assets";
-import { createAccount } from "../accounts";
-import { netWorthOverview, saveSnapshot } from "../netWorth";
+import { entryInputSchema } from "@/lib/schemas/entries";
+import { createAccount, updateAccount } from "../accounts";
+import { cardsOverview, payStatement } from "../cards";
+import { createEntry } from "../entries";
+import { cashAtPeriod, netWorthOverview } from "../netWorth";
 import { addMovement, createAsset } from "../portfolio";
 import { seedUserIfEmpty } from "../seed";
 import { fakeRepositories, type FakeRepositories } from "./fakes";
@@ -11,64 +14,64 @@ const U = "u1";
 const TODAY = "2026-11-10";
 let repos: FakeRepositories;
 let checking: string;
-let broker: string;
-let card: string;
+let savings: string;
+let misc: string;
 
 beforeEach(async () => {
   repos = fakeRepositories();
   await seedUserIfEmpty(repos, U);
   const accounts = await repos.accounts.list(U);
   checking = accounts.find((a) => a.name === "Conta Corrente")!.id;
-  broker = accounts.find((a) => a.name === "Corretora")!.id;
-  card = (await createAccount(repos, U, accountInputSchema.parse({ name: "Card", type: "credit_card", closingDay: "5", dueDay: "15" }))).id;
+  savings = accounts.find((a) => a.name === "Reserva")!.id;
+  misc = (await repos.categories.list(U)).find((c) => c.name === "Outros")!.id;
+  await updateAccount(repos, U, checking, accountInputSchema.parse({ name: "Conta Corrente", type: "checking", openingBalanceCents: "1.000,00", openingOn: "2026-10-01" }));
+  await updateAccount(repos, U, savings, accountInputSchema.parse({ name: "Reserva", type: "savings", openingBalanceCents: "500,00", openingOn: "2026-10-15" }));
+  // The seed opens accounts "today" (the real date); pin the third cash account to the test's timeline.
+  const cash = accounts.find((a) => a.name === "Dinheiro")!.id;
+  await updateAccount(repos, U, cash, accountInputSchema.parse({ name: "Dinheiro", type: "cash", openingBalanceCents: "0,00", openingOn: "2026-10-20" }));
 });
 
-describe("netWorth", () => {
-  // Acceptance 12: a month without a snapshot returns null, not 0.
-  it("is null without a snapshot even when investments exist", async () => {
-    const cdb = (await createAsset(repos, U, assetInputSchema.parse({ name: "CDB", assetClass: "fixed_income" }))).id;
-    await addMovement(repos, U, movementInputSchema.parse({ assetId: cdb, kind: "contribution", date: "2026-10-01", amountCents: "1.000,00" }));
+const add = (overrides: Record<string, unknown>) =>
+  createEntry(repos, U, entryInputSchema.parse({ kind: "expense", amountCents: "100,00", date: TODAY, description: "x", categoryId: misc, accountId: checking, settled: "on", ...overrides }), { today: TODAY });
 
-    const overview = await netWorthOverview(repos, U, TODAY, undefined, 3);
-    expect(overview.series.map((p) => p.netWorthCents)).toEqual([null, null, null]);
-    expect(overview.series[2].investmentsCents).toBe(100_000);
-    expect(overview.current?.netWorthCents).toBeNull();
-    expect(overview.cashCents).toBeNull();
-    expect(overview.form.hasSnapshot).toBe(false);
+describe("derived balances", () => {
+  it("starts at the opening balance and follows settled entries, transfers included", async () => {
+    await add({ kind: "income", amountCents: "300,00", date: "2026-10-05" });
+    await add({ amountCents: "120,00", date: "2026-10-20" });
+    await add({ kind: "transfer", counterAccountId: savings, amountCents: "200,00", date: "2026-11-02", categoryId: "" });
+    await add({ amountCents: "999,00", date: "2026-11-09", settled: "" }); // planned: not yet
+
+    const overview = await netWorthOverview(repos, U, TODAY, 3);
+    const by = Object.fromEntries(overview.balances.map((b) => [b.account.id, b.balanceCents]));
+    expect(by[checking]).toBe(100_000 + 30_000 - 12_000 - 20_000);
+    expect(by[savings]).toBe(50_000 + 20_000);
+    expect(overview.cashCents).toBe(98_000 + 70_000);
   });
 
-  it("is cash + investments − debt once a snapshot exists", async () => {
+  // Acceptance 12, reinterpreted: before any account exists, net worth is null, never 0.
+  it("is null before the first account opened and includes investments and card debt after", async () => {
     const cdb = (await createAsset(repos, U, assetInputSchema.parse({ name: "CDB", assetClass: "fixed_income" }))).id;
     await addMovement(repos, U, movementInputSchema.parse({ assetId: cdb, kind: "contribution", date: "2026-10-01", amountCents: "1.000,00" }));
-    await saveSnapshot(repos, U, {
-      period: "2026-11",
-      balances: [
-        { accountId: checking, amountCents: 500_000 },
-        { accountId: card, amountCents: 120_000 },
-      ],
-    });
+    const card = (await createAccount(repos, U, accountInputSchema.parse({ name: "Card", type: "credit_card", closingDay: "5", dueDay: "15" }))).id;
+    await add({ accountId: card, amountCents: "50,00", date: "2026-10-01" }); // Sep 6 – Oct 5 statement, unpaid
 
-    const overview = await netWorthOverview(repos, U, TODAY, undefined, 2);
-    expect(overview.series.map((p) => p.netWorthCents)).toEqual([null, 500_000 + 100_000 - 120_000]);
-    expect(overview.cashCents).toBe(500_000);
-    expect(overview.form.hasSnapshot).toBe(true);
-    expect(overview.form.lines.map((l) => [l.account.id, l.kind, l.amountCents])).toEqual(
-      expect.arrayContaining([
-        [checking, "cash", 500_000],
-        [card, "debt", 120_000],
-      ]),
-    );
-    // Brokerage accounts are never listed: investments are derived (§5.9).
-    expect(overview.form.lines.some((l) => l.account.id === broker)).toBe(false);
+    const overview = await netWorthOverview(repos, U, TODAY, 3);
+    expect(overview.series.map((p) => p.netWorthCents)).toEqual([null, 100_000 + 50_000 + 100_000 - 5_000, 150_000 + 100_000 - 5_000]);
+
+    const a = (await cardsOverview(repos, U, TODAY)).cards[0];
+    await payStatement(repos, U, { statementId: a.past[0].statement.id, fromAccountId: checking, paidOn: "2026-11-05" }, TODAY);
+    const after = await netWorthOverview(repos, U, TODAY, 1);
+    // The payment left cash and cleared the debt: net worth unchanged, cash lower.
+    expect(after.current.netWorthCents).toBe(245_000);
+    expect(after.current.cashCents).toBe(145_000);
+    expect(after.current.debtCents).toBe(0);
   });
 
-  it("replaces a month's values and refuses brokerage or negative balances", async () => {
-    await saveSnapshot(repos, U, { period: "2026-11", balances: [{ accountId: checking, amountCents: 100 }] });
-    await saveSnapshot(repos, U, { period: "2026-11", balances: [{ accountId: checking, amountCents: 200 }] });
-    expect(await repos.snapshots.listByPeriod(U, "2026-11")).toHaveLength(1);
-    expect((await repos.snapshots.listByPeriod(U, "2026-11"))[0].amountCents).toBe(200);
-
-    await expect(saveSnapshot(repos, U, { period: "2026-11", balances: [{ accountId: broker, amountCents: 1 }] })).rejects.toMatchObject({ code: "invalid" });
-    await expect(saveSnapshot(repos, U, { period: "2026-11", balances: [{ accountId: checking, amountCents: -1 }] })).rejects.toMatchObject({ code: "invalid" });
+  it("values cash at a past month's end", async () => {
+    await add({ kind: "income", amountCents: "300,00", date: "2026-10-05" });
+    await add({ amountCents: "50,00", date: "2026-11-03" });
+    expect(await cashAtPeriod(repos, U, "2026-10", TODAY)).toBe(100_000 + 30_000 + 50_000);
+    expect(await cashAtPeriod(repos, U, "2026-11", TODAY)).toBe(180_000 - 5_000);
+    expect(await cashAtPeriod(repos, U, "2026-09", TODAY)).toBeNull();
   });
 });

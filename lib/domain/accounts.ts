@@ -20,7 +20,7 @@ export function isCreditCard(account: Pick<Account, "type">): boolean {
   return account.type === "credit_card";
 }
 
-/** Card debt is never cash (§5.6); brokerage balances come from movements (§5.9). */
+/** Card debt is never cash (§5.6); brokerage balances come from movements (§5.7). Cash accounts carry a derived balance. */
 export function isCashAccount(account: Pick<Account, "type">): boolean {
   return account.type === "checking" || account.type === "savings" || account.type === "cash" || account.type === "other";
 }

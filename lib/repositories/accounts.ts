@@ -28,6 +28,8 @@ function toDomain(row: Row): Account {
     closingDay: row.closing_day,
     dueDay: row.due_day,
     creditLimitCents: row.credit_limit_cents,
+    openingBalanceCents: row.opening_balance_cents,
+    openingOn: row.opening_on,
     isActive: row.is_active,
     sortOrder: row.sort_order,
   };
@@ -41,6 +43,8 @@ function toRow(userId: string, data: Partial<NewAccount>): Partial<Insert> & { u
   if (data.closingDay !== undefined) row.closing_day = data.closingDay;
   if (data.dueDay !== undefined) row.due_day = data.dueDay;
   if (data.creditLimitCents !== undefined) row.credit_limit_cents = data.creditLimitCents;
+  if (data.openingBalanceCents !== undefined) row.opening_balance_cents = data.openingBalanceCents;
+  if (data.openingOn !== undefined) row.opening_on = data.openingOn;
   if (data.isActive !== undefined) row.is_active = data.isActive;
   if (data.sortOrder !== undefined) row.sort_order = data.sortOrder;
   return row;

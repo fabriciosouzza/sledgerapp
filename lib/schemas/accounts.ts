@@ -1,5 +1,12 @@
 import { z } from "zod";
+import { z as zod } from "zod";
+import { isIsoDate } from "@/lib/domain/dates";
+import { parseBRL } from "@/lib/domain/money";
 import { boolField, optionalCents, optionalInt, optionalText, requiredText } from "./form";
+
+/** A balance may be zero; negative means an overdraft, which is fine. */
+const openingCents = zod.preprocess((v) => (typeof v === "string" ? (v.trim() === "" ? 0 : parseBRL(v)) : v), zod.number({ error: "Enter an amount like 1.234,56." }).int()).default(0);
+const openingDate = zod.preprocess((v) => (typeof v === "string" && v.trim() === "" ? undefined : v), zod.string().refine((v) => isIsoDate(v), { error: "Enter a valid date." }).optional());
 
 export const accountTypeSchema = z.enum(["checking", "savings", "cash", "credit_card", "brokerage", "other"]);
 
@@ -11,6 +18,9 @@ export const accountInputSchema = z
     closingDay: optionalInt(1, 31),
     dueDay: optionalInt(1, 31),
     creditLimitCents: optionalCents,
+    /** Where the balance starts (cash accounts). */
+    openingBalanceCents: openingCents,
+    openingOn: openingDate,
     isActive: boolField.default(true),
   })
   .superRefine((a, ctx) => {

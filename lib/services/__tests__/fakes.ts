@@ -2,7 +2,7 @@
 // no database. Each fake enforces the invariants the real database would.
 
 import { periodEnd, periodStart } from "@/lib/domain/dates";
-import type { Account, Asset, AssetMovement, BalanceSnapshot, Category, Entry, NewEntry, Recurrence, Statement } from "@/lib/domain/types";
+import type { Account, Asset, AssetMovement, Category, Entry, NewEntry, Recurrence, Statement } from "@/lib/domain/types";
 import type {
   AccountsRepo,
   AssetsRepo,
@@ -14,10 +14,8 @@ import type {
   NewCategory,
   NewMovement,
   NewRecurrence,
-  NewSnapshot,
   RecurrencesRepo,
   Repositories,
-  SnapshotsRepo,
   StatementsRepo,
 } from "@/lib/repositories";
 import { RepositoryError } from "@/lib/repositories";
@@ -42,7 +40,6 @@ export function fakeRepositories(): FakeRepositories {
   const statements: Owned<Statement>[] = [];
   const assets: Owned<Asset>[] = [];
   const movements: Owned<AssetMovement>[] = [];
-  const snapshots: Owned<BalanceSnapshot>[] = [];
   const accountsInUse = new Set<string>();
   const categoriesInUse = new Set<string>();
 
@@ -140,6 +137,7 @@ export function fakeRepositories(): FakeRepositories {
         .filter((e) => (f.kind ? e.kind === f.kind : true))
         .filter((e) => (f.status ? e.status === f.status : true))
         .filter((e) => (f.accountId ? e.accountId === f.accountId : true))
+        .filter((e) => (f.touchingAccountIds ? f.touchingAccountIds.includes(e.accountId) || (e.counterAccountId !== null && f.touchingAccountIds.includes(e.counterAccountId)) : true))
         .filter((e) => (f.categoryId ? e.categoryId === f.categoryId : true))
         .filter((e) => (f.installmentGroupId ? e.installmentGroupId === f.installmentGroupId : true))
         .filter((e) => (f.recurrenceId ? e.recurrenceId === f.recurrenceId : true))
@@ -304,34 +302,6 @@ export function fakeRepositories(): FakeRepositories {
     },
   };
 
-  const snapshotsRepo: SnapshotsRepo = {
-    async listBetween(userId, from, to) {
-      return snapshots.filter((s) => s.userId === userId && s.period >= periodStart(from) && s.period <= periodStart(to)).map(strip);
-    },
-    async listByPeriod(userId, period) {
-      return snapshots.filter((s) => s.userId === userId && s.period === periodStart(period)).map(strip);
-    },
-    async upsertMany(userId, rows: NewSnapshot[]) {
-      return rows.map((data) => {
-        const existing = snapshots.find((s) => s.userId === userId && s.period === data.period && s.accountId === data.accountId);
-        if (existing) {
-          Object.assign(existing, data);
-          return strip(existing);
-        }
-        const row = { ...data, id: nextId(), userId };
-        snapshots.push(row);
-        return strip(row);
-      });
-    },
-    async deleteByPeriod(userId, period) {
-      const before = snapshots.length;
-      for (let i = snapshots.length - 1; i >= 0; i--) {
-        if (snapshots[i].userId === userId && snapshots[i].period === periodStart(period)) snapshots.splice(i, 1);
-      }
-      return before - snapshots.length;
-    },
-  };
-
   return {
     accounts: accountsRepo,
     categories: categoriesRepo,
@@ -340,7 +310,6 @@ export function fakeRepositories(): FakeRepositories {
     statements: statementsRepo,
     assets: assetsRepo,
     movements: movementsRepo,
-    snapshots: snapshotsRepo,
     accountsInUse,
     categoriesInUse,
     rows: { entries, recurrences, statements },

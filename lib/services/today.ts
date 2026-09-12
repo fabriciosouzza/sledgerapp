@@ -1,7 +1,6 @@
 // The Today screen (PROMPT.md §7 /, DESIGN.md §2): "what do I need to do
 // right now". Composes the other services; the only new rule is the insight.
 
-import { isCashAccount } from "@/lib/domain/accounts";
 import { addDays, addMonths, periodOf } from "@/lib/domain/dates";
 import { monthInsight, type Insight } from "@/lib/domain/insights";
 import { computeMetrics, entryTiming, type PeriodMetrics } from "@/lib/domain/metrics";
@@ -15,15 +14,15 @@ import { monthSummary } from "./summary";
 
 export interface AccountTile {
   account: Account;
-  /** Snapshot balance for the current month; `null` when not taken. */
+  /** Derived balance today; `null` before the account's opening date. */
   balanceCents: number | null;
 }
 
 export interface TodayOverview {
   today: IsoDate;
   period: Period;
-  /** Latest snapshot cash and the month it was taken in. */
-  cash: { cents: number; asOf: Period } | null;
+  /** Σ cash account balances today; `null` with no cash account yet. */
+  cashCents: number | null;
   /** Σ planned expenses due in the next 7 days, today included. */
   dueSoonCents: number;
   /** Planned entries due today (for "settle all due today"). */
@@ -59,20 +58,16 @@ export async function todayOverview(repos: Repositories, userId: string, today: 
   const overdue = planned.filter((e) => entryTiming(e, today) === "overdue").sort((a, b) => (a.date < b.date ? -1 : 1));
   const upcoming = planned.filter((e) => entryTiming(e, today) === "upcoming").sort((a, b) => (a.date < b.date ? -1 : 1));
 
-  const cashSnapshots = netWorth.series.filter((p) => p.cashCents !== null);
-  const latestCash = cashSnapshots[cashSnapshots.length - 1];
-
   return {
     today,
     period,
-    cash: latestCash && latestCash.cashCents !== null ? { cents: latestCash.cashCents, asOf: latestCash.period } : null,
+    cashCents: netWorth.cashCents,
     dueSoonCents: upcoming.filter((e) => e.kind === "expense").reduce((sum, e) => sum + e.amountCents, 0),
     dueTodayIds: upcoming.filter((e) => e.date === today).map((e) => e.id),
     metrics: summary.metrics,
     insight: monthInsight(summary.metrics, previous),
-    accounts: netWorth.form.lines
-      .filter((l) => isCashAccount(l.account))
-      .map((l) => ({ account: l.account, balanceCents: l.amountCents }))
+    accounts: netWorth.balances
+      .filter((b) => b.account.isActive)
       .sort((a, b) => Number(b.balanceCents !== null) - Number(a.balanceCents !== null)),
     toGenerate: generation.toCreate.length,
     overdue,

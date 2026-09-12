@@ -1,8 +1,8 @@
-// Month summary (PROMPT.md §5.10, §7 /month): metrics computed in TypeScript
-// from one period's rows. Cash is the latest snapshot at or before the period;
-// without one, runway is unknown, not zero.
+// Month summary (PROMPT.md §5.10, §7 /review): metrics computed in TypeScript
+// from one period's rows. Cash is the derived balance at the period's end;
+// with no cash account yet, runway is unknown, not zero.
 
-import { addMonths, periodEnd, periodOf, periodRange, periodStart } from "@/lib/domain/dates";
+import { addMonths, periodEnd, periodOf, periodRange, periodStart, today as todayInSaoPaulo } from "@/lib/domain/dates";
 import {
   budgetFromCaps,
   budgetStatus,
@@ -13,9 +13,9 @@ import {
   type CategorySpending,
   type PeriodMetrics,
 } from "@/lib/domain/metrics";
-import { latestCash } from "@/lib/domain/netWorth";
-import type { Category, Entry, Period } from "@/lib/domain/types";
+import type { Category, Entry, IsoDate, Period } from "@/lib/domain/types";
 import type { Repositories } from "@/lib/repositories";
+import { cashAtPeriod } from "./netWorth";
 
 export interface CategoryLine extends Omit<CategorySpending, "children"> {
   name: string;
@@ -51,21 +51,21 @@ export interface MonthSummary {
 
 const HISTORY_MONTHS = 6;
 
-export async function monthSummary(repos: Repositories, userId: string, period: Period): Promise<MonthSummary> {
+export async function monthSummary(repos: Repositories, userId: string, period: Period, today?: IsoDate): Promise<MonthSummary> {
   const historyFrom = addMonths(period, -(HISTORY_MONTHS - 1));
   const previousPeriod = addMonths(period, -1);
-  const [entries, categories, recurrences, snapshots, past, previousAll] = await Promise.all([
+  const [entries, categories, recurrences, cashCents, past, previousAll] = await Promise.all([
     repos.entries.list(userId, { period }),
     repos.categories.list(userId),
     repos.recurrences.list(userId),
-    repos.snapshots.listBetween(userId, addMonths(period, -12), period),
+    cashAtPeriod(repos, userId, period, today ?? todayInSaoPaulo()),
     // One bounded range for the history and last month's daily line (§4.5).
     repos.entries.list(userId, { from: periodStart(historyFrom), to: periodEnd(previousPeriod), kind: "expense", status: "settled" }),
     repos.entries.list(userId, { period: previousPeriod }),
   ]);
   const previous = computeMetrics({ entries: previousAll, categories, recurrences: [], cashCents: null });
 
-  const metrics = computeMetrics({ entries, categories, recurrences, cashCents: latestCash(snapshots, period) });
+  const metrics = computeMetrics({ entries, categories, recurrences, cashCents });
   const byId = new Map<string, Category>(categories.map((c) => [c.id, c]));
   const bySize = (a: CategoryLine, b: CategoryLine) => b.settledCents + b.plannedCents - (a.settledCents + a.plannedCents);
   const named = (line: CategorySpending): CategoryLine => {

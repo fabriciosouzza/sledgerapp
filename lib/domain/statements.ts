@@ -105,3 +105,17 @@ export function groupByCycle(card: { closingDay: number | null; dueDay: number |
   for (const g of groups.values()) g.totalCents = statementTotal(g.entries);
   return [...groups.values()].sort((a, b) => (a.cycle.cycleStart < b.cycle.cycleStart ? 1 : -1));
 }
+
+/**
+ * Debt owed at the end of `until`: every card purchase made by then whose
+ * statement was not paid by then — open cycles included, because what was
+ * bought is already owed.
+ */
+export function debtAt(
+  statements: { paidOn: IsoDate | null; entries: Pick<Entry, "date" | "kind" | "amountCents">[] }[],
+  until: IsoDate,
+): number {
+  return statements
+    .filter((s) => s.paidOn === null || s.paidOn > until)
+    .reduce((sum, s) => sum + statementTotal(s.entries.filter((e) => e.date <= until)), 0);
+}

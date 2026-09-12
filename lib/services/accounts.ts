@@ -1,6 +1,7 @@
 // Accounts: validate → apply rules → persist → return DTO (PROMPT.md §4.2).
 
 import { normalizeAccountFields } from "@/lib/domain/accounts";
+import { today } from "@/lib/domain/dates";
 import type { Account } from "@/lib/domain/types";
 import { RepositoryError, type Repositories } from "@/lib/repositories";
 import type { AccountInput } from "@/lib/schemas/accounts";
@@ -19,12 +20,12 @@ export async function getAccount(repos: Repositories, userId: string, id: string
 export async function createAccount(repos: Repositories, userId: string, input: AccountInput): Promise<Account> {
   const existing = await repos.accounts.list(userId);
   const sortOrder = existing.reduce((max, a) => Math.max(max, a.sortOrder), -1) + 1;
-  return repos.accounts.insert(userId, normalizeAccountFields({ ...input, sortOrder }));
+  return repos.accounts.insert(userId, normalizeAccountFields({ ...input, openingOn: input.openingOn ?? today(), sortOrder }));
 }
 
 export async function updateAccount(repos: Repositories, userId: string, id: string, input: AccountInput): Promise<Account> {
   const current = await getAccount(repos, userId, id);
-  return repos.accounts.update(userId, id, normalizeAccountFields({ ...input, sortOrder: current.sortOrder }));
+  return repos.accounts.update(userId, id, normalizeAccountFields({ ...input, openingOn: input.openingOn ?? current.openingOn, sortOrder: current.sortOrder }));
 }
 
 export async function setAccountActive(repos: Repositories, userId: string, id: string, isActive: boolean): Promise<Account> {

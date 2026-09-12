@@ -45,6 +45,8 @@ export type Database = {
           institution: string | null
           is_active: boolean
           name: string
+          opening_balance_cents: number
+          opening_on: string
           sort_order: number
           type: Database["public"]["Enums"]["account_type"]
           updated_at: string
@@ -59,6 +61,8 @@ export type Database = {
           institution?: string | null
           is_active?: boolean
           name: string
+          opening_balance_cents?: number
+          opening_on?: string
           sort_order?: number
           type: Database["public"]["Enums"]["account_type"]
           updated_at?: string
@@ -73,6 +77,8 @@ export type Database = {
           institution?: string | null
           is_active?: boolean
           name?: string
+          opening_balance_cents?: number
+          opening_on?: string
           sort_order?: number
           type?: Database["public"]["Enums"]["account_type"]
           updated_at?: string
@@ -169,47 +175,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      balance_snapshots: {
-        Row: {
-          account_id: string
-          amount_cents: number
-          created_at: string
-          id: string
-          kind: Database["public"]["Enums"]["balance_kind"]
-          period: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          account_id: string
-          amount_cents: number
-          created_at?: string
-          id?: string
-          kind: Database["public"]["Enums"]["balance_kind"]
-          period: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          account_id?: string
-          amount_cents?: number
-          created_at?: string
-          id?: string
-          kind?: Database["public"]["Enums"]["balance_kind"]
-          period?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "balance_snapshots_account_id_fkey"
-            columns: ["account_id"]
-            isOneToOne: false
-            referencedRelation: "accounts"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       categories: {
         Row: {
@@ -517,7 +482,6 @@ export type Database = {
         | "stocks"
         | "reits"
         | "other"
-      balance_kind: "cash" | "debt"
       entry_kind: "income" | "expense" | "contribution" | "transfer"
       entry_source: "manual" | "recurrence" | "installment"
       entry_status: "planned" | "settled"
@@ -673,7 +637,6 @@ export const Constants = {
         "reits",
         "other",
       ],
-      balance_kind: ["cash", "debt"],
       entry_kind: ["income", "expense", "contribution", "transfer"],
       entry_source: ["manual", "recurrence", "installment"],
       entry_status: ["planned", "settled"],

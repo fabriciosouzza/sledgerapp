@@ -4,12 +4,10 @@ Simple ledger — a personal finance app used on a phone, once a week. The build
 specification this project was created from is [PROMPT.md](PROMPT.md); read it
 before changing anything.
 
-**Status:** all 13 stages of [PROMPT.md §11](PROMPT.md#11-build-order) are
-in: auth, settings and seed, entries with installments and settling, month,
-recurrences and generation, cards, portfolio, net worth, Today, the API, and
-polish (dark mode, skeletons, empty states, 360px). Next: the UI direction in
-[DESIGN.md](DESIGN.md) — hierarchy on Today, a floating add button, more
-dashboards, a theme toggle.
+**Status:** every stage of [PROMPT.md §11](PROMPT.md#11-build-order) plus the
+UI iteration in [DESIGN.md](DESIGN.md). Two deliberate deviations from the
+spec, both recorded there: balances are derived from entries (no snapshots),
+and the month screen is Review at `/review`.
 
 ## Run it locally
 

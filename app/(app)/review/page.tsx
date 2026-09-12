@@ -101,7 +101,7 @@ export default async function MonthPage(props: PageProps<"/review">) {
           <Stat
             label="Months of runway"
             text={m.monthsOfRunway === null ? null : `${m.monthsOfRunway.toFixed(1)} mo`}
-            hint={m.monthsOfRunway === null ? "needs a cash snapshot and a fixed cost" : "cash ÷ fixed cost"}
+            hint={m.monthsOfRunway === null ? "needs a cash account and a fixed cost" : "cash ÷ fixed cost"}
           />
         </section>
 

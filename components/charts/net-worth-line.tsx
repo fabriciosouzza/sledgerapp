@@ -5,12 +5,12 @@ import { formatPeriodShort } from "@/lib/domain/dates";
 import { formatBRL } from "@/lib/domain/money";
 import type { NetWorthPoint } from "@/lib/domain/netWorth";
 
-/** Net worth over time. Months without a snapshot are gaps, never zero (§5.9). */
+/** Net worth over time. Months before the first account are gaps, never zero. */
 export function NetWorthLine({ data, height = 192, compact = false }: { data: NetWorthPoint[]; height?: number; compact?: boolean }) {
   const rows = data.map((p) => ({ period: formatPeriodShort(p.period), value: p.netWorthCents === null ? null : p.netWorthCents / 100 }));
   const known = rows.filter((r) => r.value !== null);
   if (known.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">No snapshots yet: the chart starts with the first one.</p>;
+    return <p className="py-6 text-center text-sm text-muted-foreground">Nothing to chart yet: add a cash account with its starting balance.</p>;
   }
   return (
     <div style={{ height }} className="w-full" role="img" aria-label="Net worth over time">

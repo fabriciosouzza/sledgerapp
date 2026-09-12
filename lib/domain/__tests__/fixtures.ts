@@ -1,4 +1,4 @@
-import type { AssetMovement, BalanceSnapshot, Entry, Recurrence } from "../types";
+import type { AssetMovement, Entry, Recurrence } from "../types";
 
 let seq = 0;
 const nextId = (prefix: string) => `${prefix}-${++seq}`;
@@ -62,13 +62,3 @@ export function movement(overrides: Partial<AssetMovement> = {}): AssetMovement 
   };
 }
 
-export function snapshot(overrides: Partial<BalanceSnapshot> = {}): BalanceSnapshot {
-  return {
-    id: nextId("snap"),
-    period: "2026-11-01",
-    accountId: "acc-checking",
-    kind: "cash",
-    amountCents: 500_000,
-    ...overrides,
-  };
-}

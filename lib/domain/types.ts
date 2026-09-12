@@ -25,7 +25,6 @@ export type MovementKind =
   | "market_adjustment"
   | "withdrawal"
   | "fee_tax";
-export type BalanceKind = "cash" | "debt";
 
 /** `YYYY-MM-DD` */
 export type IsoDate = string;
@@ -40,6 +39,9 @@ export interface Account {
   closingDay: number | null;
   dueDay: number | null;
   creditLimitCents: number | null;
+  /** Where a cash account's balance starts (DESIGN.md: balances are derived). */
+  openingBalanceCents: number;
+  openingOn: IsoDate;
   isActive: boolean;
   sortOrder: number;
 }
@@ -124,10 +126,3 @@ export interface AssetMovement {
   notes: string | null;
 }
 
-export interface BalanceSnapshot {
-  id: string;
-  period: IsoDate;
-  accountId: string;
-  kind: BalanceKind;
-  amountCents: number;
-}

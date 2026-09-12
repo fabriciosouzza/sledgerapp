@@ -26,7 +26,7 @@ export interface MetricsInput {
   entries: Entry[];
   categories: Pick<Category, "id" | "isBenefit">[];
   recurrences: Recurrence[];
-  /** Cash on hand; `null` when unknown (no snapshot) so runway stays `null`. */
+  /** Cash on hand; `null` when unknown (no cash account yet) so runway stays `null`. */
   cashCents: number | null;
 }
 

@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import type { AccountFormState } from "@/app/(app)/settings/accounts/actions";
 import { CurrencyInput } from "@/components/forms/currency-input";
+import { DatePicker } from "@/components/forms/date-picker";
 import { Field } from "@/components/forms/field";
 import { FormError } from "@/components/forms/form-error";
 import { SubmitButton } from "@/components/forms/submit-button";
@@ -10,15 +11,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
-import { ACCOUNT_TYPES } from "@/lib/domain/accounts";
+import { ACCOUNT_TYPES, isCashAccount } from "@/lib/domain/accounts";
 import type { Account, AccountType } from "@/lib/domain/types";
 
 export function AccountForm({
   account,
   action,
+  today,
 }: {
   account?: Account;
   action: (prev: AccountFormState, formData: FormData) => Promise<AccountFormState>;
+  today: string;
 }) {
   const [state, dispatch] = useActionState(action, {});
   const v = state.values ?? {};
@@ -27,6 +30,7 @@ export function AccountForm({
 
   const [type, setType] = useState<AccountType>((str("type", account?.type) || "checking") as AccountType);
   const isCard = type === "credit_card";
+  const isCash = isCashAccount({ type });
 
   return (
     <form action={dispatch} className="space-y-5">
@@ -65,6 +69,21 @@ export function AccountForm({
           <Field label="Credit limit" htmlFor="creditLimitCents" hint="Optional.">
             <CurrencyInput id="creditLimitCents" name="creditLimitCents" defaultCents={account?.creditLimitCents ?? null} className="h-11" aria-describedby="creditLimitCents-hint" />
           </Field>
+        </fieldset>
+      )}
+
+      {isCash && (
+        <fieldset className="space-y-4 rounded-xl bg-muted/40 p-4">
+          <legend className="px-1 text-sm font-medium">Starting point</legend>
+          <p className="text-xs text-muted-foreground">The balance on the day you start tracking this account. Every settled entry from then on moves it.</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Balance" htmlFor="openingBalanceCents">
+              <CurrencyInput id="openingBalanceCents" name="openingBalanceCents" defaultCents={account?.openingBalanceCents ?? 0} className="h-11" />
+            </Field>
+            <Field label="On" htmlFor="openingOn">
+              <DatePicker id="openingOn" name="openingOn" defaultValue={account?.openingOn ?? today} required />
+            </Field>
+          </div>
         </fieldset>
       )}
 
