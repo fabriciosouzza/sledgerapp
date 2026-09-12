@@ -201,7 +201,7 @@ export function EntryList({
           aria-label="Bulk settle"
           className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-border bg-background/95 px-4 py-2 backdrop-blur md:bottom-0 md:left-56"
         >
-          <div className="mx-auto flex max-w-3xl items-center gap-2">
+          <div className="mx-auto flex max-w-3xl items-center gap-2 lg:max-w-4xl xl:max-w-5xl">
             <span className="min-w-0 flex-1 truncate text-sm">
               {selected.size === 0 ? "Tap the entries to settle" : `${selected.size} selected`}
             </span>

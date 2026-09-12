@@ -20,7 +20,7 @@ export default async function NetWorthPage() {
     <>
       <PageHeader title="Net worth" description="cash + investments − debt, from what you recorded" />
       <div className="space-y-6">
-        <section className="grid grid-cols-2 gap-2" aria-label="Current">
+        <section className="grid grid-cols-2 gap-2 md:grid-cols-3" aria-label="Current">
           <Stat label={`Net worth · ${formatPeriodLong(current.period)}`} cents={current.netWorthCents} tone="signed" className="col-span-2" />
           <Stat label="Cash" cents={current.cashCents} hint="accounts below" />
           <Stat label="Debt" cents={current.debtCents} tone="negative" hint="unpaid statements" />

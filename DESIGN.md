@@ -268,10 +268,8 @@ Each step ships on its own commit; 360px pass on every screen touched (§8).
 | 4 Year and rolling-12-month views | `0e0849e` |
 | 7–8 Category icons/colours, month-over-month deltas | this commit |
 
-Sweep of 2026-09-13 (bugs A1–A8, performance B1–B2, UX D3/D4/D6/D8) fixed the
-same day. Still open: light palette review (contrast of the lime accent, chart
-colours), desktop layout width, settle with another date from a list (D2),
-edit of asset movements (D5), reordering accounts and categories (D7),
-"forgot my password", account deletion and data export (D11), the cumulative
-label on the portfolio area chart (D12), and monthly balance checkpoints if
-derived balances ever get slow (B3).
+Sweep of 2026-09-13: bugs A1–A8, performance B1–B2 and UX D2–D12 all shipped
+the same day (light chart tokens were near-white and are now dark; content
+widens to 5xl on large screens and Today uses two columns from `lg`). Still
+open: monthly balance checkpoints if derived balances ever get slow (B3), and
+a "fix balance" helper if the owner asks for it.

@@ -35,7 +35,7 @@ export function YearView({ summary, title, prevHref, nextHref }: { summary: Year
         )}
       </div>
 
-      <section aria-label="Totals" className="grid grid-cols-2 gap-2">
+      <section aria-label="Totals" className="grid grid-cols-2 gap-2 md:grid-cols-3">
         <Stat label="Income" cents={t.incomeCents} tone="positive" />
         <Stat label="Expense" cents={t.expenseCents} tone="negative" />
         <Stat label="Contributions" cents={t.contributionsCents} />

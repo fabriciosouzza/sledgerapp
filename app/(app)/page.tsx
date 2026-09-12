@@ -26,8 +26,8 @@ export default async function TodayPage() {
   const initial = (user.name ?? user.email ?? "?").slice(0, 1).toUpperCase();
 
   return (
-    <div className="space-y-6">
-      <header className="flex items-center justify-between gap-3">
+    <div className="space-y-6 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-x-8 lg:space-y-0">
+      <header className="flex items-center justify-between gap-3 lg:col-span-2 lg:mb-6">
         <div>
           <p className="text-xs text-muted-foreground">{formatDate(now)}</p>
           <h1 className="text-xl font-semibold tracking-tight">{user.name ? `Hi, ${user.name.split(" ")[0]}` : "Today"}</h1>
@@ -112,7 +112,8 @@ export default async function TodayPage() {
         />
       </OverdueBlock>
 
-      <section aria-label="Upcoming">
+      <div className="hidden lg:col-start-2 lg:row-span-6 lg:row-start-2 lg:block" aria-hidden />
+      <section aria-label="Upcoming" className="lg:col-start-2 lg:row-start-2">
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-sm font-semibold">Next 7 days</h2>
           <Link href="/entries" className="flex min-h-9 items-center gap-1 text-xs text-muted-foreground hover:text-foreground">

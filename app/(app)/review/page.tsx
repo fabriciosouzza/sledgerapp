@@ -92,7 +92,7 @@ export default async function MonthPage(props: PageProps<"/review">) {
           existingCount={generation.existing.length}
         />
 
-        <section aria-label="Summary" className="grid grid-cols-2 gap-2">
+        <section aria-label="Summary" className="grid grid-cols-2 gap-2 md:grid-cols-3">
           <Stat label="Income" cents={m.incomeCents} tone="positive" hint={deltaHint(summary.delta.income, m.plannedIncomeCents)} />
           <Stat label="Expense" cents={m.expenseCents} tone="negative" hint={deltaHint(summary.delta.expense, m.plannedExpenseCents)} />
           <Stat label="Contributions" cents={m.contributionsCents} />

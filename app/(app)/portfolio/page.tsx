@@ -44,7 +44,7 @@ export default async function PortfolioPage() {
         }
       />
       <div className="space-y-6">
-        <section className="grid grid-cols-2 gap-2" aria-label="Totals">
+        <section className="grid grid-cols-2 gap-2 md:grid-cols-3" aria-label="Totals">
           <Stat label="Total balance" cents={t.balanceCents} className="col-span-2" />
           <Stat label="Contributed" cents={t.contributedCents} hint="contributions − withdrawals" />
           <Stat label="Earned" cents={t.earnedCents} tone="signed" hint="yield + adjustments − fees" />
