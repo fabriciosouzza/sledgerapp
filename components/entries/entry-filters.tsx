@@ -1,12 +1,15 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
+import { Field } from "@/components/forms/field";
 import { MonthPicker } from "@/components/month/month-picker";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
-import { ENTRY_KINDS } from "@/lib/domain/entries";
+import { Sheet, SheetBody, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/responsive-sheet";
 import type { Account, Category } from "@/lib/domain/types";
+import { cn } from "@/lib/utils";
 
 export interface EntryFilterValues {
   month: string;
@@ -17,6 +20,13 @@ export interface EntryFilterValues {
   q: string;
 }
 
+const TABS = [
+  { value: "", label: "All" },
+  { value: "expense", label: "Spending" },
+  { value: "income", label: "Income" },
+] as const;
+
+/** Month + search on top, kind as tabs, the rest behind a sheet (DESIGN.md §3, §11). The form submits with GET. */
 export function EntryFilters({
   values,
   accounts,
@@ -27,66 +37,162 @@ export function EntryFilters({
   categories: Pick<Category, "id" | "name" | "parentId">[];
 }) {
   const form = useRef<HTMLFormElement>(null);
-  const submit = () => form.current?.requestSubmit();
-  const hasExtra = values.kind || values.status || values.account || values.category;
+  const [month, setMonth] = useState(values.month);
+  const [kind, setKind] = useState(values.kind);
+  const [status, setStatus] = useState(values.status);
+  const [account, setAccount] = useState(values.account);
+  const [category, setCategory] = useState(values.category);
+  const [open, setOpen] = useState(false);
+
+  // Draft values inside the sheet; committed on Apply.
+  const [draft, setDraft] = useState({ status, account, category });
+  const extraCount = [status, account, category].filter(Boolean).length;
+  const kindIsTab = TABS.some((t) => t.value === kind);
+
+  function submitSoon() {
+    // Let React flush the hidden inputs before the form serialises.
+    setTimeout(() => form.current?.requestSubmit(), 0);
+  }
+
+  function apply() {
+    setStatus(draft.status);
+    setAccount(draft.account);
+    setCategory(draft.category);
+    setOpen(false);
+    submitSoon();
+  }
+
+  function clear() {
+    setDraft({ status: "", account: "", category: "" });
+    setStatus("");
+    setAccount("");
+    setCategory("");
+    setOpen(false);
+    submitSoon();
+  }
 
   return (
-    <form ref={form} method="get" className="space-y-2">
-      <div className="grid grid-cols-[auto_1fr] gap-2">
-        <div className="w-[10.5rem]">
-          <input type="hidden" name="month" value={values.month} />
-          <MonthPicker
-            period={values.month}
-            compact
-            onChange={(p) => {
-              const hidden = form.current?.elements.namedItem("month");
-              if (hidden instanceof HTMLInputElement) hidden.value = p;
-              submit();
-            }}
-          />
-        </div>
+    <form ref={form} method="get" className="space-y-3">
+      <input type="hidden" name="month" value={month} />
+      <input type="hidden" name="kind" value={kind} />
+      <input type="hidden" name="status" value={status} />
+      <input type="hidden" name="account" value={account} />
+      <input type="hidden" name="category" value={category} />
+
+      <div className="grid grid-cols-[10.5rem_1fr] gap-2">
+        <MonthPicker
+          period={month}
+          compact
+          onChange={(p) => {
+            setMonth(p);
+            submitSoon();
+          }}
+        />
         <div className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input type="search" name="q" defaultValue={values.q} placeholder="Search" aria-label="Search descriptions" className="h-11 pl-8" />
         </div>
       </div>
-      <details open={Boolean(hasExtra)} className="group">
-        <summary className="flex min-h-9 cursor-pointer list-none items-center gap-1.5 text-sm text-muted-foreground select-none">
-          <SlidersHorizontal className="size-4" aria-hidden />
-          Filters
-        </summary>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <NativeSelect name="kind" value={values.kind} onChange={submit} aria-label="Kind" className="w-full [&>select]:h-11">
-            <NativeSelectOption value="">Any kind</NativeSelectOption>
-            {ENTRY_KINDS.map((k) => (
-              <NativeSelectOption key={k.value} value={k.value}>
-                {k.label}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-          <NativeSelect name="status" value={values.status} onChange={submit} aria-label="Status" className="w-full [&>select]:h-11">
-            <NativeSelectOption value="">Any status</NativeSelectOption>
-            <NativeSelectOption value="planned">Planned</NativeSelectOption>
-            <NativeSelectOption value="settled">Settled</NativeSelectOption>
-          </NativeSelect>
-          <NativeSelect name="account" value={values.account} onChange={submit} aria-label="Account" className="w-full [&>select]:h-11">
-            <NativeSelectOption value="">Any account</NativeSelectOption>
-            {accounts.map((a) => (
-              <NativeSelectOption key={a.id} value={a.id}>
-                {a.name}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-          <NativeSelect name="category" value={values.category} onChange={submit} aria-label="Category" className="w-full [&>select]:h-11">
-            <NativeSelectOption value="">Any category</NativeSelectOption>
-            {categories.map((c) => (
-              <NativeSelectOption key={c.id} value={c.id}>
-                {c.parentId ? `· ${c.name}` : c.name}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
+
+      <div className="flex items-center gap-2">
+        <div role="tablist" aria-label="Kind" className="flex flex-1 gap-1 rounded-lg bg-muted p-1">
+          {TABS.map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              role="tab"
+              aria-selected={kind === tab.value}
+              onClick={() => {
+                setKind(tab.value);
+                submitSoon();
+              }}
+              className={cn(
+                "h-9 flex-1 rounded-md text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
+                kind === tab.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
-      </details>
+        <Sheet
+          open={open}
+          onOpenChange={(o) => {
+            setOpen(o);
+            if (o) setDraft({ status, account, category });
+          }}
+        >
+          <SheetTrigger render={<Button type="button" variant={extraCount > 0 || !kindIsTab ? "secondary" : "outline"} className="h-11 shrink-0" aria-label="More filters" />}>
+            <SlidersHorizontal data-icon="inline-start" aria-hidden />
+            {extraCount > 0 ? extraCount : "Filters"}
+          </SheetTrigger>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Filters</SheetTitle>
+            </SheetHeader>
+            <SheetBody className="space-y-4 pt-4">
+              {!kindIsTab && (
+                <Field label="Kind" htmlFor="f-kind">
+                  <NativeSelect id="f-kind" value={kind} onChange={(e) => setKind(e.target.value)} className="w-full [&>select]:h-11">
+                    <NativeSelectOption value="">Any kind</NativeSelectOption>
+                    <NativeSelectOption value="expense">Expense</NativeSelectOption>
+                    <NativeSelectOption value="income">Income</NativeSelectOption>
+                    <NativeSelectOption value="transfer">Transfer</NativeSelectOption>
+                    <NativeSelectOption value="contribution">Contribution</NativeSelectOption>
+                  </NativeSelect>
+                </Field>
+              )}
+              <Field label="Status" htmlFor="f-status">
+                <NativeSelect id="f-status" value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value })} className="w-full [&>select]:h-11">
+                  <NativeSelectOption value="">Any status</NativeSelectOption>
+                  <NativeSelectOption value="planned">Planned</NativeSelectOption>
+                  <NativeSelectOption value="settled">Settled</NativeSelectOption>
+                </NativeSelect>
+              </Field>
+              <Field label="Account" htmlFor="f-account">
+                <NativeSelect id="f-account" value={draft.account} onChange={(e) => setDraft({ ...draft, account: e.target.value })} className="w-full [&>select]:h-11">
+                  <NativeSelectOption value="">Any account</NativeSelectOption>
+                  {accounts.map((a) => (
+                    <NativeSelectOption key={a.id} value={a.id}>
+                      {a.name}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </Field>
+              <Field label="Category" htmlFor="f-category">
+                <NativeSelect id="f-category" value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })} className="w-full [&>select]:h-11">
+                  <NativeSelectOption value="">Any category</NativeSelectOption>
+                  {categories.map((c) => (
+                    <NativeSelectOption key={c.id} value={c.id}>
+                      {c.parentId ? `· ${c.name}` : c.name}
+                    </NativeSelectOption>
+                  ))}
+                </NativeSelect>
+              </Field>
+              {kindIsTab && (
+                <p className="text-xs text-muted-foreground">
+                  Transfers and contributions:{" "}
+                  <button type="button" className="underline" onClick={() => setKind("transfer")}>
+                    transfers
+                  </button>{" "}
+                  ·{" "}
+                  <button type="button" className="underline" onClick={() => setKind("contribution")}>
+                    contributions
+                  </button>
+                </p>
+              )}
+            </SheetBody>
+            <SheetFooter>
+              <Button type="button" className="h-11 md:h-8" onClick={apply}>
+                Apply
+              </Button>
+              <Button type="button" variant="outline" className="h-11 md:h-8" onClick={clear}>
+                Clear
+              </Button>
+            </SheetFooter>
+          </SheetContent>
+        </Sheet>
+      </div>
       <button type="submit" className="sr-only">
         Apply
       </button>
