@@ -59,6 +59,7 @@ export function CurrencyInput({
         value={cents === null ? "" : formatBRL(cents)}
         onChange={(e) => update(e.target.value)}
         onPaste={paste}
+        onFocus={(e) => e.target.select()}
         required={required}
         autoFocus={autoFocus}
         aria-describedby={describedBy}

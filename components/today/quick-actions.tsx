@@ -49,7 +49,7 @@ export function QuickActions({ dueTodayIds, toGenerate }: { dueTodayIds: string[
         </button>
       )}
       {toGenerate > 0 && (
-        <Link href="/recurrences" className={cn(base, "border-primary/40")}>
+        <Link href="/month" className={cn(base, "border-primary/40")}>
           <Sparkles className="size-4" aria-hidden />
           Generate {toGenerate} recurring
         </Link>

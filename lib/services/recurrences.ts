@@ -104,10 +104,24 @@ export interface GenerationResult {
   skipped: number;
 }
 
-/** Idempotent (§5.5): the unique index on (recurrence_id, period) makes a second run a no-op. */
-export async function generateMonth(repos: Repositories, userId: string, period: Period): Promise<GenerationResult> {
+/**
+ * Idempotent (§5.5): the unique index on (recurrence_id, period) makes a second
+ * run a no-op. `amounts` overrides a template's amount for this month only —
+ * the water bill is never the same twice; the template keeps its estimate.
+ */
+export async function generateMonth(
+  repos: Repositories,
+  userId: string,
+  period: Period,
+  amounts: Record<string, number> = {},
+): Promise<GenerationResult> {
   const recurrences = await repos.recurrences.list(userId);
-  const rows = expandRecurrences(recurrences, period);
+  const rows = expandRecurrences(recurrences, period).map((row) => {
+    const override = row.recurrenceId === null ? undefined : amounts[row.recurrenceId];
+    if (override === undefined) return row;
+    if (!Number.isInteger(override) || override <= 0) throw new ServiceError("invalid", "Amounts must be positive.");
+    return { ...row, amountCents: override };
+  });
   const inserted = await repos.entries.insertMany(userId, rows, { ignoreConflicts: true });
   return { period, created: inserted.length, skipped: rows.length - inserted.length };
 }

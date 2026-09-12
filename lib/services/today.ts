@@ -70,7 +70,10 @@ export async function todayOverview(repos: Repositories, userId: string, today: 
     dueTodayIds: upcoming.filter((e) => e.date === today).map((e) => e.id),
     metrics: summary.metrics,
     insight: monthInsight(summary.metrics, previous),
-    accounts: netWorth.form.lines.filter((l) => isCashAccount(l.account)).map((l) => ({ account: l.account, balanceCents: l.amountCents })),
+    accounts: netWorth.form.lines
+      .filter((l) => isCashAccount(l.account))
+      .map((l) => ({ account: l.account, balanceCents: l.amountCents }))
+      .sort((a, b) => Number(b.balanceCents !== null) - Number(a.balanceCents !== null)),
     toGenerate: generation.toCreate.length,
     overdue,
     upcoming,

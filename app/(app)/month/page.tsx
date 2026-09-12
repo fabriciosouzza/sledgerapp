@@ -7,6 +7,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { CategoryTable } from "@/components/month/category-table";
 import { MonthPicker } from "@/components/month/month-picker";
 import { ViewSwitch, type MonthView } from "@/components/month/view-switch";
+import { GenerateMonth } from "@/components/recurrences/generate-month";
 import { YearView } from "./year-view";
 import { Stat } from "@/components/month/stat";
 import { addMonths, dayOf, isPeriod, parsePeriod, periodOf, today, toPeriodString } from "@/lib/domain/dates";
@@ -14,6 +15,7 @@ import { formatBRL } from "@/lib/domain/money";
 import { listAccounts } from "@/lib/services/accounts";
 import { listCategories } from "@/lib/services/categories";
 import { getContext } from "@/lib/services/context";
+import { previewGeneration } from "@/lib/services/recurrences";
 import { monthSummary, yearSummary } from "@/lib/services/summary";
 
 /** "+5% vs last month · + R$ 100,00 planned", or whichever half exists; `—` is never faked as 0%. */
@@ -54,10 +56,11 @@ export default async function MonthPage(props: PageProps<"/month">) {
     );
   }
 
-  const [summary, accounts, categories] = await Promise.all([
+  const [summary, accounts, categories, generation] = await Promise.all([
     monthSummary(repos, userId, month),
     listAccounts(repos, userId),
     listCategories(repos, userId),
+    previewGeneration(repos, userId, month),
   ]);
   const m = summary.metrics;
   const isCurrent = month === periodOf(now);
@@ -71,6 +74,21 @@ export default async function MonthPage(props: PageProps<"/month">) {
       <div className="space-y-6">
         <ViewSwitch view={view} hrefs={hrefs} />
         <MonthPicker period={month} basePath="/month" />
+
+        <GenerateMonth
+          key={month}
+          period={month}
+          card
+          toCreate={generation.toCreate.map((r) => ({
+            recurrenceId: r.recurrence.id,
+            description: r.description,
+            kind: r.kind,
+            amountCents: r.amountCents,
+            date: r.date,
+            isVariable: r.recurrence.isVariable,
+          }))}
+          existingCount={generation.existing.length}
+        />
 
         <section aria-label="Summary" className="grid grid-cols-2 gap-2">
           <Stat label="Income" cents={m.incomeCents} tone="positive" hint={deltaHint(summary.delta.income, m.plannedIncomeCents)} />

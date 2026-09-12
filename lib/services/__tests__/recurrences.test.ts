@@ -59,6 +59,15 @@ describe("generateMonth", () => {
     expect(await generateMonth(repos, U, "2026-03")).toMatchObject({ created: 1 });
   });
 
+  it("takes per-month amounts for variable bills without touching the template", async () => {
+    const water = await createRecurrence(repos, U, input({ description: "Água", amountCents: "80,00", isVariable: "on" }));
+    await generateMonth(repos, U, "2026-02", { [water.id]: 9_350 });
+    const [row] = await repos.entries.list(U, { period: "2026-02" });
+    expect(row.amountCents).toBe(9_350);
+    expect((await repos.recurrences.getById(U, water.id))!.amountCents).toBe(8_000);
+    await expect(generateMonth(repos, U, "2026-03", { [water.id]: -1 })).rejects.toMatchObject({ code: "invalid" });
+  });
+
   it("previews what is missing and what already exists", async () => {
     await createRecurrence(repos, U, input());
     const internet = await createRecurrence(repos, U, input({ description: "Internet", dueDay: "10" }));

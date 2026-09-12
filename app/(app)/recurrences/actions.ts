@@ -2,12 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { isPeriod } from "@/lib/domain/dates";
 import { firstIssue, formToObject } from "@/lib/schemas/form";
 import { recurrenceInputSchema } from "@/lib/schemas/recurrences";
 import { getContext } from "@/lib/services/context";
 import { ServiceError } from "@/lib/services/errors";
-import { createRecurrence, deleteRecurrence, generateMonth, updateRecurrence } from "@/lib/services/recurrences";
+import { createRecurrence, deleteRecurrence, updateRecurrence } from "@/lib/services/recurrences";
 
 export interface RecurrenceFormState {
   error?: string;
@@ -60,15 +59,4 @@ export async function deleteRecurrenceAction(formData: FormData): Promise<{ erro
   }
   revalidate();
   redirect(LIST);
-}
-
-export type GenerateState = { created?: number; skipped?: number; error?: string };
-
-export async function generateMonthAction(_prev: GenerateState, formData: FormData): Promise<GenerateState> {
-  const { userId, repos } = await getContext();
-  const period = String(formData.get("period") ?? "");
-  if (!isPeriod(period)) return { error: "Pick a month." };
-  const result = await generateMonth(repos, userId, period);
-  revalidate();
-  return { created: result.created, skipped: result.skipped };
 }

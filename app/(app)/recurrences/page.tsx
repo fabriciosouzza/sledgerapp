@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight, Plus } from "lucide-react";
 import { Amount } from "@/components/entries/amount";
 import { PageHeader } from "@/components/layout/page-header";
+import { MonthPicker } from "@/components/month/month-picker";
 import { Stat } from "@/components/month/stat";
 import { GenerateMonth } from "@/components/recurrences/generate-month";
 import { Badge } from "@/components/ui/badge";
@@ -35,12 +36,22 @@ export default async function RecurrencesPage(props: PageProps<"/recurrences">) 
       <div className="space-y-6">
         <Stat label="Monthly fixed cost" cents={fixed} hint="Σ active expense recurrences — what sizes the emergency fund" />
 
-        <GenerateMonth
-          key={period}
-          period={period}
-          toCreate={preview.toCreate.map((r) => ({ description: r.description, kind: r.kind, amountCents: r.amountCents, date: r.date }))}
-          existingCount={preview.existing.length}
-        />
+        <div className="space-y-3">
+          <MonthPicker period={period} basePath="/recurrences" />
+          <GenerateMonth
+            key={period}
+            period={period}
+            toCreate={preview.toCreate.map((r) => ({
+              recurrenceId: r.recurrence.id,
+              description: r.description,
+              kind: r.kind,
+              amountCents: r.amountCents,
+              date: r.date,
+              isVariable: r.recurrence.isVariable,
+            }))}
+            existingCount={preview.existing.length}
+          />
+        </div>
 
         {recurrences.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-6 text-center">
