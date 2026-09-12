@@ -116,13 +116,6 @@ export async function pendingMonths(repos: Repositories, userId: string, today: 
   return out;
 }
 
-/** Template amounts, every pending month at once — the catch-up after weeks away. */
-export async function generateMonths(repos: Repositories, userId: string, periods: Period[]): Promise<GenerationResult[]> {
-  const results: GenerationResult[] = [];
-  for (const period of periods) results.push(await generateMonth(repos, userId, period));
-  return results;
-}
-
 export interface GenerationResult {
   period: Period;
   created: number;

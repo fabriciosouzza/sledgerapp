@@ -5,24 +5,9 @@ import { isPeriod } from "@/lib/domain/dates";
 import { parseBRL } from "@/lib/domain/money";
 import { getContext } from "@/lib/services/context";
 import { ServiceError } from "@/lib/services/errors";
-import { generateMonth, generateMonths } from "@/lib/services/recurrences";
+import { generateMonth } from "@/lib/services/recurrences";
 
 export type GenerateResult = { ok: true; created: number; skipped: number } | { ok: false; error: string };
-
-/** Every pending month at once, template amounts (the Today chip). */
-export async function generateMonthsAction(periods: string[]): Promise<GenerateResult> {
-  const { userId, repos } = await getContext();
-  const valid = periods.filter(isPeriod);
-  if (valid.length === 0) return { ok: false, error: "Pick a month." };
-  try {
-    const results = await generateMonths(repos, userId, valid);
-    for (const path of ["/review", "/", "/entries", "/recurrences"]) revalidatePath(path);
-    return { ok: true, created: results.reduce((n, r) => n + r.created, 0), skipped: results.reduce((n, r) => n + r.skipped, 0) };
-  } catch (error) {
-    if (error instanceof ServiceError) return { ok: false, error: error.message };
-    throw error;
-  }
-}
 
 /** Fields: `period`, `amount:<recurrenceId>` as pt-BR amounts for this month's overrides, `skip:<recurrenceId>` to leave one out. */
 export async function generateMonthWithAmountsAction(formData: FormData): Promise<GenerateResult> {

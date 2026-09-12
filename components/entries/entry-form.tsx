@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore, useTransition } from "react";
 import { toast } from "sonner";
@@ -22,20 +21,11 @@ import { canBeInstallments, ENTRY_KINDS, needsCategory, needsCounterAccount } fr
 import { lastInstallmentPeriod } from "@/lib/domain/installments";
 import { formatBRL } from "@/lib/domain/money";
 import type { Account, Category, Entry, EntryKind } from "@/lib/domain/types";
-import type { EntrySuggestions } from "@/lib/services/suggestions";
 import { cn } from "@/lib/utils";
 
 const MEMORY_KEY = "sledger.lastUsed";
 
 type Memory = Partial<Record<EntryKind, { categoryId?: string; accountId?: string; counterAccountId?: string; settled?: boolean }>>;
-
-interface SessionRow {
-  id: string;
-  kind: EntryKind;
-  description: string;
-  amountCents: number;
-  count: number;
-}
 
 function parseMemory(raw: string | null): Memory {
   try {
@@ -79,7 +69,6 @@ export function EntryForm({
   today,
   entry,
   defaultKind,
-  suggestions,
 }: {
   accounts: Account[];
   categories: Category[];
@@ -88,8 +77,6 @@ export function EntryForm({
   entry?: Entry;
   /** Pre-selected kind (from the add sheet). */
   defaultKind?: EntryKind;
-  /** Recent descriptions and most-used categories (add only). */
-  suggestions?: EntrySuggestions;
 }) {
   const router = useRouter();
   const editing = entry !== undefined;
@@ -105,8 +92,6 @@ export function EntryForm({
   const [amountCents, setAmountCents] = useState<number | null>(entry?.amountCents ?? null);
   // null until the user touches the switch: the default then follows memory and the date.
   const [settledChoice, setSettledChoice] = useState<boolean | null>(entry ? entry.status === "settled" : null);
-  const [description, setDescription] = useState(entry?.description ?? "");
-  const [added, setAdded] = useState<SessionRow[]>([]);
   const [installments, setInstallments] = useState(false);
   const [parts, setParts] = useState(12);
   const [repeat, setRepeat] = useState(false);
@@ -121,8 +106,6 @@ export function EntryForm({
   const settled = settledChoice ?? (date <= today && (remembered?.settled ?? true));
 
   const kindCategories = categories.filter((c) => appliesToKind(c, kind));
-  const kindSuggestions = editing ? [] : (suggestions?.descriptions[kind] ?? []);
-  const topCategories = editing ? [] : (suggestions?.topCategories[kind] ?? []).map((id) => kindCategories.find((c) => c.id === id)).filter((c) => c !== undefined);
   const effectiveCategoryId = pick(categoryId, remembered?.categoryId, kindCategories);
   const effectiveAccountId = pick(accountId, remembered?.accountId, accounts);
   const counterOptions = accounts.filter((a) => a.id !== effectiveAccountId && (kind !== "contribution" || a.type === "brokerage"));
@@ -134,16 +117,6 @@ export function EntryForm({
     installments && amountCents
       ? `${parts} × ${formatBRL(amountCents)}, ${formatPeriodShort(periodOf(date))} → ${formatPeriodShort(lastInstallmentPeriod(date, parts))}`
       : null;
-
-  /** Typing a known description brings back the category and accounts used with it last time. */
-  function applyDescription(value: string) {
-    setDescription(value);
-    const match = kindSuggestions.find((s) => s.description.toLowerCase() === value.trim().toLowerCase());
-    if (!match) return;
-    if (match.categoryId) setCategoryId(match.categoryId);
-    setAccountId(match.accountId);
-    if (match.counterAccountId) setCounterAccountId(match.counterAccountId);
-  }
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -160,12 +133,10 @@ export function EntryForm({
       const result = await createEntryAction(formData);
       if (!result.ok) return setError(result.error);
       writeMemory(kind, { categoryId: effectiveCategoryId, accountId: effectiveAccountId, counterAccountId: effectiveCounterId, settled });
-      setAdded((prev) => [{ id: result.firstId, kind, description, amountCents: amountCents ?? 0, count: result.count }, ...prev]);
       toast.success(
         result.recurrence ? "Recurrence created" : result.count > 1 ? `${result.count} installments created` : "Saved",
       );
       setAmountCents(null);
-      setDescription("");
       setInstallments(false);
       setRepeat(false);
       setFormKey((k) => k + 1);
@@ -234,24 +205,6 @@ export function EntryForm({
           <div />
         )}
       </div>
-      {topCategories.length > 1 && (
-        <div className="-mt-2 flex flex-wrap gap-1.5" aria-label="Most used categories">
-          {topCategories.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => setCategoryId(c.id)}
-              aria-pressed={effectiveCategoryId === c.id}
-              className={cn(
-                "h-8 rounded-full border px-3 text-xs transition-colors",
-                effectiveCategoryId === c.id ? "border-primary bg-primary/10 text-foreground" : "border-border text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {c.name}
-            </button>
-          ))}
-        </div>
-      )}
 
       <div className="grid grid-cols-2 gap-3">
         <Field label={needsCounterAccount(kind) ? "From" : "Account"} htmlFor="accountId">
@@ -289,24 +242,7 @@ export function EntryForm({
       </div>
 
       <Field label="Description" htmlFor="description">
-        <Input
-          id="description"
-          name="description"
-          required
-          maxLength={120}
-          value={description}
-          onChange={(e) => applyDescription(e.target.value)}
-          className="h-11"
-          autoComplete="off"
-          list={kindSuggestions.length > 0 ? "description-suggestions" : undefined}
-        />
-        {kindSuggestions.length > 0 && (
-          <datalist id="description-suggestions">
-            {kindSuggestions.map((s) => (
-              <option key={s.description} value={s.description} />
-            ))}
-          </datalist>
-        )}
+        <Input id="description" name="description" required maxLength={120} defaultValue={entry?.description} className="h-11" autoComplete="off" />
       </Field>
 
       {onCard && !editing ? (
@@ -389,28 +325,6 @@ export function EntryForm({
       <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={pending}>
         {pending ? "Saving…" : editing ? "Save changes" : "Save"}
       </Button>
-
-      {added.length > 0 && (
-        <section aria-label="Added now" className="rounded-xl bg-muted/40 p-3">
-          <h2 className="mb-1 text-xs font-medium text-muted-foreground">Added now · {added.length}</h2>
-          <ul className="divide-y divide-border">
-            {added.map((row) => (
-              <li key={row.id}>
-                <Link href={`/entries/${row.id}`} className="flex min-h-10 items-center justify-between gap-3 text-sm">
-                  <span className="truncate">
-                    {row.description}
-                    {row.count > 1 && <span className="text-muted-foreground"> · {row.count}×</span>}
-                  </span>
-                  <span className={cn("shrink-0 tabular-nums", row.kind === "income" ? "text-emerald-600 dark:text-emerald-400" : row.kind === "expense" ? "text-red-600 dark:text-red-400" : "")}>
-                    {row.kind === "expense" ? "-" : row.kind === "income" ? "+" : ""}
-                    {formatBRL(row.amountCents)}
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
     </form>
   );
 }

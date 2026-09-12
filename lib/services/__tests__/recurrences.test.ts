@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { recurrenceInputSchema } from "@/lib/schemas/recurrences";
-import { createRecurrence, deleteRecurrence, fixedCost, generateMonth, generateMonths, pendingMonths, previewGeneration } from "../recurrences";
+import { createRecurrence, deleteRecurrence, fixedCost, generateMonth, pendingMonths, previewGeneration } from "../recurrences";
 import { seedUserIfEmpty } from "../seed";
 import { fakeRepositories, type FakeRepositories } from "./fakes";
 
@@ -36,7 +36,7 @@ describe("generateMonth", () => {
     expect((await repos.entries.list(U, { period: "2026-02" })).map((e) => e.description)).toEqual(["Internet"]);
   });
 
-  it("lists the recent months still to apply and applies them at once", async () => {
+  it("lists the recent months still to apply", async () => {
     await createRecurrence(repos, U, input({ startsOn: "2026-05-01" }));
     await generateMonth(repos, U, "2026-07");
     expect(await pendingMonths(repos, U, "2026-09-12")).toEqual([
@@ -44,8 +44,8 @@ describe("generateMonth", () => {
       { period: "2026-08", count: 1 },
       { period: "2026-09", count: 1 },
     ]);
-    const results = await generateMonths(repos, U, ["2026-06", "2026-08"]);
-    expect(results.map((r) => r.created)).toEqual([1, 1]);
+    await generateMonth(repos, U, "2026-06");
+    await generateMonth(repos, U, "2026-08");
     expect(await pendingMonths(repos, U, "2026-09-12")).toEqual([{ period: "2026-09", count: 1 }]);
   });
 
