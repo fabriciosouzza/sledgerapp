@@ -13,12 +13,13 @@ import { addMonths, formatDate, formatPeriodLong, periodOf } from "@/lib/domain/
 import { formatBRL } from "@/lib/domain/money";
 import { groupByDay, installmentLabel } from "@/lib/domain/entries";
 import { entryTiming } from "@/lib/domain/metrics";
-import type { Entry, Period } from "@/lib/domain/types";
+import type { Entry, IsoDate, Period } from "@/lib/domain/types";
 import type { EntryFilters } from "@/lib/repositories";
 import { cn } from "@/lib/utils";
 import { Amount } from "./amount";
 import type { Lookups } from "./lookups";
 import { SettleOnSheet } from "./settle-on-sheet";
+import { DatePicker } from "@/components/forms/date-picker";
 
 type Patch = { id: string; status: Entry["status"]; settledOn: string | null };
 
@@ -74,6 +75,7 @@ export function EntryList({
   const [optimistic, patchOptimistic] = useOptimistic(entries, applyPatch);
   const [oldest, setOldest] = useState(period);
   const [selecting, setSelecting] = useState(false);
+  const [bulkDate, setBulkDate] = useState<IsoDate>(today);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pending, startTransition] = useTransition();
   const [loadingMore, startLoading] = useTransition();
@@ -113,14 +115,15 @@ export function EntryList({
   function settleSelected() {
     const ids = [...selected];
     if (ids.length === 0) return;
+    const settledOn = bulkDate;
     startTransition(async () => {
-      for (const id of ids) patchOptimistic({ id, status: "settled", settledOn: today });
-      const result = await settleManyAction(ids);
+      for (const id of ids) patchOptimistic({ id, status: "settled", settledOn });
+      const result = await settleManyAction(ids, settledOn);
       if (!result.ok) {
         toast.error(result.error);
         return;
       }
-      setEntries((prev) => ids.reduce((list, id) => applyPatch(list, { id, status: "settled", settledOn: today }), prev));
+      setEntries((prev) => ids.reduce((list, id) => applyPatch(list, { id, status: "settled", settledOn }), prev));
       setRecent((prev) => new Set([...prev, ...ids]));
       setSelected(new Set());
       setSelecting(false);
@@ -195,14 +198,18 @@ export function EntryList({
         </div>
       )}
 
+      {selectable && plannedIds.length > 0 && !selecting && (
+        <p className="-mt-2 text-xs text-muted-foreground">Tap ○ to settle today · hold it to pick the day</p>
+      )}
+
       {selecting && (
         <div
           role="toolbar"
           aria-label="Bulk settle"
           className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 border-t border-border bg-background/95 px-4 py-2 backdrop-blur md:bottom-0 md:left-56"
         >
-          <div className="mx-auto flex max-w-3xl items-center gap-2 lg:max-w-4xl xl:max-w-5xl">
-            <span className="min-w-0 flex-1 truncate text-sm">
+          <div className="mx-auto grid max-w-3xl grid-cols-[1fr_auto_auto] items-center gap-x-2 gap-y-1 md:flex lg:max-w-4xl xl:max-w-5xl">
+            <span className="min-w-0 truncate text-sm md:flex-1">
               {selected.size === 0 ? "Tap the entries to settle" : `${selected.size} selected`}
             </span>
             <Button variant="ghost" className="h-11" onClick={() => setSelected(new Set(selected.size === plannedIds.length ? [] : plannedIds))}>
@@ -211,6 +218,9 @@ export function EntryList({
             <Button variant="ghost" className="h-11" onClick={stopSelecting}>
               Cancel
             </Button>
+            <div className="col-span-2 md:w-40" aria-label="Settled on">
+              <DatePicker name="bulkSettledOn" value={bulkDate} onChange={(v) => v && setBulkDate(v)} className="h-11" />
+            </div>
             <Button className="h-11" onClick={settleSelected} disabled={selected.size === 0 || pending}>
               <CheckCheck data-icon="inline-start" aria-hidden />
               Settle{selected.size > 0 ? ` ${selected.size}` : ""}

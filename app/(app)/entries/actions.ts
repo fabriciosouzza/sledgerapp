@@ -38,9 +38,9 @@ export async function unsettleEntryAction(id: string): Promise<ActionResult> {
   return run(() => unsettleEntry(repos, userId, id));
 }
 
-export async function settleManyAction(ids: string[]): Promise<ActionResult> {
+export async function settleManyAction(ids: string[], settledOn?: string): Promise<ActionResult> {
   const { userId, repos } = await getContext();
-  return run(() => settleEntries(repos, userId, ids, today()));
+  return run(() => settleEntries(repos, userId, ids, settledOn ?? today()));
 }
 
 export async function deleteEntryAction(formData: FormData): Promise<{ error?: string }> {
