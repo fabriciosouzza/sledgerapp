@@ -4,7 +4,7 @@ Simple ledger — a personal finance app used on a phone, once a week. The build
 specification this project was created from is [PROMPT.md](PROMPT.md); read it
 before changing anything.
 
-**Status:** stage 11 of 13 — Today (`/`), `/net-worth` (monthly snapshots, empty months stay empty), `/portfolio` (assets, movements, contributed vs earned), `/cards` (per-card statement cycles, pay statement as a transfer), `/recurrences` with fixed cost and idempotent month generation, `/month` (summary, both savings rates, category caps, still-planned list), `/add` and `/entries` with installments, settling
+**Status:** stage 12 of 13 — route handlers under `app/api/`, Today (`/`), `/net-worth` (monthly snapshots, empty months stay empty), `/portfolio` (assets, movements, contributed vs earned), `/cards` (per-card statement cycles, pay statement as a transfer), `/recurrences` with fixed cost and idempotent month generation, `/month` (summary, both savings rates, category caps, still-planned list), `/add` and `/entries` with installments, settling
 (optimistic, with undo), bulk settle, filters and scoped edit/delete; on top of
 settings and seed, auth, the app shell, the domain rules and the schema
 ([PROMPT.md §11](PROMPT.md#11-build-order)).
@@ -62,6 +62,22 @@ After changing a migration, regenerate the row types:
 ```sh
 supabase gen types typescript --local > lib/db/database.types.ts
 ```
+
+## API
+
+Route handlers mirror the server actions and call the same services
+([PROMPT.md §4.3](PROMPT.md#43-server-actions-and-route-handlers)). They use
+the session cookie, so call them from a signed-in browser or forward its
+cookies; without a session they answer `401`.
+
+| | |
+|---|---|
+| `GET /api/entries?period=2026-11[&status=&kind=&account=&category=&q=]` | entries of a month |
+| `POST /api/entries` | JSON with the `/add` form's fields (`amountCents` as `"149,90"` or cents) |
+| `PATCH /api/entries/:id/settle` | `{ "settledOn"?: "2026-11-05", "settled"?: false }` |
+| `POST /api/recurrences/generate` | `{ "period"?: "2026-11", "dryRun"?: true }` |
+| `GET /api/summary?period=2026-11` | the month's metrics, categories and planned entries |
+| `GET /api/statements` | every card with open and past statements |
 
 ## Deploy
 
