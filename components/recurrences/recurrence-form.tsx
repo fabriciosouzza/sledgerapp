@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import type { RecurrenceFormState } from "@/app/(app)/recurrences/actions";
 import { CurrencyInput } from "@/components/forms/currency-input";
 import { Field } from "@/components/forms/field";
+import { DatePicker } from "@/components/forms/date-picker";
 import { FormError } from "@/components/forms/form-error";
 import { SubmitButton } from "@/components/forms/submit-button";
 import { Input } from "@/components/ui/input";
@@ -112,10 +113,10 @@ export function RecurrenceForm({
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Starts on" htmlFor="startsOn">
-          <Input id="startsOn" name="startsOn" type="date" required defaultValue={str("startsOn", recurrence?.startsOn) || today} className="h-11" />
+          <DatePicker id="startsOn" name="startsOn" required defaultValue={str("startsOn", recurrence?.startsOn) || today} />
         </Field>
         <Field label="Ends on" htmlFor="endsOn" hint="Optional.">
-          <Input id="endsOn" name="endsOn" type="date" defaultValue={str("endsOn", recurrence?.endsOn)} className="h-11" aria-describedby="endsOn-hint" />
+          <DatePicker id="endsOn" name="endsOn" defaultValue={str("endsOn", recurrence?.endsOn) || null} clearable placeholder="Never" />
         </Field>
       </div>
 

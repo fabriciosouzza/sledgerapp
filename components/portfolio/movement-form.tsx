@@ -6,9 +6,9 @@ import { toast } from "sonner";
 import { addMovementAction } from "@/app/(app)/portfolio/actions";
 import { CurrencyInput } from "@/components/forms/currency-input";
 import { Field } from "@/components/forms/field";
+import { DatePicker } from "@/components/forms/date-picker";
 import { FormError } from "@/components/forms/form-error";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
@@ -86,7 +86,7 @@ export function MovementForm({
           <CurrencyInput id="amountCents" name="amountCents" required autoFocus onCentsChange={setCents} className="h-11" />
         </Field>
         <Field label="Date" htmlFor="date">
-          <Input id="date" name="date" type="date" required defaultValue={today} className="h-11" />
+          <DatePicker id="date" name="date" required defaultValue={today} />
         </Field>
       </div>
 

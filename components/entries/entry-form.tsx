@@ -7,6 +7,7 @@ import { createEntryAction } from "@/app/(app)/add/actions";
 import { updateEntryAction } from "@/app/(app)/entries/actions";
 import { CurrencyInput } from "@/components/forms/currency-input";
 import { Field } from "@/components/forms/field";
+import { DatePicker } from "@/components/forms/date-picker";
 import { FormError } from "@/components/forms/form-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -172,7 +173,7 @@ export function EntryForm({
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Date" htmlFor="date">
-          <Input id="date" name="date" type="date" required value={date} onChange={(e) => setDate(e.target.value)} className="h-11" />
+          <DatePicker id="date" name="date" required value={date} onChange={(v) => v && setDate(v)} />
         </Field>
         {needsCategory(kind) ? (
           <Field label="Category" htmlFor="categoryId">
@@ -242,7 +243,7 @@ export function EntryForm({
       </div>
       {settled && (
         <Field label={kind === "income" ? "Received on" : "Paid on"} htmlFor="settledOn">
-          <Input id="settledOn" name="settledOn" type="date" defaultValue={entry?.settledOn ?? (date <= today ? date : today)} className="h-11" />
+          <DatePicker id="settledOn" name="settledOn" defaultValue={entry?.settledOn ?? (date <= today ? date : today)} />
         </Field>
       )}
 

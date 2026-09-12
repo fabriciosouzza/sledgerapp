@@ -2,19 +2,11 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/responsive-sheet";
 
 /**
- * Confirmation on destructive actions (§8). Renders a trigger; on confirm
- * submits `action` with the given hidden fields.
+ * Confirmation on destructive actions (§8): a bottom sheet on mobile, a dialog
+ * on desktop. Renders a trigger; on confirm submits `action` with the hidden fields.
  */
 export function ConfirmDialog({
   trigger,
@@ -25,7 +17,7 @@ export function ConfirmDialog({
   fields,
   onError,
 }: {
-  /** A `<Button>` (or any element rendering a native button); the dialog attaches to it. */
+  /** A `<Button>` (or any element rendering a native button); the sheet attaches to it. */
   trigger: React.ReactElement<Record<string, unknown>>;
   title: string;
   description: string;
@@ -52,28 +44,28 @@ export function ConfirmDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={trigger} />
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        <DialogFooter>
-          <Button type="button" variant="outline" className="h-11 sm:h-8" onClick={() => setOpen(false)} disabled={pending}>
-            Cancel
-          </Button>
-          <form action={submit}>
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger render={trigger} />
+      <SheetContent>
+        <SheetHeader>
+          <SheetTitle>{title}</SheetTitle>
+          <SheetDescription>{description}</SheetDescription>
+        </SheetHeader>
+        {error && <p className="px-4 text-sm text-destructive md:px-0">{error}</p>}
+        <SheetFooter>
+          <form action={submit} className="contents">
             {Object.entries(fields).map(([k, v]) => (
               <input key={k} type="hidden" name={k} value={v} />
             ))}
-            <Button type="submit" variant="destructive" className="h-11 w-full sm:h-8 sm:w-auto" disabled={pending}>
+            <Button type="submit" variant="destructive" className="h-11 w-full md:h-8 md:w-auto" disabled={pending}>
               {pending ? "Working…" : confirmLabel}
             </Button>
           </form>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+          <Button type="button" variant="outline" className="h-11 md:h-8" onClick={() => setOpen(false)} disabled={pending}>
+            Cancel
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useRef } from "react";
 import { Search, SlidersHorizontal } from "lucide-react";
+import { MonthPicker } from "@/components/month/month-picker";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { ENTRY_KINDS } from "@/lib/domain/entries";
@@ -32,7 +33,18 @@ export function EntryFilters({
   return (
     <form ref={form} method="get" className="space-y-2">
       <div className="grid grid-cols-[auto_1fr] gap-2">
-        <Input type="month" name="month" value={values.month} onChange={submit} aria-label="Month" className="h-11 w-[9.5rem]" />
+        <div className="w-[10.5rem]">
+          <input type="hidden" name="month" value={values.month} />
+          <MonthPicker
+            period={values.month}
+            compact
+            onChange={(p) => {
+              const hidden = form.current?.elements.namedItem("month");
+              if (hidden instanceof HTMLInputElement) hidden.value = p;
+              submit();
+            }}
+          />
+        </div>
         <div className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input type="search" name="q" defaultValue={values.q} placeholder="Search" aria-label="Search descriptions" className="h-11 pl-8" />
