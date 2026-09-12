@@ -1,18 +1,20 @@
 import Link from "next/link";
-import { BookOpen, ChevronRight, CreditCard, LineChart, List, LogOut, Repeat, Settings } from "lucide-react";
+import { ChevronRight, LogOut } from "lucide-react";
 import { signOutAction } from "@/app/(auth)/actions";
+import { MORE_ITEMS } from "@/components/layout/nav-items";
 import { PageHeader } from "@/components/layout/page-header";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 
-const LINKS = [
-  { href: "/entries", label: "Entries", description: "Every entry, filter and bulk settle", icon: List },
-  { href: "/cards", label: "Cards", description: "Statements per credit card", icon: CreditCard },
-  { href: "/recurrences", label: "Recurrences", description: "Fixed cost and month generation", icon: Repeat },
-  { href: "/net-worth", label: "Net worth", description: "Monthly snapshots", icon: LineChart },
-  { href: "/settings", label: "Settings", description: "Accounts, categories, assets", icon: Settings },
-  { href: "/guide", label: "How sledger works", description: "The terms and the weekly routine", icon: BookOpen },
-] as const;
+const DESCRIPTIONS: Record<string, string> = {
+  "/entries": "Every entry, filter and bulk settle",
+  "/cards": "Statements per credit card",
+  "/recurrences": "Fixed cost and month generation",
+  "/net-worth": "Monthly snapshots",
+  "/settings": "Accounts, categories, assets, profile",
+  "/guide": "The terms and the weekly routine",
+};
+const LINKS = MORE_ITEMS.map((item) => ({ ...item, description: DESCRIPTIONS[item.href] ?? "" }));
 
 export default function MorePage() {
   return (

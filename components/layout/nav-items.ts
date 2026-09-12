@@ -1,4 +1,4 @@
-import { CalendarDays, Home, MoreHorizontal, PieChart, Plus, type LucideIcon } from "lucide-react";
+import { BookOpen, CalendarDays, CreditCard, Home, LineChart, List, MoreHorizontal, PieChart, Plus, Repeat, Settings, type LucideIcon } from "lucide-react";
 
 export interface NavItem {
   href: "/" | "/add" | "/month" | "/portfolio" | "/more";
@@ -13,6 +13,16 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/add", label: "Add", icon: Plus },
   { href: "/portfolio", label: "Portfolio", icon: PieChart },
   { href: "/more", label: "More", icon: MoreHorizontal },
+];
+
+/** What "More" holds on mobile; the desktop sidebar lists these directly. */
+export const MORE_ITEMS: { href: "/entries" | "/cards" | "/recurrences" | "/net-worth" | "/settings" | "/guide"; label: string; icon: LucideIcon }[] = [
+  { href: "/entries", label: "Entries", icon: List },
+  { href: "/cards", label: "Cards", icon: CreditCard },
+  { href: "/recurrences", label: "Recurrences", icon: Repeat },
+  { href: "/net-worth", label: "Net worth", icon: LineChart },
+  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/guide", label: "How it works", icon: BookOpen },
 ];
 
 /** Screens reachable from "More" that share its highlighted nav item. */
