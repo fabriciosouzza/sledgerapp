@@ -7,12 +7,14 @@ import { supabaseAccountsRepo, type AccountsRepo } from "./accounts";
 import { supabaseCategoriesRepo, type CategoriesRepo } from "./categories";
 import { supabaseEntriesRepo, type EntriesRepo } from "./entries";
 import { supabaseRecurrencesRepo, type RecurrencesRepo } from "./recurrences";
+import { supabaseStatementsRepo, type StatementsRepo } from "./statements";
 
 export interface Repositories {
   accounts: AccountsRepo;
   categories: CategoriesRepo;
   entries: EntriesRepo;
   recurrences: RecurrencesRepo;
+  statements: StatementsRepo;
 }
 
 export function createRepositories(db: DbClient): Repositories {
@@ -21,6 +23,7 @@ export function createRepositories(db: DbClient): Repositories {
     categories: supabaseCategoriesRepo(db),
     entries: supabaseEntriesRepo(db),
     recurrences: supabaseRecurrencesRepo(db),
+    statements: supabaseStatementsRepo(db),
   };
 }
 
@@ -29,3 +32,4 @@ export type { AccountsRepo, NewAccount } from "./accounts";
 export type { CategoriesRepo, NewCategory } from "./categories";
 export type { EntriesRepo, EntryFilters } from "./entries";
 export type { NewRecurrence, RecurrencesRepo } from "./recurrences";
+export type { NewStatement, StatementsRepo } from "./statements";

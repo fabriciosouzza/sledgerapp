@@ -81,3 +81,27 @@ export function isStatementOpen(statement: Pick<Statement, "cycleEnd">, today: I
 export function daysToDue(statement: Pick<Statement, "dueDate">, today: IsoDate): number {
   return daysBetween(today, statement.dueDate);
 }
+
+export interface CycleGroup {
+  cycle: CardCycle;
+  entries: Entry[];
+  totalCents: number;
+}
+
+/**
+ * Card entries grouped into the cycles they belong to, newest first. Only
+ * purchases and refunds: the transfer that pays a statement is not part of
+ * the next one.
+ */
+export function groupByCycle(card: { closingDay: number | null; dueDay: number | null }, entries: Entry[]): CycleGroup[] {
+  const groups = new Map<IsoDate, CycleGroup>();
+  for (const e of entries) {
+    if (e.kind !== "expense" && e.kind !== "income") continue;
+    const cycle = resolveCardCycle(card, e.date);
+    const group = groups.get(cycle.cycleStart) ?? { cycle, entries: [], totalCents: 0 };
+    group.entries.push(e);
+    groups.set(cycle.cycleStart, group);
+  }
+  for (const g of groups.values()) g.totalCents = statementTotal(g.entries);
+  return [...groups.values()].sort((a, b) => (a.cycle.cycleStart < b.cycle.cycleStart ? 1 : -1));
+}

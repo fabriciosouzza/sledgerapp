@@ -2,7 +2,7 @@
 // no database. Each fake enforces the invariants the real database would.
 
 import { periodEnd, periodStart } from "@/lib/domain/dates";
-import type { Account, Category, Entry, NewEntry, Recurrence } from "@/lib/domain/types";
+import type { Account, Category, Entry, NewEntry, Recurrence, Statement } from "@/lib/domain/types";
 import type {
   AccountsRepo,
   CategoriesRepo,
@@ -12,6 +12,7 @@ import type {
   NewRecurrence,
   RecurrencesRepo,
   Repositories,
+  StatementsRepo,
 } from "@/lib/repositories";
 import { RepositoryError } from "@/lib/repositories";
 
@@ -24,7 +25,7 @@ export interface FakeRepositories extends Repositories {
   accountsInUse: Set<string>;
   categoriesInUse: Set<string>;
   /** Raw rows, for assertions. */
-  rows: { entries: Owned<Entry>[]; recurrences: Owned<Recurrence>[] };
+  rows: { entries: Owned<Entry>[]; recurrences: Owned<Recurrence>[]; statements: Owned<Statement>[] };
 }
 
 export function fakeRepositories(): FakeRepositories {
@@ -32,6 +33,7 @@ export function fakeRepositories(): FakeRepositories {
   const categories: Owned<Category>[] = [];
   const entries: Owned<Entry>[] = [];
   const recurrences: Owned<Recurrence>[] = [];
+  const statements: Owned<Statement>[] = [];
   const accountsInUse = new Set<string>();
   const categoriesInUse = new Set<string>();
 
@@ -212,13 +214,40 @@ export function fakeRepositories(): FakeRepositories {
     },
   };
 
+  const statementsRepo: StatementsRepo = {
+    async listByUser(userId) {
+      return statements.filter((s) => s.userId === userId).map(strip);
+    },
+    async listByAccount(userId, accountId) {
+      return statements.filter((s) => s.userId === userId && s.accountId === accountId).map(strip);
+    },
+    async getById(userId, id) {
+      const row = statements.find((s) => s.userId === userId && s.id === id);
+      return row ? strip(row) : null;
+    },
+    async ensure(userId, data) {
+      const existing = statements.find((s) => s.accountId === data.accountId && s.cycleStart === data.cycleStart);
+      if (existing) return strip(existing);
+      const row = { ...data, id: nextId(), userId };
+      statements.push(row);
+      return strip(row);
+    },
+    async setPaidOn(userId, id, paidOn) {
+      const row = statements.find((s) => s.userId === userId && s.id === id);
+      if (!row) throw new RepositoryError("not_found", "statement not found");
+      row.paidOn = paidOn;
+      return strip(row);
+    },
+  };
+
   return {
     accounts: accountsRepo,
     categories: categoriesRepo,
     entries: entriesRepo,
     recurrences: recurrencesRepo,
+    statements: statementsRepo,
     accountsInUse,
     categoriesInUse,
-    rows: { entries, recurrences },
+    rows: { entries, recurrences, statements },
   };
 }
