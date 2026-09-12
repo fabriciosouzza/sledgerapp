@@ -6,6 +6,7 @@ import { useOptimistic, useRef, useState, useTransition } from "react";
 import { Check, CheckCheck, ChevronDown, Circle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { loadMonthAction, settleEntryAction, settleManyAction, unsettleEntryAction } from "@/app/(app)/entries/actions";
+import { CategoryIcon } from "@/components/categories/category-icon";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { addMonths, formatDate, formatPeriodLong, periodOf } from "@/lib/domain/dates";
@@ -247,7 +248,8 @@ function EntryRow({
   onUnsettle: () => void;
 }) {
   const timing = entryTiming(entry, today);
-  const category = entry.categoryId ? lookups.categories[entry.categoryId]?.name : null;
+  const categoryRow = entry.categoryId ? lookups.categories[entry.categoryId] : undefined;
+  const category = categoryRow?.name ?? null;
   const account = lookups.accounts[entry.accountId]?.name ?? "?";
   const counter = entry.counterAccountId ? lookups.accounts[entry.counterAccountId]?.name : null;
   const parts = installmentLabel(entry);
@@ -300,6 +302,13 @@ function EntryRow({
           <span className="flex size-11 items-center justify-center">
             <Checkbox checked={selected} onCheckedChange={onToggle} aria-label={`Select ${entry.description}`} disabled={entry.status === "settled"} />
           </span>
+        )}
+        {!selecting && (
+          <CategoryIcon
+            icon={categoryRow?.icon ?? (entry.kind === "transfer" ? "landmark" : entry.kind === "contribution" ? "piggy-bank" : null)}
+            color={categoryRow?.color ?? null}
+            size="sm"
+          />
         )}
         <Link
           href={editHref}

@@ -53,7 +53,7 @@ export function YearView({ summary, title, prevHref, nextHref }: { summary: Year
         <section>
           <h2 className="mb-2 text-sm font-semibold">By category</h2>
           <div className="mb-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-            <Donut slices={summary.categories.map((c) => ({ name: c.name, cents: c.settledCents }))} label="Expense by category" centerLabel="settled" />
+            <Donut slices={summary.categories.map((c) => ({ name: c.name, cents: c.settledCents, color: c.color ?? undefined }))} label="Expense by category" centerLabel="settled" />
           </div>
           <CategoryTable lines={summary.categories} />
         </section>

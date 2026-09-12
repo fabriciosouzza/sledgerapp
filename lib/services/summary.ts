@@ -20,6 +20,8 @@ import type { Repositories } from "@/lib/repositories";
 export interface CategoryLine extends Omit<CategorySpending, "children"> {
   name: string;
   isActive: boolean;
+  icon: string | null;
+  color: string | null;
   children: CategoryLine[];
 }
 
@@ -43,20 +45,25 @@ export interface MonthSummary {
   dailySpend: { current: number[]; previous: number[] };
   /** The last six months, oldest first, against today's caps. */
   history: BudgetMonth[];
+  /** Change vs the previous month, `null` when that month has nothing to compare. */
+  delta: { income: number | null; expense: number | null };
 }
 
 const HISTORY_MONTHS = 6;
 
 export async function monthSummary(repos: Repositories, userId: string, period: Period): Promise<MonthSummary> {
   const historyFrom = addMonths(period, -(HISTORY_MONTHS - 1));
-  const [entries, categories, recurrences, snapshots, past] = await Promise.all([
+  const previousPeriod = addMonths(period, -1);
+  const [entries, categories, recurrences, snapshots, past, previousAll] = await Promise.all([
     repos.entries.list(userId, { period }),
     repos.categories.list(userId),
     repos.recurrences.list(userId),
     repos.snapshots.listBetween(userId, addMonths(period, -12), period),
     // One bounded range for the history and last month's daily line (§4.5).
-    repos.entries.list(userId, { from: periodStart(historyFrom), to: periodEnd(addMonths(period, -1)), kind: "expense", status: "settled" }),
+    repos.entries.list(userId, { from: periodStart(historyFrom), to: periodEnd(previousPeriod), kind: "expense", status: "settled" }),
+    repos.entries.list(userId, { period: previousPeriod }),
   ]);
+  const previous = computeMetrics({ entries: previousAll, categories, recurrences: [], cashCents: null });
 
   const metrics = computeMetrics({ entries, categories, recurrences, cashCents: latestCash(snapshots, period) });
   const byId = new Map<string, Category>(categories.map((c) => [c.id, c]));
@@ -67,6 +74,8 @@ export async function monthSummary(repos: Repositories, userId: string, period: 
       ...line,
       name: category?.name ?? "?",
       isActive: category?.isActive ?? true,
+      icon: category?.icon ?? null,
+      color: category?.color ?? null,
       children: line.children.map(named).sort(bySize),
     };
   };
@@ -94,6 +103,10 @@ export async function monthSummary(repos: Repositories, userId: string, period: 
       previous: dailyCumulativeExpense(byPeriod.get(addMonths(period, -1)) ?? [], addMonths(period, -1)),
     },
     history,
+    delta: {
+      income: previous.incomeCents > 0 ? (metrics.incomeCents - previous.incomeCents) / previous.incomeCents : null,
+      expense: previous.expenseCents > 0 ? (metrics.expenseCents - previous.expenseCents) / previous.expenseCents : null,
+    },
   };
 }
 
@@ -131,7 +144,16 @@ export async function yearSummary(repos: Repositories, userId: string, from: Per
   const bySize = (a: CategoryLine, b: CategoryLine) => b.settledCents + b.plannedCents - (a.settledCents + a.plannedCents);
   const named = (line: CategorySpending): CategoryLine => {
     const category = byId.get(line.categoryId);
-    return { ...line, name: category?.name ?? "?", isActive: category?.isActive ?? true, children: line.children.map(named).sort(bySize), capCents: null, capUsage: null };
+    return {
+      ...line,
+      name: category?.name ?? "?",
+      isActive: category?.isActive ?? true,
+      icon: category?.icon ?? null,
+      color: category?.color ?? null,
+      children: line.children.map(named).sort(bySize),
+      capCents: null,
+      capUsage: null,
+    };
   };
   return {
     from,

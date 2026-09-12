@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import type { CategoryFormState } from "@/app/(app)/settings/categories/actions";
+import { CATEGORY_COLORS, CATEGORY_ICONS, CategoryIcon } from "@/components/categories/category-icon";
 import { CurrencyInput } from "@/components/forms/currency-input";
 import { Field } from "@/components/forms/field";
 import { FormError } from "@/components/forms/form-error";
@@ -12,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import type { Category } from "@/lib/domain/types";
+import { cn } from "@/lib/utils";
 
 export function CategoryForm({
   category,
@@ -28,6 +30,8 @@ export function CategoryForm({
   const str = (key: string, fallback: string | number | null | undefined) =>
     typeof v[key] === "string" ? v[key] : fallback === null || fallback === undefined ? "" : String(fallback);
   const appliesTo = Array.isArray(v.appliesTo) ? v.appliesTo : (category?.appliesTo ?? ["expense"]);
+  const [icon, setIcon] = useState<string>(str("icon", category?.icon));
+  const [color, setColor] = useState<string>(str("color", category?.color));
 
   return (
     <form action={dispatch} className="space-y-5">
@@ -63,6 +67,42 @@ export function CategoryForm({
               <Checkbox name="appliesTo[]" value={kind} defaultChecked={appliesTo.includes(kind)} />
               {kind}
             </label>
+          ))}
+        </div>
+      </fieldset>
+
+      <input type="hidden" name="icon" value={icon} />
+      <input type="hidden" name="color" value={color} />
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium">Icon</legend>
+        <div className="flex flex-wrap gap-1.5">
+          {Object.keys(CATEGORY_ICONS).map((name) => (
+            <button
+              key={name}
+              type="button"
+              aria-label={name}
+              aria-pressed={icon === name}
+              onClick={() => setIcon(icon === name ? "" : name)}
+              className={cn("rounded-full ring-offset-2 ring-offset-background focus-visible:outline-2 focus-visible:outline-ring", icon === name && "ring-2 ring-primary")}
+            >
+              <CategoryIcon icon={name} color={color || null} />
+            </button>
+          ))}
+        </div>
+      </fieldset>
+      <fieldset className="space-y-2">
+        <legend className="text-sm font-medium">Colour</legend>
+        <div className="flex flex-wrap gap-2">
+          {CATEGORY_COLORS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              aria-label={c}
+              aria-pressed={color === c}
+              onClick={() => setColor(color === c ? "" : c)}
+              className={cn("size-9 rounded-full ring-offset-2 ring-offset-background focus-visible:outline-2 focus-visible:outline-ring", color === c && "ring-2 ring-foreground")}
+              style={{ background: c }}
+            />
           ))}
         </div>
       </fieldset>

@@ -16,6 +16,14 @@ import { listCategories } from "@/lib/services/categories";
 import { getContext } from "@/lib/services/context";
 import { monthSummary, yearSummary } from "@/lib/services/summary";
 
+/** "+5% vs last month · + R$ 100,00 planned", or whichever half exists; `—` is never faked as 0%. */
+function deltaHint(delta: number | null, plannedCents: number): string | undefined {
+  const parts: string[] = [];
+  if (delta !== null) parts.push(`${delta >= 0 ? "+" : "−"}${Math.abs(Math.round(delta * 100))}% vs last month`);
+  if (plannedCents > 0) parts.push(`+ ${formatBRL(plannedCents)} planned`);
+  return parts.length > 0 ? parts.join(" · ") : undefined;
+}
+
 export default async function MonthPage(props: PageProps<"/month">) {
   const sp = await props.searchParams;
   const now = today();
@@ -65,8 +73,8 @@ export default async function MonthPage(props: PageProps<"/month">) {
         <MonthPicker period={month} basePath="/month" />
 
         <section aria-label="Summary" className="grid grid-cols-2 gap-2">
-          <Stat label="Income" cents={m.incomeCents} tone="positive" hint={m.plannedIncomeCents ? `+ ${formatBRL(m.plannedIncomeCents)} planned` : undefined} />
-          <Stat label="Expense" cents={m.expenseCents} tone="negative" hint={m.plannedExpenseCents ? `+ ${formatBRL(m.plannedExpenseCents)} planned` : undefined} />
+          <Stat label="Income" cents={m.incomeCents} tone="positive" hint={deltaHint(summary.delta.income, m.plannedIncomeCents)} />
+          <Stat label="Expense" cents={m.expenseCents} tone="negative" hint={deltaHint(summary.delta.expense, m.plannedExpenseCents)} />
           <Stat label="Contributions" cents={m.contributionsCents} />
           <Stat label="Leftover" cents={m.leftoverCents} tone="signed" hint="income − expense − contributions" />
           <Stat label="Savings rate" rate={m.savingsRate} tone="signed" />
@@ -106,7 +114,7 @@ export default async function MonthPage(props: PageProps<"/month">) {
           )}
           {summary.categories.length > 0 && (
             <div className="mb-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-              <Donut slices={summary.categories.map((c) => ({ name: c.name, cents: c.settledCents }))} label="Expense by category" centerLabel="settled" />
+              <Donut slices={summary.categories.map((c) => ({ name: c.name, cents: c.settledCents, color: c.color ?? undefined }))} label="Expense by category" centerLabel="settled" />
             </div>
           )}
           <CategoryTable lines={summary.categories} />

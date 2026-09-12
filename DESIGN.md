@@ -1,6 +1,8 @@
 # Design notes — UI direction after the first build
 
-Status: backlog agreed on 2026-09-12, to start next session. The reference is a
+Status: backlog agreed on 2026-09-12; items 1–11 shipped on 2026-09-13 (see
+"Done" at the end). Left open: the desktop width note in item 9 and a light
+palette review after the toggle. The reference is a
 FinTrack-style finance app mockup (dark, lime accent, five phones). We keep our
 own palette and the rules in `PROMPT.md`; what we take from the reference is
 **information hierarchy, the add button, and more dashboards**.
@@ -235,8 +237,25 @@ focus returns to the trigger; ≥ 44px targets (§8).
 
 Each step ships on its own commit; 360px pass on every screen touched (§8).
 
-## Open questions
+## Decisions (2026-09-13)
 
-- Budget = sum of caps, or a separate monthly budget number?
-- Should the FAB open `/add` directly, or a kind picker first?
-- Yearly view: calendar year only, or any rolling 12 months?
+- Budget = sum of category caps (no new column).
+- The FAB opens a kind picker sheet, then `/add?kind=…`.
+- Yearly view offers both a calendar year and the last 12 months.
+
+## Done
+
+| Item | Commit |
+|---|---|
+| 9 Bulk-settle control | `58190bc` |
+| 10–11 Responsive sheet, month grid, calendar date picker | `3ea4e07` |
+| Theme toggle | `37f7c82` |
+| 1 FAB with kind picker | `e18d2b7` |
+| 2 Today hierarchy | `15284be` |
+| 4–6 Month dashboards (spend line, donut, budget, last 6 months) | `8667573` |
+| 3 Entries tabs + filters sheet | `00b18e6` |
+| 4 Year and rolling-12-month views | `0e0849e` |
+| 7–8 Category icons/colours, month-over-month deltas | this commit |
+
+Still open: light palette review (contrast of the lime accent, chart colours),
+desktop layout width for lists, "See all" preview of recent entries on Today.

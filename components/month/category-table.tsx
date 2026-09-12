@@ -1,3 +1,4 @@
+import { CategoryIcon } from "@/components/categories/category-icon";
 import { formatBRL } from "@/lib/domain/money";
 import type { CategoryLine } from "@/lib/services/summary";
 import { cn } from "@/lib/utils";
@@ -32,8 +33,11 @@ function Line({ line, small = false }: { line: CategoryLine; small?: boolean }) 
   const width = line.capUsage === null ? 0 : Math.min(100, line.capUsage * 100);
   return (
     <div className="space-y-1.5">
-      <div className="flex items-baseline justify-between gap-3">
-        <span className={cn("truncate font-medium", small ? "text-xs text-muted-foreground" : "text-sm")}>{line.name}</span>
+      <div className="flex items-center justify-between gap-3">
+        <span className="flex min-w-0 items-center gap-2">
+          {!small && <CategoryIcon icon={line.icon} color={line.color} size="sm" />}
+          <span className={cn("truncate font-medium", small ? "text-xs text-muted-foreground" : "text-sm")}>{line.name}</span>
+        </span>
         <span className={cn("shrink-0 font-semibold tabular-nums", small ? "text-xs" : "text-sm", over && "text-red-600 dark:text-red-400")}>
           {formatBRL(line.settledCents)}
         </span>
