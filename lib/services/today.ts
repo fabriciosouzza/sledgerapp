@@ -8,7 +8,7 @@ import { computeMetrics, entryTiming, type PeriodMetrics } from "@/lib/domain/me
 import type { NetWorthPoint } from "@/lib/domain/netWorth";
 import type { Account, Entry, IsoDate, Period } from "@/lib/domain/types";
 import type { Repositories } from "@/lib/repositories";
-import { cardsOverview, type CardsOverview } from "./cards";
+import { cardsOverview, type CardsOverview, type StatementDue } from "./cards";
 import { netWorthOverview } from "./netWorth";
 import { previewGeneration } from "./recurrences";
 import { monthSummary } from "./summary";
@@ -24,8 +24,10 @@ export interface TodayOverview {
   period: Period;
   /** Σ cash account balances today; `null` with no cash account yet. */
   cashCents: number | null;
-  /** Σ planned money leaving cash in the next 7 days (expenses, transfers out, contributions), today included. */
+  /** Σ planned money leaving cash in the next 7 days (expenses, transfers out, contributions) plus card statements due by then, overdue included. */
   dueSoonCents: number;
+  /** Card statements closed and unpaid, oldest first. */
+  statementsDue: StatementDue[];
   /** Planned entries due today (for "settle all due today"). */
   dueTodayIds: string[];
   metrics: PeriodMetrics;
@@ -66,7 +68,10 @@ export async function todayOverview(repos: Repositories, userId: string, today: 
     today,
     period,
     cashCents: netWorth.cashCents,
-    dueSoonCents: upcoming.filter((e) => e.kind !== "income").reduce((sum, e) => sum + e.amountCents, 0),
+    dueSoonCents:
+      upcoming.filter((e) => e.kind !== "income").reduce((sum, e) => sum + e.amountCents, 0) +
+      cards.toPay.filter((s) => s.daysToDue <= UPCOMING_DAYS).reduce((sum, s) => sum + s.view.totalCents, 0),
+    statementsDue: cards.toPay,
     dueTodayIds: upcoming.filter((e) => e.date === today).map((e) => e.id),
     metrics: summary.metrics,
     insight: monthInsight(summary.metrics, previous),

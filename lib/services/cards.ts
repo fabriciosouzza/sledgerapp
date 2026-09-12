@@ -36,9 +36,18 @@ export interface CardView {
   limitUsage: number | null;
 }
 
+export interface StatementDue {
+  card: Account;
+  view: StatementView;
+  /** Negative when overdue. */
+  daysToDue: number;
+}
+
 export interface CardsOverview {
   cards: CardView[];
   totalDebtCents: number;
+  /** Closed, unpaid, with something on them — what actually needs paying, oldest first. */
+  toPay: StatementDue[];
 }
 
 /** How far back the screen looks. A year of statements is plenty for a phone. */
@@ -67,7 +76,9 @@ async function buildCard(repos: Repositories, userId: string, card: Account, tod
   for (const group of groups) {
     let statement = known.get(group.cycle.cycleStart);
     if (!statement) {
-      if (ensure === "open" && group.cycle.cycleStart !== current.cycleStart) {
+      // Cycles that are closed and never paid are due: they get a row even on Today.
+      const closedWithTotal = group.cycle.cycleEnd < today && group.totalCents > 0;
+      if (ensure === "open" && group.cycle.cycleStart !== current.cycleStart && !closedWithTotal) {
         views.push({ statement: { id: "", accountId: card.id, ...group.cycle, paidOn: null }, entries: group.entries, totalCents: group.totalCents, isOpen: false, daysToDue: daysToDue(group.cycle, today) });
         continue;
       }
@@ -102,7 +113,10 @@ export async function cardsOverview(repos: Repositories, userId: string, today: 
   const cards = accounts.filter((a) => isCreditCard(a) && a.isActive);
   const views: CardView[] = [];
   for (const card of cards) views.push(await buildCard(repos, userId, card, today, options.ensure ?? "all"));
-  return { cards: views, totalDebtCents: views.reduce((sum, c) => sum + c.debtCents, 0) };
+  const toPay: StatementDue[] = views
+    .flatMap((c) => c.past.filter((s) => s.statement.paidOn === null && s.totalCents > 0).map((view) => ({ card: c.account, view, daysToDue: view.daysToDue })))
+    .sort((a, b) => a.daysToDue - b.daysToDue);
+  return { cards: views, totalDebtCents: views.reduce((sum, c) => sum + c.debtCents, 0), toPay };
 }
 
 export interface PayStatementInput {

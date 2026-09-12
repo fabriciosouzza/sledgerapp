@@ -4,21 +4,36 @@ import type { CardView } from "@/lib/services/cards";
 import { cn } from "@/lib/utils";
 
 /** One tile per card: open statement total and days to due (§7 Today, /cards). */
+/**
+ * What matters first: a closed statement waiting to be paid (red when
+ * overdue); otherwise the open cycle and when it closes. The bar is the
+ * share of the credit limit in use.
+ */
 export function CardTile({ card, className }: { card: CardView; className?: string }) {
-  const { open } = card;
-  const due = open.daysToDue;
+  const toPay = card.past.filter((s) => s.statement.paidOn === null && s.totalCents > 0).sort((a, b) => a.daysToDue - b.daysToDue)[0];
+  const usage = card.limitUsage;
   return (
     <div className={cn("flex h-24 w-36 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-foreground/10", className)}>
-      <p className="truncate text-xs text-muted-foreground">{card.account.name}</p>
-      <p className="mt-0.5 text-lg font-semibold tabular-nums">{formatBRL(open.totalCents)}</p>
-      <p className={cn("truncate text-[11px] whitespace-nowrap text-muted-foreground", due < 0 && open.statement.paidOn === null && "text-red-600 dark:text-red-400")}>
-        {open.statement.paidOn
-          ? `paid ${formatDayMonth(open.statement.paidOn)}`
-          : `${due < 0 ? `due ${-due}d ago` : due === 0 ? "due today" : `due in ${due}d`} · ${formatDayMonth(open.statement.dueDate)}`}
+      <p className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+        <span className="truncate">{card.account.name}</span>
+        {usage !== null && <span className={cn("shrink-0 tabular-nums", usage > 0.9 && "text-red-600 dark:text-red-400")}>{Math.round(usage * 100)}%</span>}
       </p>
-      {card.limitUsage !== null && (
-        <div className="mt-auto h-1 overflow-hidden rounded-full bg-muted" aria-hidden>
-          <div className={cn("h-full rounded-full", card.limitUsage > 0.9 ? "bg-red-500" : "bg-primary")} style={{ width: `${Math.min(100, card.limitUsage * 100)}%` }} />
+      {toPay ? (
+        <>
+          <p className="mt-0.5 text-lg font-semibold tabular-nums">{formatBRL(toPay.totalCents)}</p>
+          <p className={cn("truncate text-[11px] whitespace-nowrap", toPay.daysToDue < 0 ? "text-red-600 dark:text-red-400" : "text-muted-foreground")}>
+            {toPay.daysToDue < 0 ? `overdue · due ${formatDayMonth(toPay.statement.dueDate)}` : toPay.daysToDue === 0 ? "due today" : `due in ${toPay.daysToDue}d · ${formatDayMonth(toPay.statement.dueDate)}`}
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="mt-0.5 text-lg font-semibold tabular-nums">{formatBRL(card.open.totalCents)}</p>
+          <p className="truncate text-[11px] whitespace-nowrap text-muted-foreground">so far · closes {formatDayMonth(card.open.statement.cycleEnd)}</p>
+        </>
+      )}
+      {usage !== null && (
+        <div className="mt-auto h-1 overflow-hidden rounded-full bg-muted" aria-label={`${Math.round(usage * 100)}% of the credit limit in use`} role="img">
+          <div className={cn("h-full rounded-full", usage > 0.9 ? "bg-red-500" : "bg-primary")} style={{ width: `${Math.min(100, usage * 100)}%` }} />
         </div>
       )}
     </div>

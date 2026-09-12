@@ -76,6 +76,22 @@ describe("cardsOverview", () => {
     expect(overview.cards.find((c) => c.account.id === cardA)!.debtCents).toBe(5_000);
   });
 
+  it("lists closed unpaid statements to pay, oldest first, even in 'open' mode", async () => {
+    await spend(cardA, "2026-09-01", "100,00"); // A: Aug 6 – Sep 5, due Sep 15 (overdue)
+    await spend(cardA, "2026-10-01", "300,00"); // A: Sep 6 – Oct 5, due Oct 15 (overdue)
+    await spend(cardA, "2026-11-10", "50,00"); // A: open
+    const { toPay } = await cardsOverview(repos, U, TODAY, { ensure: "open" });
+    expect(toPay.map((s) => [s.view.totalCents, s.view.statement.dueDate, s.daysToDue])).toEqual([
+      [10_000, "2026-09-15", -56],
+      [30_000, "2026-10-15", -26],
+    ]);
+    expect(toPay.every((s) => s.view.statement.id)).toBe(true);
+
+    await payStatement(repos, U, { statementId: toPay[0].view.statement.id, fromAccountId: checking, paidOn: "2026-09-15" }, TODAY);
+    const after = await cardsOverview(repos, U, TODAY, { ensure: "open" });
+    expect(after.toPay).toHaveLength(1);
+  });
+
   // Acceptance 3: paying a statement is not an expense; the purchase is.
   it("keeps the payment out of expense while the purchase stays in", async () => {
     await spend(cardA, "2026-10-01", "300,00");
