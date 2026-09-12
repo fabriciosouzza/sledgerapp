@@ -4,8 +4,8 @@ Simple ledger — a personal finance app used on a phone, once a week. The build
 specification this project was created from is [PROMPT.md](PROMPT.md); read it
 before changing anything.
 
-**Status:** stage 1 of 13 — Next.js, Tailwind, shadcn/ui and the initial
-database schema ([PROMPT.md §11](PROMPT.md#11-build-order)).
+**Status:** stage 2 of 13 — domain rules in `lib/domain/` with unit tests, on top of the
+schema and scaffold ([PROMPT.md §11](PROMPT.md#11-build-order)).
 
 ## Run it locally
 
