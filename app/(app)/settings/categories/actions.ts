@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { categoryInputSchema } from "@/lib/schemas/categories";
 import { firstIssue, formToObject } from "@/lib/schemas/form";
-import { createCategory, deleteCategory, updateCategory } from "@/lib/services/categories";
+import { createCategory, deleteCategory, moveCategory, updateCategory } from "@/lib/services/categories";
 import { getContext } from "@/lib/services/context";
 import { ServiceError } from "@/lib/services/errors";
 
@@ -51,6 +51,15 @@ export async function updateCategoryAction(_prev: CategoryFormState, formData: F
   }
   revalidate();
   redirect(LIST);
+}
+
+export async function moveCategoryAction(formData: FormData): Promise<void> {
+  const { userId, repos } = await getContext();
+  const id = String(formData.get("id") ?? "");
+  const direction = formData.get("direction") === "up" ? -1 : 1;
+  await moveCategory(repos, userId, id, direction);
+  revalidate();
+  revalidatePath("/add");
 }
 
 export async function deleteCategoryAction(formData: FormData): Promise<{ error?: string }> {

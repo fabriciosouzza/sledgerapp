@@ -63,6 +63,22 @@ export async function updateCategory(repos: Repositories, userId: string, id: st
   return repos.categories.update(userId, id, fields(input, current.sortOrder)).catch(translate);
 }
 
+/** Swaps the category with its neighbour among its siblings (same parent); -1 up, 1 down. */
+export async function moveCategory(repos: Repositories, userId: string, id: string, direction: -1 | 1): Promise<void> {
+  const all = sortCategoryTree(await repos.categories.list(userId));
+  const me = all.find((c) => c.id === id);
+  if (!me) throw new ServiceError("not_found", "Category not found.");
+  const siblings = all.filter((c) => c.parentId === me.parentId);
+  const index = siblings.findIndex((c) => c.id === id);
+  const target = index + direction;
+  if (target < 0 || target >= siblings.length) return;
+  const reordered = [...siblings];
+  [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+  for (const [i, category] of reordered.entries()) {
+    if (category.sortOrder !== i) await repos.categories.update(userId, category.id, { sortOrder: i });
+  }
+}
+
 export async function setCategoryActive(repos: Repositories, userId: string, id: string, isActive: boolean): Promise<Category> {
   return repos.categories.update(userId, id, { isActive });
 }

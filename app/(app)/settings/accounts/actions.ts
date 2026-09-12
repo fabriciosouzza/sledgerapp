@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { accountInputSchema } from "@/lib/schemas/accounts";
 import { firstIssue, formToObject } from "@/lib/schemas/form";
-import { createAccount, deleteAccount, setAccountActive, updateAccount } from "@/lib/services/accounts";
+import { createAccount, deleteAccount, moveAccount, setAccountActive, updateAccount } from "@/lib/services/accounts";
 import { getContext } from "@/lib/services/context";
 import { ServiceError } from "@/lib/services/errors";
 
@@ -65,6 +65,14 @@ export async function deleteAccountAction(formData: FormData): Promise<{ error?:
   }
   revalidate();
   redirect(LIST);
+}
+
+export async function moveAccountAction(formData: FormData): Promise<void> {
+  const { userId, repos } = await getContext();
+  const id = String(formData.get("id") ?? "");
+  const direction = formData.get("direction") === "up" ? -1 : 1;
+  await moveAccount(repos, userId, id, direction);
+  revalidate();
 }
 
 export async function toggleAccountAction(formData: FormData): Promise<void> {

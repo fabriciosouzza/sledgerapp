@@ -32,6 +32,20 @@ export async function setAccountActive(repos: Repositories, userId: string, id: 
   return repos.accounts.update(userId, id, { isActive });
 }
 
+/** Swaps the account with its neighbour in the list; -1 moves it up, 1 down. */
+export async function moveAccount(repos: Repositories, userId: string, id: string, direction: -1 | 1): Promise<void> {
+  const list = await repos.accounts.list(userId);
+  const index = list.findIndex((a) => a.id === id);
+  if (index === -1) throw new ServiceError("not_found", "Account not found.");
+  const target = index + direction;
+  if (target < 0 || target >= list.length) return;
+  const reordered = [...list];
+  [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+  for (const [i, account] of reordered.entries()) {
+    if (account.sortOrder !== i) await repos.accounts.update(userId, account.id, { sortOrder: i });
+  }
+}
+
 /** Deletes when nothing references the account; otherwise says so, and the UI offers to deactivate. */
 export async function deleteAccount(repos: Repositories, userId: string, id: string): Promise<void> {
   await getAccount(repos, userId, id);

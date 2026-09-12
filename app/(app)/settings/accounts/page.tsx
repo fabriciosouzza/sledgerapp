@@ -8,6 +8,8 @@ import { accountTypeLabel, isCreditCard } from "@/lib/domain/accounts";
 import { formatBRL } from "@/lib/domain/money";
 import type { Account } from "@/lib/domain/types";
 import { listAccounts } from "@/lib/services/accounts";
+import { MoveButtons } from "@/components/settings/move-buttons";
+import { moveAccountAction } from "./actions";
 import { getContext } from "@/lib/services/context";
 
 export default async function AccountsPage() {
@@ -47,11 +49,11 @@ export default async function AccountsPage() {
 function AccountList({ accounts }: { accounts: Account[] }) {
   return (
     <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-      {accounts.map((a) => (
-        <li key={a.id}>
+      {accounts.map((a, i) => (
+        <li key={a.id} className="flex items-center pr-2">
           <Link
             href={`/settings/accounts/${a.id}`}
-            className="flex min-h-14 items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring"
+            className="flex min-h-14 min-w-0 flex-1 items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring"
           >
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">
@@ -66,6 +68,7 @@ function AccountList({ accounts }: { accounts: Account[] }) {
             </span>
             <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
           </Link>
+          <MoveButtons id={a.id} action={moveAccountAction} first={i === 0} last={i === accounts.length - 1} />
         </li>
       ))}
     </ul>
