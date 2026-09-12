@@ -4,8 +4,9 @@ Simple ledger — a personal finance app used on a phone, once a week. The build
 specification this project was created from is [PROMPT.md](PROMPT.md); read it
 before changing anything.
 
-**Status:** stage 2 of 13 — domain rules in `lib/domain/` with unit tests, on top of the
-schema and scaffold ([PROMPT.md §11](PROMPT.md#11-build-order)).
+**Status:** stage 3 of 13 — auth (login, magic link, callback, proxy, sign
+out) and the app shell with navigation, on top of the domain rules and schema
+([PROMPT.md §11](PROMPT.md#11-build-order)).
 
 ## Run it locally
 
@@ -37,8 +38,14 @@ no RPC, no triggers except `updated_at`
 ([PROMPT.md §4.1](PROMPT.md#41-postgres-is-storage-not-logic)). The schema lives
 in `supabase/migrations/`.
 
-Nothing talks to the database yet. Auth (stage 3) needs a Supabase instance,
-local or hosted; `.env.example` lists the two variables the app reads.
+Auth needs a Supabase instance, local or hosted. Copy `.env.example` to
+`.env.local` and fill in the two variables.
+
+**Local Supabase** needs the [Supabase CLI](https://supabase.com/docs/guides/local-development)
+on the host (it drives Docker itself): `supabase start` boots Postgres + Auth
+and prints the URL and anon key; `supabase db reset` applies the migrations.
+Emails (magic links, confirmations) land in the Inbucket UI printed by
+`supabase status`. Sign-up works without email confirmation locally.
 
 ## Deploy
 

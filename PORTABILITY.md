@@ -6,10 +6,10 @@ only what is listed here. Keep this file current as the code grows.
 
 | What | Where | Change |
 |---|---|---|
-| Auth adapter | `lib/auth/` | Re-implement session lookup, sign-in and sign-out for the new provider. |
-| DB client factory | `lib/db/client.ts` | Return a client for the new driver (e.g. Drizzle over `postgres`). |
+| Auth adapter | `lib/auth/session.ts`, `lib/auth/adapter.ts`, `lib/auth/proxy.ts` | Re-implement `getUser`, sign-in/up, magic link, sign-out and the per-request session refresh for the new provider. `SessionUser` is the only type the rest of the app sees. |
+| DB client factory | `lib/db/client.ts`, `lib/db/env.ts` | Return a client for the new driver (e.g. Drizzle over `postgres`) and read its connection settings. |
 | Repositories | `lib/repositories/` | Rewrite the queries; method signatures stay, callers do not change. |
-| Auth callback & route protection | `app/auth/callback/route.ts`, `proxy.ts` | Swap to the new provider's flow. |
+| Auth callback & route protection | `app/auth/callback/route.ts`, `proxy.ts` | The callback calls `completeEmailLink`; `proxy.ts` calls `updateSession`. Swap what those adapters do, not the callers. |
 | `auth.users` foreign keys | `supabase/migrations/` | Every `user_id` references `auth.users(id)`; point it at the new users table. |
 | `auth.uid()` in RLS policies | `supabase/migrations/` | Replace with the new host's notion of the current user (e.g. `current_setting('app.user_id')::uuid`), or drop RLS — services already scope every query by `user_id`. |
 | Local stack & migration runner | `supabase/config.toml`, the Supabase CLI | Plain Postgres plus any migration runner; the SQL is standard Postgres. |
