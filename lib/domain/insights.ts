@@ -15,8 +15,18 @@ export interface Insight {
 
 const pct = (r: number) => `${Math.abs(Math.round(r * 100))}%`;
 
-export function monthInsight(current: PeriodMetrics, previous: PeriodMetrics | null): Insight | null {
-  const change = previous && previous.expenseCents > 0 && current.expenseCents > 0 ? ratio(current.expenseCents - previous.expenseCents, previous.expenseCents) : null;
+/** Fewer days than this and a comparison with last month says more about timing than about spending. */
+const MIN_COMPARABLE_DAY = 7;
+
+/**
+ * `previous` must cover the same span as `current`: the whole month, or up to
+ * `throughDay` when the month is in progress (the caller cuts it).
+ */
+export function monthInsight(current: PeriodMetrics, previous: PeriodMetrics | null, options: { throughDay?: number | null } = {}): Insight | null {
+  const throughDay = options.throughDay ?? null;
+  const comparable = throughDay === null || throughDay >= MIN_COMPARABLE_DAY;
+  const change =
+    comparable && previous && previous.expenseCents > 0 && current.expenseCents > 0 ? ratio(current.expenseCents - previous.expenseCents, previous.expenseCents) : null;
   const rate = current.savingsRate;
   const rateDetail =
     rate === null
@@ -26,7 +36,7 @@ export function monthInsight(current: PeriodMetrics, previous: PeriodMetrics | n
   if (change !== null && Math.abs(change) >= 0.01) {
     const down = change < 0;
     return {
-      headline: `Spending ${down ? "down" : "up"} ${pct(change)} vs last month`,
+      headline: `Spending ${down ? "down" : "up"} ${pct(change)} vs ${throughDay === null ? "last month" : `the same point last month`}`,
       detail: rateDetail ?? `${formatBRL(current.expenseCents)} so far`,
       ring: rate,
       tone: down ? "good" : "bad",

@@ -2,7 +2,7 @@
 // from one period's rows. Cash is the derived balance at the period's end;
 // with no cash account yet, runway is unknown, not zero.
 
-import { addMonths, periodEnd, periodOf, periodRange, periodStart, today as todayInSaoPaulo } from "@/lib/domain/dates";
+import { addMonths, parseIsoDate, periodEnd, periodOf, periodRange, periodStart, today as todayInSaoPaulo } from "@/lib/domain/dates";
 import {
   budgetFromCaps,
   budgetStatus,
@@ -45,8 +45,14 @@ export interface MonthSummary {
   dailySpend: { current: number[]; previous: number[] };
   /** The last six months, oldest first, against today's caps. */
   history: BudgetMonth[];
-  /** Change vs the previous month, `null` when that month has nothing to compare. */
-  delta: { income: number | null; expense: number | null };
+  /**
+   * Change vs the previous month, `null` when that month has nothing to compare.
+   * For the current month the previous one is cut at the same day (`throughDay`), so
+   * a half month is not compared with a whole one.
+   */
+  delta: { income: number | null; expense: number | null; throughDay: number | null };
+  /** Last month's metrics, cut the same way, for the insight. `null` when it has no entries. */
+  previous: PeriodMetrics | null;
 }
 
 const HISTORY_MONTHS = 6;
@@ -68,7 +74,11 @@ export async function monthSummary(
     repos.entries.list(userId, { from: periodStart(historyFrom), to: periodEnd(previousPeriod), kind: "expense", status: "settled" }),
     repos.entries.list(userId, { period: previousPeriod }),
   ]);
-  const previous = computeMetrics({ entries: previousAll, categories, recurrences: [], cashCents: null });
+  // A month in progress is compared with the previous one up to the same day.
+  const today = options.today ?? todayInSaoPaulo();
+  const throughDay = periodOf(today) === period ? parseIsoDate(today).day : null;
+  const previousEntries = throughDay === null ? previousAll : previousAll.filter((e) => parseIsoDate(e.date).day <= throughDay);
+  const previous = previousEntries.length > 0 ? computeMetrics({ entries: previousEntries, categories, recurrences: [], cashCents: null }) : null;
 
   const metrics = computeMetrics({ entries, categories, recurrences, cashCents });
   const byId = new Map<string, Category>(categories.map((c) => [c.id, c]));
@@ -109,9 +119,11 @@ export async function monthSummary(
     },
     history,
     delta: {
-      income: previous.incomeCents > 0 ? (metrics.incomeCents - previous.incomeCents) / previous.incomeCents : null,
-      expense: previous.expenseCents > 0 ? (metrics.expenseCents - previous.expenseCents) / previous.expenseCents : null,
+      income: previous && previous.incomeCents > 0 ? (metrics.incomeCents - previous.incomeCents) / previous.incomeCents : null,
+      expense: previous && previous.expenseCents > 0 ? (metrics.expenseCents - previous.expenseCents) / previous.expenseCents : null,
+      throughDay,
     },
+    previous,
   };
 }
 

@@ -19,9 +19,9 @@ import { pendingMonths, previewGeneration } from "@/lib/services/recurrences";
 import { monthSummary, yearSummary } from "@/lib/services/summary";
 
 /** "+5% vs last month · + R$ 100,00 planned", or whichever half exists; `—` is never faked as 0%. */
-function deltaHint(delta: number | null, plannedCents: number): string | undefined {
+function deltaHint(delta: number | null, plannedCents: number, throughDay: number | null): string | undefined {
   const parts: string[] = [];
-  if (delta !== null) parts.push(`${delta >= 0 ? "+" : "−"}${Math.abs(Math.round(delta * 100))}% vs last month`);
+  if (delta !== null) parts.push(`${delta >= 0 ? "+" : "−"}${Math.abs(Math.round(delta * 100))}% vs ${throughDay === null ? "last month" : `last month to day ${throughDay}`}`);
   if (plannedCents > 0) parts.push(`+ ${formatBRL(plannedCents)} planned`);
   return parts.length > 0 ? parts.join(" · ") : undefined;
 }
@@ -95,8 +95,8 @@ export default async function MonthPage(props: PageProps<"/review">) {
         />
 
         <section aria-label="Summary" className="grid grid-cols-2 gap-2 md:grid-cols-3">
-          <Stat label="Income" cents={m.incomeCents} tone="positive" hint={deltaHint(summary.delta.income, m.plannedIncomeCents)} href={`/entries?month=${month}&kind=income`} />
-          <Stat label="Expense" cents={m.expenseCents} tone="negative" hint={deltaHint(summary.delta.expense, m.plannedExpenseCents)} href={`/entries?month=${month}&kind=expense`} />
+          <Stat label="Income" cents={m.incomeCents} tone="positive" hint={deltaHint(summary.delta.income, m.plannedIncomeCents, summary.delta.throughDay)} href={`/entries?month=${month}&kind=income`} />
+          <Stat label="Expense" cents={m.expenseCents} tone="negative" hint={deltaHint(summary.delta.expense, m.plannedExpenseCents, summary.delta.throughDay)} href={`/entries?month=${month}&kind=expense`} />
           <Stat label="Contributions" cents={m.contributionsCents} href={`/entries?month=${month}&kind=moves`} />
           <Stat label="Leftover" cents={m.leftoverCents} tone="signed" hint="income − expense − contributions · all entries" href={`/entries?month=${month}`} />
           <Stat label="Savings rate" rate={m.savingsRate} tone="signed" />

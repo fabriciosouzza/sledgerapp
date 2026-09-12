@@ -49,3 +49,12 @@ describe("monthInsight", () => {
     expect(monthInsight(metrics({ expenseCents: 100_050, incomeCents: 200_000, savingsRate: 0.5 }), metrics({ expenseCents: 100_000 }))?.headline).toBe("You kept 50% of what came in");
   });
 });
+
+describe("monthInsight, month in progress", () => {
+  it("names the same point last month once the month is old enough, and stays quiet before that", () => {
+    const current = metrics({ expenseCents: 50_000, incomeCents: 500_000, savingsRate: 0.9 });
+    const previous = metrics({ expenseCents: 100_000 });
+    expect(monthInsight(current, previous, { throughDay: 12 })?.headline).toBe("Spending down 50% vs the same point last month");
+    expect(monthInsight(current, previous, { throughDay: 3 })?.headline).toBe("You kept 90% of what came in");
+  });
+});

@@ -2,9 +2,9 @@
 // right now". Composes the other services; the only new rule is the insight.
 
 import { isCreditCard } from "@/lib/domain/accounts";
-import { addDays, addMonths, periodOf } from "@/lib/domain/dates";
+import { addDays, periodOf } from "@/lib/domain/dates";
 import { monthInsight, type Insight } from "@/lib/domain/insights";
-import { computeMetrics, entryTiming, type PeriodMetrics } from "@/lib/domain/metrics";
+import { entryTiming, type PeriodMetrics } from "@/lib/domain/metrics";
 import type { NetWorthPoint } from "@/lib/domain/netWorth";
 import type { Account, Entry, IsoDate, Period } from "@/lib/domain/types";
 import type { Repositories } from "@/lib/repositories";
@@ -46,19 +46,14 @@ const UPCOMING_DAYS = 7;
 
 export async function todayOverview(repos: Repositories, userId: string, today: IsoDate): Promise<TodayOverview> {
   const period = periodOf(today);
-  const previousPeriod = addMonths(period, -1);
   const netWorth = await netWorthOverview(repos, userId, today);
-  const [summary, previousEntries, planned, cards, generation, categories] = await Promise.all([
+  const [summary, planned, cards, generation] = await Promise.all([
     monthSummary(repos, userId, period, { today, cashCents: netWorth.cashCents }),
-    repos.entries.list(userId, { period: previousPeriod }),
     // Planned rows only: whatever is still due, however old, plus the next days.
     repos.entries.list(userId, { status: "planned", to: addDays(today, UPCOMING_DAYS) }),
     cardsOverview(repos, userId, today, { ensure: "open" }),
     pendingMonths(repos, userId, today),
-    repos.categories.list(userId),
   ]);
-
-  const previous = previousEntries.length > 0 ? computeMetrics({ entries: previousEntries, categories, recurrences: [], cashCents: null }) : null;
   // Card purchases are paid through their statement, never one by one (§5.6).
   const cardIds = new Set(netWorth.accounts.filter(isCreditCard).map((a) => a.id));
   const toSettle = planned.filter((e) => !cardIds.has(e.accountId));
@@ -75,7 +70,7 @@ export async function todayOverview(repos: Repositories, userId: string, today: 
     statementsDue: cards.toPay,
     dueTodayIds: upcoming.filter((e) => e.date === today).map((e) => e.id),
     metrics: summary.metrics,
-    insight: monthInsight(summary.metrics, previous),
+    insight: monthInsight(summary.metrics, summary.previous, { throughDay: summary.delta.throughDay }),
     accounts: netWorth.balances
       .filter((b) => b.account.isActive)
       .sort((a, b) => Number(b.balanceCents !== null && b.balanceCents !== 0) - Number(a.balanceCents !== null && a.balanceCents !== 0)),
