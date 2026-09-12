@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { computeMetrics } from "@/lib/domain/metrics";
-import { assetInputSchema, movementInputSchema } from "@/lib/schemas/assets";
-import { addMovement, createAsset, deleteAsset, deleteMovement, portfolioOverview } from "../portfolio";
+import { assetInputSchema, movementInputSchema, movementUpdateSchema } from "@/lib/schemas/assets";
+import { addMovement, createAsset, deleteAsset, deleteMovement, portfolioOverview, updateMovement } from "../portfolio";
 import { seedUserIfEmpty } from "../seed";
 import { fakeRepositories, type FakeRepositories } from "./fakes";
 
@@ -76,6 +76,16 @@ describe("portfolioOverview", () => {
     expect(overview.assets.map((a) => a.asset.name)).toEqual(["CDB 110%", "BTC"]);
     expect(overview.series.map((p) => p.period)).toEqual(["2026-09", "2026-10", "2026-11"]);
     expect(overview.series[2]).toEqual({ period: "2026-11", contributedCents: 150_000, earnedCents: -6_800 });
+  });
+});
+
+describe("updateMovement", () => {
+  it("edits amount and date, and the paired entry follows", async () => {
+    const movement = await addMovement(repos, U, move({ kind: "contribution", amountCents: "1.000,00", fromAccountId: checking, brokerageAccountId: broker }));
+    const updated = await updateMovement(repos, U, movementUpdateSchema.parse({ id: movement.id, kind: "contribution", date: "2026-11-20", amountCents: "1.250,00" }));
+    expect(updated).toMatchObject({ amountCents: 125_000, date: "2026-11-20" });
+    expect(await repos.entries.getById(U, movement.entryId!)).toMatchObject({ amountCents: 125_000, date: "2026-11-20", settledOn: "2026-11-20" });
+    await expect(updateMovement(repos, U, movementUpdateSchema.parse({ id: movement.id, kind: "yield", date: "2026-11-20", amountCents: "1,00" }))).rejects.toMatchObject({ code: "invalid" });
   });
 });
 

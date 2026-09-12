@@ -37,8 +37,10 @@ export default async function MonthPage(props: PageProps<"/review">) {
   const { userId, repos } = await getContext();
 
   if (view !== "month") {
-    const from = view === "year" ? toPeriodString(year, 1) : addMonths(month, -11);
-    const to = view === "year" ? toPeriodString(year, 12) : month;
+    // "12 months" is always the current month and the eleven before it.
+    const current = periodOf(now);
+    const from = view === "year" ? toPeriodString(year, 1) : addMonths(current, -11);
+    const to = view === "year" ? toPeriodString(year, 12) : current;
     const summary = await yearSummary(repos, userId, from, to);
     return (
       <>
@@ -48,8 +50,8 @@ export default async function MonthPage(props: PageProps<"/review">) {
           <YearView
             summary={summary}
             title={view === "year" ? String(year) : "Last 12 months"}
-            prevHref={view === "year" ? `/review?view=year&month=${toPeriodString(year - 1, 1)}` : `/review?view=rolling&month=${addMonths(month, -12)}`}
-            nextHref={view === "year" ? `/review?view=year&month=${toPeriodString(year + 1, 1)}` : `/review?view=rolling&month=${addMonths(month, 12)}`}
+            prevHref={view === "year" ? `/review?view=year&month=${toPeriodString(year - 1, 1)}` : undefined}
+            nextHref={view === "year" ? `/review?view=year&month=${toPeriodString(year + 1, 1)}` : undefined}
           />
         </div>
       </>

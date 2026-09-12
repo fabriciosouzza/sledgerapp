@@ -45,3 +45,20 @@ export const movementInputSchema = z
   });
 
 export type MovementInput = z.infer<typeof movementInputSchema>;
+
+/** An edit keeps the asset and the pairing; only what happened may change. */
+export const movementUpdateSchema = z
+  .object({
+    id: requiredText("Movement", 36),
+    kind: movementKindSchema,
+    date: isoDateField,
+    amountCents: signedCents,
+    notes: optionalText(500),
+  })
+  .superRefine((m, ctx) => {
+    if (m.kind !== "market_adjustment" && m.amountCents < 0) {
+      ctx.addIssue({ code: "custom", path: ["amountCents"], message: "Only a market adjustment can be negative." });
+    }
+  });
+
+export type MovementUpdate = z.infer<typeof movementUpdateSchema>;

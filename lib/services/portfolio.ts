@@ -6,7 +6,7 @@ import { addMonths, periodOf } from "@/lib/domain/dates";
 import { balanceByClass, portfolioSeries, summarize, type PortfolioPoint, type PortfolioSummary } from "@/lib/domain/portfolio";
 import type { Asset, AssetClass, AssetMovement, IsoDate } from "@/lib/domain/types";
 import type { Repositories } from "@/lib/repositories";
-import type { AssetInput, MovementInput } from "@/lib/schemas/assets";
+import type { AssetInput, MovementInput, MovementUpdate } from "@/lib/schemas/assets";
 import { ServiceError } from "./errors";
 
 export interface AssetLine {
@@ -127,6 +127,22 @@ export async function addMovement(repos: Repositories, userId: string, input: Mo
     entryId,
     notes: input.notes,
   });
+}
+
+export async function getMovement(repos: Repositories, userId: string, id: string): Promise<AssetMovement> {
+  const movement = await repos.movements.getById(userId, id);
+  if (!movement) throw new ServiceError("not_found", "Movement not found.");
+  return movement;
+}
+
+/** Edits what happened; a paired cash entry follows the amount and the date. */
+export async function updateMovement(repos: Repositories, userId: string, input: MovementUpdate): Promise<AssetMovement> {
+  const current = await getMovement(repos, userId, input.id);
+  if (current.entryId !== null) {
+    if (input.kind !== "contribution") throw new ServiceError("invalid", "A movement paired with a cash entry stays a contribution; delete it to change that.");
+    await repos.entries.update(userId, current.entryId, { amountCents: input.amountCents, date: input.date, settledOn: input.date, notes: input.notes });
+  }
+  return repos.movements.update(userId, input.id, { kind: input.kind, date: input.date, amountCents: input.amountCents, notes: input.notes });
 }
 
 /** Removes the movement and, for a paired contribution, the cash entry it created. */

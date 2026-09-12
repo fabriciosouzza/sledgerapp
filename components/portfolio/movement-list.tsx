@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
-import { Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteMovementAction } from "@/app/(app)/portfolio/actions";
 import { ConfirmDialog } from "@/components/forms/confirm-dialog";
@@ -36,6 +37,9 @@ export function MovementList({ movements }: { movements: AssetMovement[] }) {
               {signed > 0 ? "+" : ""}
               {formatBRL(signed)}
             </span>
+            <Link href={`/portfolio/movements/${m.id}`} aria-label="Edit movement" className="flex size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring">
+              <Pencil className="size-4" aria-hidden />
+            </Link>
             <ConfirmDialog
               trigger={
                 <Button variant="ghost" size="icon-lg" aria-label="Delete movement" className="size-11 text-muted-foreground">

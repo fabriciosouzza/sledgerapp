@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { addMovementAction } from "@/app/(app)/portfolio/actions";
+import { addMovementAction, updateMovementAction } from "@/app/(app)/portfolio/actions";
 import { CurrencyInput } from "@/components/forms/currency-input";
 import { Field } from "@/components/forms/field";
 import { DatePicker } from "@/components/forms/date-picker";
@@ -14,24 +14,28 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { MOVEMENT_KINDS } from "@/lib/domain/assets";
-import type { Account, Asset, MovementKind } from "@/lib/domain/types";
+import type { Account, Asset, AssetMovement, MovementKind } from "@/lib/domain/types";
 
 export function MovementForm({
   assets,
   accounts,
   today,
   defaultAssetId,
+  movement,
 }: {
   assets: Asset[];
   accounts: Account[];
   today: string;
   defaultAssetId?: string;
+  /** Present when editing. */
+  movement?: AssetMovement;
 }) {
+  const editing = movement !== undefined;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string>();
-  const [kind, setKind] = useState<MovementKind>("contribution");
-  const [negative, setNegative] = useState(false);
+  const [kind, setKind] = useState<MovementKind>(movement?.kind ?? "contribution");
+  const [negative, setNegative] = useState((movement?.amountCents ?? 0) < 0);
   const [pair, setPair] = useState(true);
   const [cents, setCents] = useState<number | null>(null);
 
@@ -50,7 +54,7 @@ export function MovementForm({
     }
     setError(undefined);
     startTransition(async () => {
-      const result = await addMovementAction(formData);
+      const result = editing ? await updateMovementAction(formData) : await addMovementAction(formData);
       if (!result.ok) return setError(result.error);
       toast.success("Movement saved");
       router.push(`/portfolio/${result.assetId}`);
@@ -60,9 +64,10 @@ export function MovementForm({
   return (
     <form onSubmit={onSubmit} className="space-y-5">
       <FormError message={error} />
+      {movement && <input type="hidden" name="id" value={movement.id} />}
 
       <Field label="Asset" htmlFor="assetId">
-        <NativeSelect id="assetId" name="assetId" defaultValue={defaultAssetId ?? assets[0]?.id} required className="w-full [&>select]:h-11">
+        <NativeSelect id="assetId" name="assetId" defaultValue={movement?.assetId ?? defaultAssetId ?? assets[0]?.id} required disabled={editing} className="w-full [&>select]:h-11">
           {assets.map((a) => (
             <NativeSelectOption key={a.id} value={a.id}>
               {a.name}
@@ -72,7 +77,7 @@ export function MovementForm({
       </Field>
 
       <Field label="Kind" htmlFor="kind" hint={hint}>
-        <NativeSelect id="kind" name="kind" value={kind} onChange={(e) => setKind(e.target.value as MovementKind)} className="w-full [&>select]:h-11" aria-describedby="kind-hint">
+        <NativeSelect id="kind" name="kind" value={kind} onChange={(e) => setKind(e.target.value as MovementKind)} disabled={editing && movement.entryId !== null} className="w-full [&>select]:h-11" aria-describedby="kind-hint">
           {MOVEMENT_KINDS.map((k) => (
             <NativeSelectOption key={k.value} value={k.value}>
               {k.label}
@@ -83,10 +88,10 @@ export function MovementForm({
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Amount" htmlFor="amountCents">
-          <CurrencyInput id="amountCents" name="amountCents" required autoFocus onCentsChange={setCents} className="h-11" />
+          <CurrencyInput id="amountCents" name="amountCents" required autoFocus defaultCents={movement ? Math.abs(movement.amountCents) : null} onCentsChange={setCents} className="h-11" />
         </Field>
         <Field label="Date" htmlFor="date">
-          <DatePicker id="date" name="date" required defaultValue={today} />
+          <DatePicker id="date" name="date" required defaultValue={movement?.date ?? today} />
         </Field>
       </div>
 
@@ -100,7 +105,7 @@ export function MovementForm({
         </div>
       )}
 
-      {kind === "contribution" && (
+      {kind === "contribution" && !editing && (
         <div className="space-y-3 rounded-xl bg-muted/40 p-4">
           <div className="flex min-h-11 items-center justify-between gap-3">
             <div>
@@ -135,11 +140,11 @@ export function MovementForm({
       )}
 
       <Field label="Notes" htmlFor="notes" hint="Optional.">
-        <Textarea id="notes" name="notes" rows={2} maxLength={500} aria-describedby="notes-hint" />
+        <Textarea id="notes" name="notes" rows={2} maxLength={500} defaultValue={movement?.notes ?? ""} aria-describedby="notes-hint" />
       </Field>
 
       <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={pending}>
-        {pending ? "Saving…" : "Save movement"}
+        {pending ? "Saving…" : editing ? "Save changes" : "Save movement"}
       </Button>
     </form>
   );
