@@ -34,7 +34,7 @@ export function AccountStrip({ accounts, cards }: { accounts: AccountTile[]; car
 function CashTile({ account: { account, balanceCents } }: { account: AccountTile }) {
   return (
     <Link
-      href="/net-worth"
+      href={`/accounts/${account.id}`}
       className="block h-24 w-36 rounded-xl bg-card p-3 ring-1 ring-foreground/10 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring"
     >
       <p className="truncate text-xs text-muted-foreground">{account.name}</p>

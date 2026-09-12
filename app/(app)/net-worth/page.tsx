@@ -46,7 +46,7 @@ export default async function NetWorthPage() {
               {active.map(({ account, balanceCents }) => (
                 <li key={account.id}>
                   <Link
-                    href={`/settings/accounts/${account.id}`}
+                    href={`/accounts/${account.id}`}
                     className="flex min-h-14 items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring"
                   >
                     <span className="min-w-0 flex-1">

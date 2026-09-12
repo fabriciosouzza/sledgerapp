@@ -23,13 +23,16 @@ export default async function EntriesPage(props: PageProps<"/entries">) {
   const sp = await props.searchParams;
   const now = today();
   const month = isPeriod(str(sp.month)) ? str(sp.month) : periodOf(now);
-  const kind = KINDS.find((k) => k === str(sp.kind));
+  const kindParam = str(sp.kind);
+  const kind = KINDS.find((k) => k === kindParam);
+  const moves = kindParam === "moves";
   const status = STATUSES.find((s) => s === str(sp.status));
-  const values = { month, kind: kind ?? "", status: status ?? "", account: str(sp.account), category: str(sp.category), q: str(sp.q).trim() };
+  const values = { month, kind: moves ? "moves" : (kind ?? ""), status: status ?? "", account: str(sp.account), category: str(sp.category), q: str(sp.q).trim() };
 
   const { userId, repos } = await getContext();
   const filters = {
     kind,
+    kinds: moves ? (["transfer", "contribution"] as EntryKind[]) : undefined,
     status,
     accountId: values.account || undefined,
     categoryId: values.category || undefined,

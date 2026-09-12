@@ -16,6 +16,8 @@ export interface EntryFilters {
   settledFrom?: IsoDate;
   settledTo?: IsoDate;
   kind?: EntryKind;
+  /** Any of these kinds (used by the "Moves" tab: transfers and contributions). */
+  kinds?: EntryKind[];
   status?: EntryStatus;
   accountId?: string;
   /** Entries where the account is either side (source or counter). */
@@ -107,6 +109,7 @@ export function supabaseEntriesRepo(db: DbClient): EntriesRepo {
       if (filters.settledFrom) q = q.gte("settled_on", filters.settledFrom);
       if (filters.settledTo) q = q.lte("settled_on", filters.settledTo);
       if (filters.kind) q = q.eq("kind", filters.kind);
+      if (filters.kinds && filters.kinds.length > 0) q = q.in("kind", filters.kinds);
       if (filters.status) q = q.eq("status", filters.status);
       if (filters.accountId) q = q.eq("account_id", filters.accountId);
       if (filters.touchingAccountIds && filters.touchingAccountIds.length > 0) {

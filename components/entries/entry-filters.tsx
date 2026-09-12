@@ -24,6 +24,7 @@ const TABS = [
   { value: "", label: "All" },
   { value: "expense", label: "Spending" },
   { value: "income", label: "Income" },
+  { value: "moves", label: "Moves" },
 ] as const;
 
 /** Month + search on top, kind as tabs, the rest behind a sheet (DESIGN.md §3, §11). The form submits with GET. */
@@ -47,7 +48,6 @@ export function EntryFilters({
   // Draft values inside the sheet; committed on Apply.
   const [draft, setDraft] = useState({ status, account, category });
   const extraCount = [status, account, category].filter(Boolean).length;
-  const kindIsTab = TABS.some((t) => t.value === kind);
 
   function submitSoon() {
     // Let React flush the hidden inputs before the form serialises.
@@ -107,7 +107,7 @@ export function EntryFilters({
                 submitSoon();
               }}
               className={cn(
-                "h-9 flex-1 rounded-md text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
+                "h-9 flex-1 rounded-md px-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring sm:text-sm",
                 kind === tab.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -122,7 +122,7 @@ export function EntryFilters({
             if (o) setDraft({ status, account, category });
           }}
         >
-          <SheetTrigger render={<Button type="button" variant={extraCount > 0 || !kindIsTab ? "secondary" : "outline"} className="h-11 shrink-0" aria-label="More filters" />}>
+          <SheetTrigger render={<Button type="button" variant={extraCount > 0 ? "secondary" : "outline"} className="h-11 shrink-0" aria-label="More filters" />}>
             <SlidersHorizontal data-icon="inline-start" aria-hidden />
             {extraCount > 0 ? extraCount : "Filters"}
           </SheetTrigger>
@@ -131,17 +131,6 @@ export function EntryFilters({
               <SheetTitle>Filters</SheetTitle>
             </SheetHeader>
             <SheetBody className="space-y-4 pt-4">
-              {!kindIsTab && (
-                <Field label="Kind" htmlFor="f-kind">
-                  <NativeSelect id="f-kind" value={kind} onChange={(e) => setKind(e.target.value)} className="w-full [&>select]:h-11">
-                    <NativeSelectOption value="">Any kind</NativeSelectOption>
-                    <NativeSelectOption value="expense">Expense</NativeSelectOption>
-                    <NativeSelectOption value="income">Income</NativeSelectOption>
-                    <NativeSelectOption value="transfer">Transfer</NativeSelectOption>
-                    <NativeSelectOption value="contribution">Contribution</NativeSelectOption>
-                  </NativeSelect>
-                </Field>
-              )}
               <Field label="Status" htmlFor="f-status">
                 <NativeSelect id="f-status" value={draft.status} onChange={(e) => setDraft({ ...draft, status: e.target.value })} className="w-full [&>select]:h-11">
                   <NativeSelectOption value="">Any status</NativeSelectOption>
@@ -169,18 +158,6 @@ export function EntryFilters({
                   ))}
                 </NativeSelect>
               </Field>
-              {kindIsTab && (
-                <p className="text-xs text-muted-foreground">
-                  Transfers and contributions:{" "}
-                  <button type="button" className="underline" onClick={() => setKind("transfer")}>
-                    transfers
-                  </button>{" "}
-                  ·{" "}
-                  <button type="button" className="underline" onClick={() => setKind("contribution")}>
-                    contributions
-                  </button>
-                </p>
-              )}
             </SheetBody>
             <SheetFooter>
               <Button type="button" className="h-11 md:h-8" onClick={apply}>

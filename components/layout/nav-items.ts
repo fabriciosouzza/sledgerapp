@@ -26,7 +26,7 @@ export const MORE_ITEMS: { href: "/entries" | "/cards" | "/recurrences" | "/net-
 ];
 
 /** Screens reachable from "More" that share its highlighted nav item. */
-export const MORE_PATHS = ["/more", "/entries", "/cards", "/recurrences", "/net-worth", "/settings", "/guide"];
+export const MORE_PATHS = ["/more", "/entries", "/cards", "/recurrences", "/net-worth", "/settings", "/guide", "/accounts"];
 
 export function isNavActive(href: NavItem["href"], pathname: string): boolean {
   if (href === "/more") return MORE_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));

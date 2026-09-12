@@ -95,7 +95,7 @@ export default async function MonthPage(props: PageProps<"/review">) {
         <section aria-label="Summary" className="grid grid-cols-2 gap-2 md:grid-cols-3">
           <Stat label="Income" cents={m.incomeCents} tone="positive" hint={deltaHint(summary.delta.income, m.plannedIncomeCents)} href={`/entries?month=${month}&kind=income`} />
           <Stat label="Expense" cents={m.expenseCents} tone="negative" hint={deltaHint(summary.delta.expense, m.plannedExpenseCents)} href={`/entries?month=${month}&kind=expense`} />
-          <Stat label="Contributions" cents={m.contributionsCents} href={`/entries?month=${month}&kind=contribution`} />
+          <Stat label="Contributions" cents={m.contributionsCents} href={`/entries?month=${month}&kind=moves`} />
           <Stat label="Leftover" cents={m.leftoverCents} tone="signed" hint="income − expense − contributions · all entries" href={`/entries?month=${month}`} />
           <Stat label="Savings rate" rate={m.savingsRate} tone="signed" />
           <Stat label="Savings rate ex-benefits" rate={m.savingsRateExBenefits} tone="signed" hint={m.benefitsCents ? `benefits ${formatBRL(m.benefitsCents)}` : undefined} />

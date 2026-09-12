@@ -122,7 +122,7 @@ export default async function TodayPage() {
               label="Due in 7 days"
               cents={overview.dueSoonCents}
               tone={overview.dueSoonCents > 0 ? "negative" : "neutral"}
-              href={`/entries?month=${overview.period}&status=planned`}
+              href="#upcoming"
             />
             <Stat
               label="Leftover this month"
@@ -160,7 +160,7 @@ export default async function TodayPage() {
             />
           </OverdueBlock>
 
-          <section aria-label="Upcoming">
+          <section aria-label="Upcoming" id="upcoming" className="scroll-mt-4">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="text-sm font-semibold">Next 7 days</h2>
               <Link
