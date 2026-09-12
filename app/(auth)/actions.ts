@@ -7,6 +7,24 @@ import { credentialsSchema, magicLinkSchema } from "@/lib/schemas/auth";
 import { getRepositories } from "@/lib/services/context";
 import { seedUserIfEmpty } from "@/lib/services/seed";
 
+/**
+ * Seeds a first-time user (§10). Never blocks the sign-in: the user is in
+ * either way, and the empty states offer the starting set again.
+ */
+async function seedAfterSignIn(userId: string | null): Promise<void> {
+  if (!userId) return;
+  const repos = await getRepositories();
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      await seedUserIfEmpty(repos, userId);
+      return;
+    } catch (error) {
+      console.error(`seed after sign-in failed (attempt ${attempt})`, error);
+      await new Promise((resolve) => setTimeout(resolve, 150));
+    }
+  }
+}
+
 export interface AuthFormState {
   error?: string;
   message?: string;
@@ -33,7 +51,7 @@ export async function signInAction(_prev: AuthFormState, formData: FormData): Pr
   const result = await signInWithPassword(parsed.data.email, parsed.data.password);
   if (!result.ok) return { error: result.error, email };
 
-  if (result.userId) await seedUserIfEmpty(await getRepositories(), result.userId);
+  await seedAfterSignIn(result.userId);
   redirect(nextPath(formData));
 }
 
@@ -49,7 +67,7 @@ export async function signUpAction(_prev: AuthFormState, formData: FormData): Pr
   // Confirmation off (local default): signed in already. On: a link was sent.
   const signedIn = await signInWithPassword(parsed.data.email, parsed.data.password);
   if (signedIn.ok) {
-    if (signedIn.userId) await seedUserIfEmpty(await getRepositories(), signedIn.userId);
+    await seedAfterSignIn(signedIn.userId);
     redirect(next);
   }
   return { message: "Account created. Check your email to confirm it.", email };

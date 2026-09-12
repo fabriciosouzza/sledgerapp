@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { EntryForm } from "@/components/entries/entry-form";
 import { PageHeader } from "@/components/layout/page-header";
+import { SeedButton } from "@/components/settings/seed-button";
 import { Button } from "@/components/ui/button";
 import { today } from "@/lib/domain/dates";
 import { listAccounts } from "@/lib/services/accounts";
@@ -19,9 +20,12 @@ export default async function AddPage() {
         <PageHeader title="Add" />
         <div className="rounded-xl border border-dashed border-border p-6 text-center">
           <p className="text-sm text-muted-foreground">An entry needs an account. Add one first.</p>
-          <Button render={<Link href="/settings/accounts/new" />} nativeButton={false} className="mt-4 h-11">
-            Add account
-          </Button>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Button render={<Link href="/settings/accounts/new" />} nativeButton={false} className="h-11">
+              Add account
+            </Button>
+            <SeedButton />
+          </div>
         </div>
       </>
     );

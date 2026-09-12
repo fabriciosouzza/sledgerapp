@@ -72,8 +72,8 @@ export function supabaseCategoriesRepo(db: DbClient): CategoriesRepo {
     },
 
     async count(userId) {
-      const { count, error } = await db.from("categories").select("id", { count: "exact", head: true }).eq("user_id", userId);
-      if (error) throw fromPostgres(error);
+      const { count, error, status, statusText } = await db.from("categories").select("id", { count: "exact", head: true }).eq("user_id", userId);
+      if (error) throw fromPostgres(error, { status, statusText });
       return count ?? 0;
     },
 

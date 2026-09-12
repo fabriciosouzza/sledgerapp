@@ -70,8 +70,8 @@ export function supabaseAccountsRepo(db: DbClient): AccountsRepo {
     },
 
     async count(userId) {
-      const { count, error } = await db.from("accounts").select("id", { count: "exact", head: true }).eq("user_id", userId);
-      if (error) throw fromPostgres(error);
+      const { count, error, status, statusText } = await db.from("accounts").select("id", { count: "exact", head: true }).eq("user_id", userId);
+      if (error) throw fromPostgres(error, { status, statusText });
       return count ?? 0;
     },
 

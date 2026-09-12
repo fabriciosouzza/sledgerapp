@@ -47,13 +47,18 @@ export const SEED_CATEGORIES: NewCategory[] = [
   sortOrder: i,
 }));
 
-/** Seeds accounts and categories when the user has none. Safe to call on every sign-in. */
+/**
+ * Seeds accounts and categories when the user has none. Safe to call on every
+ * sign-in. Sequential on purpose: the first queries after a sign-in share a
+ * session that was just created, and firing them concurrently has produced
+ * spurious 401s.
+ */
 export async function seedUserIfEmpty(repos: Repositories, userId: string): Promise<{ seeded: boolean }> {
-  const [accounts, categories] = await Promise.all([repos.accounts.count(userId), repos.categories.count(userId)]);
-  if (accounts > 0 || categories > 0) return { seeded: false };
-  await Promise.all([
-    repos.accounts.insertMany(userId, SEED_ACCOUNTS),
-    repos.categories.insertMany(userId, SEED_CATEGORIES),
-  ]);
+  const accounts = await repos.accounts.count(userId);
+  if (accounts > 0) return { seeded: false };
+  const categories = await repos.categories.count(userId);
+  if (categories > 0) return { seeded: false };
+  await repos.accounts.insertMany(userId, SEED_ACCOUNTS);
+  await repos.categories.insertMany(userId, SEED_CATEGORIES);
   return { seeded: true };
 }

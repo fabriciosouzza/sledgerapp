@@ -9,7 +9,7 @@ export default async function LoginPage(props: PageProps<"/login">) {
   const next = typeof searchParams.next === "string" ? searchParams.next : "/";
 
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-6 px-4 py-12">
+    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col gap-6 px-4 pt-[14vh] pb-12">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight">sledger</h1>
         <p className="text-sm text-muted-foreground">Sign in to your ledger.</p>

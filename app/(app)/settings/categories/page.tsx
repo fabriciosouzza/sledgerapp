@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight, CornerDownRight, Plus } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
+import { SeedButton } from "@/components/settings/seed-button";
 import { Button } from "@/components/ui/button";
 import { formatBRL } from "@/lib/domain/money";
 import { listCategories } from "@/lib/services/categories";
@@ -25,9 +26,12 @@ export default async function CategoriesPage() {
       {categories.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border p-6 text-center">
           <p className="text-sm text-muted-foreground">No categories yet. Every income and expense needs one.</p>
-          <Button render={<Link href="/settings/categories/new" />} nativeButton={false} className="mt-4 h-11">
-            Add category
-          </Button>
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            <Button render={<Link href="/settings/categories/new" />} nativeButton={false} className="h-11">
+              Add category
+            </Button>
+            <SeedButton />
+          </div>
         </div>
       ) : (
         <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight, Plus } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
+import { SeedButton } from "@/components/settings/seed-button";
 import { Button } from "@/components/ui/button";
 import { accountTypeLabel, isCreditCard } from "@/lib/domain/accounts";
 import { formatBRL } from "@/lib/domain/money";
@@ -75,9 +76,12 @@ function EmptyAccounts() {
   return (
     <div className="rounded-xl border border-dashed border-border p-6 text-center">
       <p className="text-sm text-muted-foreground">No accounts yet. Add a checking account or a credit card to start.</p>
-      <Button render={<Link href="/settings/accounts/new" />} nativeButton={false} className="mt-4 h-11">
-        Add account
-      </Button>
+      <div className="mt-4 flex flex-wrap justify-center gap-2">
+        <Button render={<Link href="/settings/accounts/new" />} nativeButton={false} className="h-11">
+          Add account
+        </Button>
+        <SeedButton />
+      </div>
     </div>
   );
 }

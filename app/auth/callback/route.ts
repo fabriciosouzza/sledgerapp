@@ -17,8 +17,10 @@ export async function GET(request: NextRequest) {
   const result = await completeEmailLink(params);
   if (!result.ok) return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(result.error)}`);
 
-  // A magic link may be the user's first sign-in (§10).
-  if (result.userId) await seedUserIfEmpty(await getRepositories(), result.userId);
+  // A magic link may be the user's first sign-in (§10). Never blocks it.
+  if (result.userId) {
+    await seedUserIfEmpty(await getRepositories(), result.userId).catch((error: unknown) => console.error("seed after callback failed", error));
+  }
 
   return NextResponse.redirect(`${origin}${next}`);
 }
