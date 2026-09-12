@@ -32,4 +32,7 @@ npm: ## Any npm command: make npm args="install zod"
 sh: ## Shell in the node container
 	$(RUN) bash
 
-.PHONY: help dev install test typecheck lint check build npm sh
+dev-user: ## Create the local test user (dev@sledger.local / sledger-dev-1234); needs `supabase start`
+	@./scripts/dev-user.sh
+
+.PHONY: help dev install test typecheck lint check build npm sh dev-user

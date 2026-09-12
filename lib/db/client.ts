@@ -4,22 +4,26 @@
 import { createServerClient } from "@supabase/ssr";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
+import { cache } from "react";
+import type { Database } from "./database.types";
 import { supabaseEnv } from "./env";
 
-export type DbClient = SupabaseClient;
+export type DbClient = SupabaseClient<Database>;
 
 /**
- * A client bound to the current request's cookies. Create one per request —
- * never share across requests. Cookie writes fail silently inside Server
- * Components (they cannot set headers); the proxy refreshes sessions instead.
+ * The client bound to the current request's cookies. `cache` makes every call
+ * within one request share the same instance, so a sign-in and the queries
+ * that follow it see the same session; a new request gets a new client.
+ * Cookie writes fail silently inside Server Components (they cannot set
+ * headers); the proxy refreshes sessions instead.
  */
-export async function createClient(): Promise<DbClient> {
+export const createClient = cache(async (): Promise<DbClient> => {
   // Cookies first: reading them marks the render dynamic, so a build without
   // env vars does not try to prerender screens that need a session.
   const cookieStore = await cookies();
   const { url, anonKey } = supabaseEnv();
 
-  return createServerClient(url, anonKey, {
+  return createServerClient<Database>(url, anonKey, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
@@ -35,4 +39,4 @@ export async function createClient(): Promise<DbClient> {
       },
     },
   });
-}
+});

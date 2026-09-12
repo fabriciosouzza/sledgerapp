@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { completeEmailLink } from "@/lib/auth/adapter";
+import { getRepositories } from "@/lib/services/context";
+import { seedUserIfEmpty } from "@/lib/services/seed";
 
 /** Where email links land: magic link, sign-up confirmation, recovery. */
 export async function GET(request: NextRequest) {
@@ -14,6 +16,9 @@ export async function GET(request: NextRequest) {
 
   const result = await completeEmailLink(params);
   if (!result.ok) return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(result.error)}`);
+
+  // A magic link may be the user's first sign-in (§10).
+  if (result.userId) await seedUserIfEmpty(await getRepositories(), result.userId);
 
   return NextResponse.redirect(`${origin}${next}`);
 }

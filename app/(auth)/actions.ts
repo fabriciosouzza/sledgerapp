@@ -4,6 +4,8 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { sendMagicLink, signInWithPassword, signOut as signOutAdapter, signUp } from "@/lib/auth/adapter";
 import { credentialsSchema, magicLinkSchema } from "@/lib/schemas/auth";
+import { getRepositories } from "@/lib/services/context";
+import { seedUserIfEmpty } from "@/lib/services/seed";
 
 export interface AuthFormState {
   error?: string;
@@ -31,6 +33,7 @@ export async function signInAction(_prev: AuthFormState, formData: FormData): Pr
   const result = await signInWithPassword(parsed.data.email, parsed.data.password);
   if (!result.ok) return { error: result.error, email };
 
+  if (result.userId) await seedUserIfEmpty(await getRepositories(), result.userId);
   redirect(nextPath(formData));
 }
 
@@ -45,7 +48,10 @@ export async function signUpAction(_prev: AuthFormState, formData: FormData): Pr
 
   // Confirmation off (local default): signed in already. On: a link was sent.
   const signedIn = await signInWithPassword(parsed.data.email, parsed.data.password);
-  if (signedIn.ok) redirect(next);
+  if (signedIn.ok) {
+    if (signedIn.userId) await seedUserIfEmpty(await getRepositories(), signedIn.userId);
+    redirect(next);
+  }
   return { message: "Account created. Check your email to confirm it.", email };
 }
 

@@ -4,9 +4,9 @@ Simple ledger — a personal finance app used on a phone, once a week. The build
 specification this project was created from is [PROMPT.md](PROMPT.md); read it
 before changing anything.
 
-**Status:** stage 3 of 13 — auth (login, magic link, callback, proxy, sign
-out) and the app shell with navigation, on top of the domain rules and schema
-([PROMPT.md §11](PROMPT.md#11-build-order)).
+**Status:** stage 4 of 13 — accounts and categories (repositories, services,
+`/settings`) and the starting seed, on top of auth, the app shell, the domain
+rules and the schema ([PROMPT.md §11](PROMPT.md#11-build-order)).
 
 ## Run it locally
 
@@ -30,6 +30,7 @@ All run inside the container; `make help` lists them.
 | `make build` | `next build` |
 | `make npm args="install zod"` | any npm command |
 | `make sh` | shell in the container |
+| `make dev-user` | create the local test user (needs `supabase start`) |
 
 ## Database
 
@@ -46,6 +47,20 @@ on the host (it drives Docker itself): `supabase start` boots Postgres + Auth
 and prints the URL and anon key; `supabase db reset` applies the migrations.
 Emails (magic links, confirmations) land in the Inbucket UI printed by
 `supabase status`. Sign-up works without email confirmation locally.
+
+Because the app runs in Docker, `NEXT_PUBLIC_SUPABASE_URL` must be
+`http://host.docker.internal:54321`, not `127.0.0.1` — see `.env.example`.
+
+**Test user.** `make dev-user` creates `dev@sledger.local` / `sledger-dev-1234`
+in the local Supabase (override with `DEV_USER_EMAIL` / `DEV_USER_PASSWORD`).
+Accounts and categories are seeded on the first sign-in, so a fresh
+`supabase db reset` + `make dev-user` is a clean slate.
+
+After changing a migration, regenerate the row types:
+
+```sh
+supabase gen types typescript --local > lib/db/database.types.ts
+```
 
 ## Deploy
 
