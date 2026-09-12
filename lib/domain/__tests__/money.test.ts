@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cashFlowSign, digitsToCents, formatBRL, parseBRL, ratio, splitCents, sumCents } from "../money";
+import { cashFlowSign, digitsToCents, formatBRL, formatBRLWhole, parseBRL, ratio, splitCents, sumCents } from "../money";
 
 const plain = (s: string) => s.replace(/ /g, " ");
 
@@ -61,5 +61,13 @@ describe("cashFlowSign", () => {
     expect(cashFlowSign("expense")).toBe(-1);
     expect(cashFlowSign("contribution")).toBe(0);
     expect(cashFlowSign("transfer")).toBe(0);
+  });
+});
+
+describe("formatBRLWhole", () => {
+  it("drops the cents and rounds", () => {
+    expect(plain(formatBRLWhole(1_393_800))).toBe("R$ 13.938");
+    expect(plain(formatBRLWhole(384_720))).toBe("R$ 3.847");
+    expect(plain(formatBRLWhole(50))).toBe("R$ 1");
   });
 });

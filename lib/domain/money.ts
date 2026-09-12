@@ -36,6 +36,13 @@ const brl = new Intl.NumberFormat("pt-BR", {
   maximumFractionDigits: 2,
 });
 
+const brlWhole = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+
+/** `1393800` → `R$ 13.938`: for glances where the split matters, not the cents. */
+export function formatBRLWhole(cents: number): string {
+  return brlWhole.format(Math.round(cents / 100));
+}
+
 /** `123456` → `R$ 1.234,56`. Negative cents render with a leading minus. */
 export function formatBRL(cents: number): string {
   return brl.format(cents / 100);

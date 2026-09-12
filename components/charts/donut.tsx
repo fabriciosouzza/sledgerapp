@@ -1,7 +1,7 @@
 "use client";
 
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
-import { formatBRL } from "@/lib/domain/money";
+import { formatBRL, formatBRLWhole } from "@/lib/domain/money";
 
 const COLORS = ["var(--chart-1)", "var(--chart-2)", "var(--chart-3)", "var(--chart-4)", "var(--chart-5)", "var(--muted-foreground)"];
 
@@ -29,7 +29,7 @@ export function Donut({ slices, label, centerLabel }: { slices: DonutSlice[]; la
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-sm font-semibold tabular-nums">{formatBRL(total)}</span>
+          <span className="text-sm font-semibold tabular-nums">{formatBRLWhole(total)}</span>
           {centerLabel && <span className="text-[10px] text-muted-foreground">{centerLabel}</span>}
         </div>
       </div>
