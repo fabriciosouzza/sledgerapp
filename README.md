@@ -100,13 +100,29 @@ users, and only runs under `make test-db`. Together they prove every item of
 
 ## Deploy
 
-1. Create a Supabase project and run the migrations against it:
-   `supabase link --project-ref <ref>` then `supabase db push`.
-2. In the Supabase dashboard, add `https://<your-app>/auth/callback` to
-   Authentication → URL configuration → Redirect URLs, and set the site URL.
-3. On Vercel, set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-   (the project's URL and anon/publishable key) and deploy; `next build` needs
-   nothing else.
+The app is a stock Next.js build with Supabase behind it; nothing else runs.
+
+1. **Supabase project.** Create one, then from the repo:
+   `supabase link --project-ref <ref>` and `supabase db push` (applies the
+   three files in `supabase/migrations/`). Keep the service role key out of
+   the repo.
+2. **Auth settings** (dashboard → Authentication → URL configuration): site
+   URL `https://<your-app>` and `https://<your-app>/auth/callback` in the
+   redirect URLs. Magic links and password resets are emails: the default
+   Supabase sender is rate-limited (a few per hour) and fine for one person;
+   set a custom SMTP (Authentication → SMTP) for anything more. Password
+   sign-in does not need email at all.
+3. **Vercel** (or any Node host): import the repo, framework Next.js, and
+   set the environment variables
+   - `NEXT_PUBLIC_SUPABASE_URL` — the project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — the anon / publishable key
+   - `SUPABASE_SERVICE_ROLE_KEY` — optional, server-only; enables "Delete my
+     account" on the profile page. Leave it unset and the button explains.
+
+   `next build` needs nothing else; the `Dockerfile` is for local work only.
+4. **Time.** Sessions are validated against the server clock; the "JWT issued
+   at future" retry exists for laptops waking from sleep and is harmless on a
+   host with NTP.
 
 ## Layout
 

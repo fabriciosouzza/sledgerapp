@@ -273,3 +273,20 @@ the same day (light chart tokens were near-white and are now dark; content
 widens to 5xl on large screens and Today uses two columns from `lg`). Still
 open: monthly balance checkpoints if derived balances ever get slow (B3), and
 a "fix balance" helper if the owner asks for it.
+
+Persona review of 2026-09-13 (`docs/ux-review-2026-09.md`), shipped the
+same day: closed unpaid card statements are bills on Today (with Pay) and
+the card tile shows what is due plus the % of the limit in use; bulk settle
+takes a date; the add form suggests recent descriptions (filling category
+and account), offers most-used category chips, defaults "already paid" on
+and remembers the choice, and lists what was added in the session; the
+portfolio form accepts the broker balance for a market adjustment,
+remembers the kind per asset and moves to the next asset after saving, and
+`/portfolio/record` records a whole month in one pass; Today detects the
+last three months still to apply and applies them in one tap (Review keeps
+the editable flow, now with per-row skip); a month in progress is compared
+with the previous one up to the same day, and not at all in its first week.
+Left as they are, by decision: overdue below the fold, the "cash on hand"
+wording, checking what was typed in Entries, and the number of charts on
+Review. Paying a statement that has no recorded purchases is still not
+possible — the statement is the purchases.
