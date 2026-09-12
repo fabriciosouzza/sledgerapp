@@ -158,6 +158,60 @@ Proposal (`components/entries/entry-list.tsx`):
 - Desktop: the list is narrow inside a wide main area; cap the list width or
   use the space for the sticky bar and filters rather than leaving it empty.
 
+### 10. Date and month pickers (high priority, medium)
+
+Reported: the native `<input type="month">` popup (Chrome's grey grid) looks
+foreign next to the rest of the app. The same goes for `<input type="date">`
+on the entry, recurrence and pay-statement forms.
+
+What the shadcn registry offers for our style (`base-nova`), checked on
+2026-09-12: `calendar` (react-day-picker + date-fns, `captionLayout="dropdown"`
+for month/year navigation), `popover`, `drawer` (bottom sheet built on Base
+UI — no extra dependency), `sheet`.
+
+Proposal:
+
+- **`MonthPicker`** (our own, no library): a trigger showing "September 2026"
+  with ‹ › arrows; tapping the label opens a picker with the year and a 3×4
+  grid of months, "This month" and the current one highlighted. Used on
+  `/month`, `/entries`, `/recurrences`, `/net-worth`. Keep the arrows for the
+  one-handed case.
+- **`DatePicker`**: `calendar` inside a `popover` on desktop and inside a
+  `drawer` on mobile; pt-BR labels (`date-fns/locale/pt-BR`), week starting on
+  Sunday, "Today" shortcut; the value stays an ISO date in a hidden input so
+  the schemas do not change. Used for entry date, "paid on", recurrence
+  start/end, movement date, statement payment date.
+- Keyboard and the native picker remain reachable (the trigger is a button;
+  typing a date is possible in the popover's input on desktop).
+
+### 11. Bottom sheets on mobile, dialogs on desktop (high priority, medium)
+
+Everything is a page today. That is right for the long forms; for short
+actions it costs a navigation and loses context. Proposal: one responsive
+primitive, **`Sheet`** = `drawer` (bottom, with a grab handle, drag to close)
+below `md`, `dialog` at `md` and up — the "responsive dialog" pattern from the
+shadcn docs (`useMediaQuery`), implemented once in `components/ui/responsive-sheet.tsx`.
+
+Move into sheets (short, contextual, no navigation):
+
+- Settle with a date other than today (tap-and-hold on the settle circle).
+- Pay statement (already a dialog → becomes the sheet).
+- Delete confirmations (already dialogs → sheet).
+- Filters on `/entries` (the disclosure becomes a sheet with Apply/Clear).
+- The month and date pickers above, on mobile.
+- Add movement from an asset page.
+- The kind picker if the FAB gets one (item 1).
+- Snapshot for the current month from Today's "Take a snapshot" link.
+
+Stay as pages: `/add` (fast entry, keyboard up, the most used form), entry
+edit, recurrence form, settings CRUD, snapshot form on `/net-worth`.
+
+References: iOS Wallet / Health sheets (half-height, handle, one primary
+action), shadcn "Drawer" and "Responsive dialog" examples, Vaul's
+snap-point sheets. Rules: a sheet never contains a second sheet; the primary
+action is a full-width button at the bottom; Escape and the backdrop close it;
+focus returns to the trigger; ≥ 44px targets (§8).
+
 ## Not taking from the reference
 
 - **AI chat / "Super AI search"**: out of scope by `PROMPT.md` §1.
@@ -169,13 +223,15 @@ Proposal (`components/entries/entry-list.tsx`):
 ## Suggested order for the next session
 
 1. Bulk-settle control (item 9) — small and already confusing in use.
-2. Theme toggle (system / light / dark) + light palette review.
-3. FAB in the bottom nav.
-4. Today hierarchy (hero, insight card, account strip, quick actions).
-5. Month: spending line, donut, budget summary and last-6-months bars.
-6. Entries: kind tabs; Today → "See all".
-7. Yearly view.
-8. Category icons/colours; delta tiles.
+2. Responsive sheet primitive (item 11) and the month/date pickers (item 10);
+   migrate the existing dialogs to it.
+3. Theme toggle (system / light / dark) + light palette review.
+4. FAB in the bottom nav.
+5. Today hierarchy (hero, insight card, account strip, quick actions).
+6. Month: spending line, donut, budget summary and last-6-months bars.
+7. Entries: kind tabs and the filters sheet; Today → "See all".
+8. Yearly view.
+9. Category icons/colours; delta tiles.
 
 Each step ships on its own commit; 360px pass on every screen touched (§8).
 
