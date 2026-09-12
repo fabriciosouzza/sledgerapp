@@ -9,6 +9,7 @@ import { supabaseCategoriesRepo, type CategoriesRepo } from "./categories";
 import { supabaseEntriesRepo, type EntriesRepo } from "./entries";
 import { supabaseMovementsRepo, type MovementsRepo } from "./movements";
 import { supabaseRecurrencesRepo, type RecurrencesRepo } from "./recurrences";
+import { supabaseSnapshotsRepo, type SnapshotsRepo } from "./snapshots";
 import { supabaseStatementsRepo, type StatementsRepo } from "./statements";
 
 export interface Repositories {
@@ -19,6 +20,7 @@ export interface Repositories {
   statements: StatementsRepo;
   assets: AssetsRepo;
   movements: MovementsRepo;
+  snapshots: SnapshotsRepo;
 }
 
 export function createRepositories(db: DbClient): Repositories {
@@ -30,6 +32,7 @@ export function createRepositories(db: DbClient): Repositories {
     statements: supabaseStatementsRepo(db),
     assets: supabaseAssetsRepo(db),
     movements: supabaseMovementsRepo(db),
+    snapshots: supabaseSnapshotsRepo(db),
   };
 }
 
@@ -41,3 +44,4 @@ export type { NewRecurrence, RecurrencesRepo } from "./recurrences";
 export type { NewStatement, StatementsRepo } from "./statements";
 export type { AssetsRepo, NewAsset } from "./assets";
 export type { MovementsRepo, NewMovement } from "./movements";
+export type { NewSnapshot, SnapshotsRepo } from "./snapshots";

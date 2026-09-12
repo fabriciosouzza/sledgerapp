@@ -6,6 +6,7 @@ export function Stat({
   label,
   cents,
   rate,
+  text,
   tone = "neutral",
   hint,
   className,
@@ -13,13 +14,17 @@ export function Stat({
   label: string;
   cents?: number | null;
   rate?: number | null;
+  /** Preformatted text, when neither cents nor a rate fits. */
+  text?: string | null;
   tone?: "neutral" | "signed" | "positive" | "negative";
   hint?: string;
   className?: string;
 }) {
   let value: string;
   let color = "";
-  if (rate !== undefined) {
+  if (text !== undefined) {
+    value = text ?? "—";
+  } else if (rate !== undefined) {
     value = rate === null ? "—" : `${(rate * 100).toFixed(rate * 100 >= 100 || rate * 100 <= -100 ? 0 : 1)}%`;
     if (rate !== null && tone === "signed") color = rate < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400";
   } else {
