@@ -1,8 +1,18 @@
 // In-memory repositories for service tests (PROMPT.md §12): same interface,
 // no database. Each fake enforces the invariants the real database would.
 
-import type { Account, Category } from "@/lib/domain/types";
-import type { AccountsRepo, CategoriesRepo, NewAccount, NewCategory, Repositories } from "@/lib/repositories";
+import { periodEnd, periodStart } from "@/lib/domain/dates";
+import type { Account, Category, Entry, NewEntry, Recurrence } from "@/lib/domain/types";
+import type {
+  AccountsRepo,
+  CategoriesRepo,
+  EntriesRepo,
+  NewAccount,
+  NewCategory,
+  NewRecurrence,
+  RecurrencesRepo,
+  Repositories,
+} from "@/lib/repositories";
 import { RepositoryError } from "@/lib/repositories";
 
 let seq = 0;
@@ -10,9 +20,18 @@ const nextId = () => `id-${++seq}`;
 
 type Owned<T> = T & { userId: string };
 
-export function fakeRepositories(): Repositories & { accountsInUse: Set<string>; categoriesInUse: Set<string> } {
+export interface FakeRepositories extends Repositories {
+  accountsInUse: Set<string>;
+  categoriesInUse: Set<string>;
+  /** Raw rows, for assertions. */
+  rows: { entries: Owned<Entry>[]; recurrences: Owned<Recurrence>[] };
+}
+
+export function fakeRepositories(): FakeRepositories {
   const accounts: Owned<Account>[] = [];
   const categories: Owned<Category>[] = [];
+  const entries: Owned<Entry>[] = [];
+  const recurrences: Owned<Recurrence>[] = [];
   const accountsInUse = new Set<string>();
   const categoriesInUse = new Set<string>();
 
@@ -91,5 +110,115 @@ export function fakeRepositories(): Repositories & { accountsInUse: Set<string>;
     },
   };
 
-  return { accounts: accountsRepo, categories: categoriesRepo, accountsInUse, categoriesInUse };
+  const checkEntry = (e: NewEntry) => {
+    if (e.amountCents <= 0) throw new RepositoryError("invalid", "amount");
+    if ((e.status === "settled") !== (e.settledOn !== null)) throw new RepositoryError("invalid", "settled");
+    if ((e.kind === "transfer" || e.kind === "contribution") !== (e.counterAccountId !== null)) {
+      throw new RepositoryError("invalid", "counter");
+    }
+    if ((e.kind === "income" || e.kind === "expense") && e.categoryId === null) throw new RepositoryError("invalid", "category");
+  };
+
+  const entriesRepo: EntriesRepo = {
+    async list(userId, f) {
+      const from = f.from ?? (f.period ? periodStart(f.period) : null);
+      const to = f.to ?? (f.period ? periodEnd(f.period) : null);
+      return entries
+        .filter((e) => e.userId === userId)
+        .filter((e) => (from ? e.date >= from : true) && (to ? e.date <= to : true))
+        .filter((e) => (f.kind ? e.kind === f.kind : true))
+        .filter((e) => (f.status ? e.status === f.status : true))
+        .filter((e) => (f.accountId ? e.accountId === f.accountId : true))
+        .filter((e) => (f.categoryId ? e.categoryId === f.categoryId : true))
+        .filter((e) => (f.installmentGroupId ? e.installmentGroupId === f.installmentGroupId : true))
+        .filter((e) => (f.recurrenceId ? e.recurrenceId === f.recurrenceId : true))
+        .filter((e) => (f.statementId ? e.statementId === f.statementId : true))
+        .filter((e) => (f.search ? e.description.toLowerCase().includes(f.search.toLowerCase()) : true))
+        .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
+        .map(strip);
+    },
+    async getById(userId, id) {
+      const row = entries.find((e) => e.userId === userId && e.id === id);
+      return row ? strip(row) : null;
+    },
+    async insert(userId, data) {
+      checkEntry(data);
+      const row = { ...data, id: nextId(), userId };
+      entries.push(row);
+      return strip(row);
+    },
+    async insertMany(userId, data, options) {
+      const out: Entry[] = [];
+      for (const d of data) {
+        const dup =
+          d.recurrenceId !== null && entries.some((e) => e.recurrenceId === d.recurrenceId && e.period === d.period);
+        if (dup) {
+          if (options?.ignoreConflicts) continue;
+          throw new RepositoryError("conflict", "recurrence period");
+        }
+        out.push(await entriesRepo.insert(userId, d));
+      }
+      return out;
+    },
+    async update(userId, id, patch) {
+      const row = entries.find((e) => e.userId === userId && e.id === id);
+      if (!row) throw new RepositoryError("not_found", "entry not found");
+      const next = { ...row, ...patch };
+      checkEntry(next);
+      Object.assign(row, patch);
+      return strip(row);
+    },
+    async updateMany(userId, ids, patch) {
+      const out: Entry[] = [];
+      for (const id of ids) out.push(await entriesRepo.update(userId, id, patch));
+      return out;
+    },
+    async deleteMany(userId, ids) {
+      let n = 0;
+      for (const id of ids) {
+        const i = entries.findIndex((e) => e.userId === userId && e.id === id);
+        if (i >= 0) {
+          entries.splice(i, 1);
+          n++;
+        }
+      }
+      return n;
+    },
+  };
+
+  const recurrencesRepo: RecurrencesRepo = {
+    async list(userId) {
+      return recurrences.filter((r) => r.userId === userId).map(strip);
+    },
+    async getById(userId, id) {
+      const row = recurrences.find((r) => r.userId === userId && r.id === id);
+      return row ? strip(row) : null;
+    },
+    async insert(userId, data: NewRecurrence) {
+      const row = { ...data, id: nextId(), userId };
+      recurrences.push(row);
+      return strip(row);
+    },
+    async update(userId, id, patch) {
+      const row = recurrences.find((r) => r.userId === userId && r.id === id);
+      if (!row) throw new RepositoryError("not_found", "recurrence not found");
+      Object.assign(row, patch);
+      return strip(row);
+    },
+    async delete(userId, id) {
+      const i = recurrences.findIndex((r) => r.userId === userId && r.id === id);
+      if (i >= 0) recurrences.splice(i, 1);
+      for (const e of entries) if (e.recurrenceId === id) e.recurrenceId = null;
+    },
+  };
+
+  return {
+    accounts: accountsRepo,
+    categories: categoriesRepo,
+    entries: entriesRepo,
+    recurrences: recurrencesRepo,
+    accountsInUse,
+    categoriesInUse,
+    rows: { entries, recurrences },
+  };
 }
