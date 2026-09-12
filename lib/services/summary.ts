@@ -96,3 +96,48 @@ export async function monthSummary(repos: Repositories, userId: string, period: 
     history,
   };
 }
+
+export interface YearMonth {
+  period: Period;
+  metrics: PeriodMetrics;
+}
+
+export interface YearSummary {
+  from: Period;
+  to: Period;
+  months: YearMonth[];
+  /** Totals over the range, computed from every row at once. */
+  totals: PeriodMetrics;
+  categories: CategoryLine[];
+}
+
+/**
+ * A run of months (a calendar year or a rolling twelve, DESIGN.md §4): one
+ * bounded fetch, split by month in TypeScript. Twelve months of a personal
+ * ledger stay well under the §4.5 ceiling.
+ */
+export async function yearSummary(repos: Repositories, userId: string, from: Period, to: Period): Promise<YearSummary> {
+  const [entries, categories] = await Promise.all([
+    repos.entries.list(userId, { from: periodStart(from), to: periodEnd(to) }),
+    repos.categories.list(userId),
+  ]);
+  const byPeriod = new Map<Period, Entry[]>();
+  for (const e of entries) byPeriod.set(periodOf(e.date), [...(byPeriod.get(periodOf(e.date)) ?? []), e]);
+  const months = periodRange(from, to).map((period) => ({
+    period,
+    metrics: computeMetrics({ entries: byPeriod.get(period) ?? [], categories, recurrences: [], cashCents: null }),
+  }));
+  const byId = new Map<string, Category>(categories.map((c) => [c.id, c]));
+  const bySize = (a: CategoryLine, b: CategoryLine) => b.settledCents + b.plannedCents - (a.settledCents + a.plannedCents);
+  const named = (line: CategorySpending): CategoryLine => {
+    const category = byId.get(line.categoryId);
+    return { ...line, name: category?.name ?? "?", isActive: category?.isActive ?? true, children: line.children.map(named).sort(bySize), capCents: null, capUsage: null };
+  };
+  return {
+    from,
+    to,
+    months,
+    totals: computeMetrics({ entries, categories, recurrences: [], cashCents: null }),
+    categories: spendingByCategory(entries, categories).map(named).sort(bySize),
+  };
+}

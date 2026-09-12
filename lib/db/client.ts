@@ -11,6 +11,7 @@ export type DbClient = SupabaseClient<Database>;
 
 type CookieStore = Awaited<ReturnType<typeof cookies>>;
 
+
 /**
  * One client per request. The request's cookie store is the memo key: it is
  * the same object for every `cookies()` call in a render or a server action,

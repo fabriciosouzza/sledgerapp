@@ -60,6 +60,11 @@ in the local Supabase (override with `DEV_USER_EMAIL` / `DEV_USER_PASSWORD`).
 Accounts and categories are seeded on the first sign-in, so a fresh
 `supabase db reset` + `make dev-user` is a clean slate.
 
+**"JWT issued at future"** (a 401 from PostgREST, sometimes right after
+signing in): the Docker VM's clock drifted from the host's, usually after the
+Mac slept. PostgREST tolerates 30 s. Fix the clock (restart Docker Desktop, or
+`docker run --rm --privileged alpine hwclock -s`) and reload.
+
 After changing a migration, regenerate the row types:
 
 ```sh

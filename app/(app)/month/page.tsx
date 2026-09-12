@@ -6,20 +6,46 @@ import { buildLookups } from "@/components/entries/lookups";
 import { PageHeader } from "@/components/layout/page-header";
 import { CategoryTable } from "@/components/month/category-table";
 import { MonthPicker } from "@/components/month/month-picker";
+import { ViewSwitch, type MonthView } from "@/components/month/view-switch";
+import { YearView } from "./year-view";
 import { Stat } from "@/components/month/stat";
-import { dayOf, isPeriod, periodOf, today } from "@/lib/domain/dates";
+import { addMonths, dayOf, isPeriod, parsePeriod, periodOf, today, toPeriodString } from "@/lib/domain/dates";
 import { formatBRL } from "@/lib/domain/money";
 import { listAccounts } from "@/lib/services/accounts";
 import { listCategories } from "@/lib/services/categories";
 import { getContext } from "@/lib/services/context";
-import { monthSummary } from "@/lib/services/summary";
+import { monthSummary, yearSummary } from "@/lib/services/summary";
 
 export default async function MonthPage(props: PageProps<"/month">) {
   const sp = await props.searchParams;
   const now = today();
   const month = typeof sp.month === "string" && isPeriod(sp.month) ? sp.month : periodOf(now);
+  const view: MonthView = sp.view === "year" || sp.view === "rolling" ? sp.view : "month";
+  const { year } = parsePeriod(month);
+  const hrefs = { month: `/month?month=${month}`, year: `/month?view=year&month=${month}`, rolling: `/month?view=rolling&month=${month}` };
 
   const { userId, repos } = await getContext();
+
+  if (view !== "month") {
+    const from = view === "year" ? toPeriodString(year, 1) : addMonths(month, -11);
+    const to = view === "year" ? toPeriodString(year, 12) : month;
+    const summary = await yearSummary(repos, userId, from, to);
+    return (
+      <>
+        <PageHeader title="Month" />
+        <div className="space-y-6">
+          <ViewSwitch view={view} hrefs={hrefs} />
+          <YearView
+            summary={summary}
+            title={view === "year" ? String(year) : "Last 12 months"}
+            prevHref={view === "year" ? `/month?view=year&month=${toPeriodString(year - 1, 1)}` : `/month?view=rolling&month=${addMonths(month, -12)}`}
+            nextHref={view === "year" ? `/month?view=year&month=${toPeriodString(year + 1, 1)}` : `/month?view=rolling&month=${addMonths(month, 12)}`}
+          />
+        </div>
+      </>
+    );
+  }
+
   const [summary, accounts, categories] = await Promise.all([
     monthSummary(repos, userId, month),
     listAccounts(repos, userId),
@@ -35,6 +61,7 @@ export default async function MonthPage(props: PageProps<"/month">) {
     <>
       <PageHeader title="Month" />
       <div className="space-y-6">
+        <ViewSwitch view={view} hrefs={hrefs} />
         <MonthPicker period={month} basePath="/month" />
 
         <section aria-label="Summary" className="grid grid-cols-2 gap-2">
