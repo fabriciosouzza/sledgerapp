@@ -125,6 +125,12 @@ export function formatDate(date: IsoDate): string {
   return `${pad(day)}/${pad(month)}/${year}`;
 }
 
+/** `2026-11-05` → `05/11`, for tiles where the year is obvious. */
+export function formatDayMonth(date: IsoDate): string {
+  const { month, day } = parseIsoDate(date);
+  return `${pad(day)}/${pad(month)}`;
+}
+
 /** `2026-11` → `Nov/26` — the preview format in §7 (`Oct/26 → Sep/27`). */
 export function formatPeriodShort(period: Period): string {
   const { year, month } = parsePeriod(period);

@@ -25,7 +25,7 @@ export async function generateMonthWithAmountsAction(formData: FormData): Promis
 
   try {
     const result = await generateMonth(repos, userId, period, amounts);
-    for (const path of ["/month", "/", "/entries", "/recurrences"]) revalidatePath(path);
+    for (const path of ["/review", "/", "/entries", "/recurrences"]) revalidatePath(path);
     return { ok: true, created: result.created, skipped: result.skipped };
   } catch (error) {
     if (error instanceof ServiceError) return { ok: false, error: error.message };

@@ -25,7 +25,7 @@ export async function saveSnapshotAction(formData: FormData): Promise<SnapshotAc
 
   try {
     const saved = await saveSnapshot(repos, userId, { period, balances });
-    for (const path of ["/net-worth", "/", "/month"]) revalidatePath(path);
+    for (const path of ["/net-worth", "/", "/review"]) revalidatePath(path);
     return { ok: true, count: saved.length };
   } catch (error) {
     if (error instanceof ServiceError) return { ok: false, error: error.message };

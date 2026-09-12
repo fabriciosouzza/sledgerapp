@@ -88,11 +88,11 @@ description (§1 is explicit that chat bots are out of scope).
 
 Reference: Daily · Weekly · Monthly · Yearly with a line chart per period.
 
-Ours today: `/month` is one calendar month with a picker.
+Ours today: `/review` is one calendar month with a picker.
 
-Proposal: add a **spending line** to `/month` (daily cumulative spend for the
+Proposal: add a **spending line** to `/review` (daily cumulative spend for the
 month, with last month as a faded second line), and a **Yearly** view:
-`/month?view=year` with income / expense / contributions per month as bars,
+`/review?view=year` with income / expense / contributions per month as bars,
 savings rate as a line, and the same summary numbers for the year. Daily and
 weekly views are not worth a screen for a once-a-week user; the daily line on
 the month view covers it. All computed in `lib/domain/metrics.ts` from the
@@ -105,7 +105,7 @@ Reference: "Monthly Budget · Spend $3,050 / $5,000 · 61%" with a progress bar,
 a budget-vs-spent line chart, and "Last 6 periods" bars coloured
 within / risk / overspending.
 
-Ours today: per-category caps with progress bars on `/month`; no overall
+Ours today: per-category caps with progress bars on `/review`; no overall
 budget.
 
 Proposal: the **sum of category caps** is the month's budget (no new column).
@@ -119,7 +119,7 @@ settings row) — decide before building.
 
 Reference: donut with the total in the middle and a legend.
 
-Proposal: on `/month`, above the category table: donut of settled expense by
+Proposal: on `/review`, above the category table: donut of settled expense by
 root category, total in the centre. Reuse `ClassDonut` generalised to
 `components/charts/donut.tsx`.
 
@@ -156,7 +156,7 @@ Proposal (`components/entries/entry-list.tsx`):
   "N selected · Settle" + "Cancel". Never a disabled "Settle" with no context.
 - "Select all" in the bar for the visible planned entries.
 - On Today, the overdue block gets no select mode at all: the block is small
-  and the point is one-tap settle. `/entries` and `/month` keep it.
+  and the point is one-tap settle. `/entries` and `/review` keep it.
 - Desktop: the list is narrow inside a wide main area; cap the list width or
   use the space for the sticky bar and filters rather than leaving it empty.
 
@@ -176,7 +176,7 @@ Proposal:
 - **`MonthPicker`** (our own, no library): a trigger showing "September 2026"
   with ‹ › arrows; tapping the label opens a picker with the year and a 3×4
   grid of months, "This month" and the current one highlighted. Used on
-  `/month`, `/entries`, `/recurrences`, `/net-worth`. Keep the arrows for the
+  `/review`, `/entries`, `/recurrences`, `/net-worth`. Keep the arrows for the
   one-handed case.
 - **`DatePicker`**: `calendar` inside a `popover` on desktop and inside a
   `drawer` on mobile; pt-BR labels (`date-fns/locale/pt-BR`), week starting on

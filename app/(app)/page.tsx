@@ -73,7 +73,7 @@ export default async function TodayPage() {
           <div className="min-w-0 flex-1">
             <p className="font-semibold">{overview.insight.headline}</p>
             {overview.insight.detail && <p className="text-sm text-muted-foreground">{overview.insight.detail}</p>}
-            <Link href="/month" className="mt-1 inline-flex min-h-9 items-center gap-1 text-sm text-primary hover:underline">
+            <Link href="/review" className="mt-1 inline-flex min-h-9 items-center gap-1 text-sm text-primary hover:underline">
               Review the month <ArrowRight className="size-3" aria-hidden />
             </Link>
           </div>

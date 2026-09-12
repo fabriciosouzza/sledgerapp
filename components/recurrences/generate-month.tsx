@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { AlertTriangle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { generateMonthWithAmountsAction } from "@/app/(app)/month/actions";
+import { generateMonthWithAmountsAction } from "@/app/(app)/review/actions";
 import { CurrencyInput } from "@/components/forms/currency-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +26,7 @@ export interface PreviewRow {
 /**
  * What "generate month" would create, with this month's amounts editable
  * before they exist (a variable bill keeps its estimate on the template).
- * Sits on /month as a card and on /recurrences (DESIGN.md).
+ * Sits on /review as a card and on /recurrences (DESIGN.md).
  */
 export function GenerateMonth({
   period,

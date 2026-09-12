@@ -26,13 +26,13 @@ function deltaHint(delta: number | null, plannedCents: number): string | undefin
   return parts.length > 0 ? parts.join(" · ") : undefined;
 }
 
-export default async function MonthPage(props: PageProps<"/month">) {
+export default async function MonthPage(props: PageProps<"/review">) {
   const sp = await props.searchParams;
   const now = today();
   const month = typeof sp.month === "string" && isPeriod(sp.month) ? sp.month : periodOf(now);
   const view: MonthView = sp.view === "year" || sp.view === "rolling" ? sp.view : "month";
   const { year } = parsePeriod(month);
-  const hrefs = { month: `/month?month=${month}`, year: `/month?view=year&month=${month}`, rolling: `/month?view=rolling&month=${month}` };
+  const hrefs = { month: `/review?month=${month}`, year: `/review?view=year&month=${month}`, rolling: `/review?view=rolling&month=${month}` };
 
   const { userId, repos } = await getContext();
 
@@ -48,8 +48,8 @@ export default async function MonthPage(props: PageProps<"/month">) {
           <YearView
             summary={summary}
             title={view === "year" ? String(year) : "Last 12 months"}
-            prevHref={view === "year" ? `/month?view=year&month=${toPeriodString(year - 1, 1)}` : `/month?view=rolling&month=${addMonths(month, -12)}`}
-            nextHref={view === "year" ? `/month?view=year&month=${toPeriodString(year + 1, 1)}` : `/month?view=rolling&month=${addMonths(month, 12)}`}
+            prevHref={view === "year" ? `/review?view=year&month=${toPeriodString(year - 1, 1)}` : `/review?view=rolling&month=${addMonths(month, -12)}`}
+            nextHref={view === "year" ? `/review?view=year&month=${toPeriodString(year + 1, 1)}` : `/review?view=rolling&month=${addMonths(month, 12)}`}
           />
         </div>
       </>
@@ -73,7 +73,7 @@ export default async function MonthPage(props: PageProps<"/month">) {
       <PageHeader title="Review" />
       <div className="space-y-6">
         <ViewSwitch view={view} hrefs={hrefs} />
-        <MonthPicker period={month} basePath="/month" />
+        <MonthPicker period={month} basePath="/review" />
 
         <GenerateMonth
           key={month}

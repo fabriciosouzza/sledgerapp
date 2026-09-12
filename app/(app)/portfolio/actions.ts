@@ -10,7 +10,7 @@ import { addMovement, deleteMovement } from "@/lib/services/portfolio";
 export type MovementActionResult = { ok: true; assetId: string } | { ok: false; error: string };
 
 function revalidate() {
-  for (const path of ["/portfolio", "/portfolio/[id]", "/", "/entries", "/month", "/net-worth"]) revalidatePath(path, "page");
+  for (const path of ["/portfolio", "/portfolio/[id]", "/", "/entries", "/review", "/net-worth"]) revalidatePath(path, "page");
 }
 
 export async function addMovementAction(formData: FormData): Promise<MovementActionResult> {

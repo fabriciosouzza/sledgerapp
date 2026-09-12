@@ -16,7 +16,7 @@ export interface RecurrenceFormState {
 const LIST = "/recurrences";
 
 function revalidate() {
-  for (const path of [LIST, "/recurrences/[id]", "/", "/month", "/entries"]) revalidatePath(path, "page");
+  for (const path of [LIST, "/recurrences/[id]", "/", "/review", "/entries"]) revalidatePath(path, "page");
 }
 
 export async function createRecurrenceAction(_prev: RecurrenceFormState, formData: FormData): Promise<RecurrenceFormState> {

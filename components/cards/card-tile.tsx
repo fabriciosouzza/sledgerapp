@@ -1,4 +1,4 @@
-import { formatDate } from "@/lib/domain/dates";
+import { formatDayMonth } from "@/lib/domain/dates";
 import { formatBRL } from "@/lib/domain/money";
 import type { CardView } from "@/lib/services/cards";
 import { cn } from "@/lib/utils";
@@ -13,8 +13,8 @@ export function CardTile({ card, className }: { card: CardView; className?: stri
       <p className="mt-0.5 text-lg font-semibold tabular-nums">{formatBRL(open.totalCents)}</p>
       <p className={cn("truncate text-[11px] whitespace-nowrap text-muted-foreground", due < 0 && open.statement.paidOn === null && "text-red-600 dark:text-red-400")}>
         {open.statement.paidOn
-          ? `paid ${formatDate(open.statement.paidOn)}`
-          : `${due < 0 ? `due ${-due}d ago` : due === 0 ? "due today" : `due in ${due}d`} · ${formatDate(open.statement.dueDate)}`}
+          ? `paid ${formatDayMonth(open.statement.paidOn)}`
+          : `${due < 0 ? `due ${-due}d ago` : due === 0 ? "due today" : `due in ${due}d`} · ${formatDayMonth(open.statement.dueDate)}`}
       </p>
       {card.limitUsage !== null && (
         <div className="mt-auto h-1 overflow-hidden rounded-full bg-muted" aria-hidden>

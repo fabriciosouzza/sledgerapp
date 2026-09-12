@@ -19,7 +19,7 @@ export function MonthsStatus({ months }: { months: MonthStatus[] }) {
         return (
           <li key={m.period}>
             <Link
-              href={`/month?month=${m.period}`}
+              href={`/review?month=${m.period}`}
               className="flex min-h-14 items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring"
             >
               <span className="min-w-0 flex-1">

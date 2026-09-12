@@ -1,7 +1,7 @@
 import { BookOpen, CalendarDays, CreditCard, Home, LineChart, List, MoreHorizontal, PieChart, Plus, Repeat, Settings, type LucideIcon } from "lucide-react";
 
 export interface NavItem {
-  href: "/" | "/add" | "/month" | "/portfolio" | "/more";
+  href: "/" | "/add" | "/review" | "/portfolio" | "/more";
   label: string;
   icon: LucideIcon;
 }
@@ -9,7 +9,7 @@ export interface NavItem {
 /** Bottom nav on mobile, sidebar on desktop (PROMPT.md §7); the add button sits in the middle as a FAB. */
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Today", icon: Home },
-  { href: "/month", label: "Review", icon: CalendarDays },
+  { href: "/review", label: "Review", icon: CalendarDays },
   { href: "/add", label: "Add", icon: Plus },
   { href: "/portfolio", label: "Portfolio", icon: PieChart },
   { href: "/more", label: "More", icon: MoreHorizontal },
