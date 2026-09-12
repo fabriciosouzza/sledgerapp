@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { sendMagicLink, signInWithPassword, signOut as signOutAdapter, signUp } from "@/lib/auth/adapter";
+import { sendMagicLink, sendPasswordReset, signInWithPassword, signOut as signOutAdapter, signUp } from "@/lib/auth/adapter";
 import { credentialsSchema, magicLinkSchema } from "@/lib/schemas/auth";
 import { getRepositories } from "@/lib/services/context";
 import { seedUserIfEmpty } from "@/lib/services/seed";
@@ -81,6 +81,15 @@ export async function magicLinkAction(_prev: AuthFormState, formData: FormData):
   const result = await sendMagicLink(parsed.data.email, await callbackUrl(nextPath(formData)));
   if (!result.ok) return { error: result.error, email };
   return { message: `Magic link sent to ${parsed.data.email}.`, email };
+}
+
+export async function forgotPasswordAction(_prev: AuthFormState, formData: FormData): Promise<AuthFormState> {
+  const email = String(formData.get("email") ?? "");
+  const parsed = magicLinkSchema.safeParse({ email });
+  if (!parsed.success) return { error: parsed.error.issues[0].message, email };
+  const result = await sendPasswordReset(parsed.data.email, await callbackUrl("/settings/profile?reset=1"));
+  if (!result.ok) return { error: result.error, email };
+  return { message: `If ${parsed.data.email} has an account, a link to set a new password is on its way.`, email };
 }
 
 export async function signOutAction(): Promise<void> {

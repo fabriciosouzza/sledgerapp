@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import {
+  forgotPasswordAction,
   magicLinkAction,
   signInAction,
   signUpAction,
@@ -12,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type Mode = "password" | "magic";
+type Mode = "password" | "magic" | "forgot";
 
 export function LoginForm({
   initialError,
@@ -35,14 +36,20 @@ export function LoginForm({
     magicLinkAction,
     initial,
   );
+  const [forgot, forgotDispatch, sendingReset] = useActionState(
+    forgotPasswordAction,
+    initial,
+  );
 
-  const pending = signingIn || signingUp || sendingMagic;
+  const pending = signingIn || signingUp || sendingMagic || sendingReset;
   const state =
     mode === "password"
       ? signUp.error || signUp.message
         ? signUp
         : signIn
-      : magic;
+      : mode === "magic"
+        ? magic
+        : forgot;
 
   return (
     <div className="space-y-4">
@@ -52,7 +59,7 @@ export function LoginForm({
         className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1"
       >
         <ModeTab
-          active={mode === "password"}
+          active={mode === "password" || mode === "forgot"}
           onClick={() => setMode("password")}
         >
           Password
@@ -121,6 +128,42 @@ export function LoginForm({
                 {signingUp ? "Creating account…" : "Create account"}
               </Button>
             </div>
+            <button
+              type="button"
+              onClick={() => setMode("forgot")}
+              className="min-h-9 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              Forgot your password?
+            </button>
+          </form>
+        ) : mode === "forgot" ? (
+          <form className="space-y-4" action={forgotDispatch}>
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email">Email</Label>
+              <Input
+                id="forgot-email"
+                name="email"
+                type="email"
+                autoComplete="email"
+                inputMode="email"
+                required
+                defaultValue={state.email}
+                className="h-11"
+              />
+            </div>
+            <Button type="submit" size="lg" className="h-11 w-full" disabled={pending}>
+              {sendingReset ? "Sending…" : "Send reset link"}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              The link signs you in and takes you to the profile to set a new password.
+            </p>
+            <button
+              type="button"
+              onClick={() => setMode("password")}
+              className="min-h-9 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              Back to sign in
+            </button>
           </form>
         ) : (
           <form className="space-y-4" action={magicDispatch}>

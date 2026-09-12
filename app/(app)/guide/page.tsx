@@ -13,6 +13,7 @@ const SECTIONS: Section[] = [
       { term: "Review", meaning: "How the month, the year or the last 12 months went: income, expense, contributions, both savings rates, spending by category against caps, recurring entries still to apply, and what is still planned." },
       { term: "Portfolio", meaning: "Your investments as the sum of their movements — no market quotes." },
       { term: "More", meaning: "Everything else: the full list of entries, cards, recurrences, net worth, settings and this guide." },
+      { term: "Your data", meaning: "Settings → Profile downloads everything as one JSON file; forgot your password? The login screen sends a link that signs you in to set a new one." },
     ],
   },
   {

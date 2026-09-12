@@ -2,7 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
-import { updateEmail, updateName, updatePassword } from "@/lib/auth/adapter";
+import { redirect } from "next/navigation";
+import { deleteUser, updateEmail, updateName, updatePassword } from "@/lib/auth/adapter";
+import { getUser } from "@/lib/auth/session";
 import { changePasswordSchema, emailSchema, nameSchema } from "@/lib/schemas/auth";
 
 export interface ProfileState {
@@ -25,6 +27,15 @@ export async function updatePasswordAction(_prev: ProfileState, formData: FormDa
   const result = await updatePassword(parsed.data.password);
   if (!result.ok) return { error: result.error };
   return { message: "Password changed." };
+}
+
+export async function deleteAccountAction(formData: FormData): Promise<{ error?: string }> {
+  const user = await getUser();
+  if (!user) return { error: "Sign in required." };
+  if (String(formData.get("confirm") ?? "") !== (user.email ?? "")) return { error: "Type your email exactly to confirm." };
+  const result = await deleteUser(user.id);
+  if (!result.ok) return { error: result.error };
+  redirect("/login");
 }
 
 export async function updateEmailAction(_prev: ProfileState, formData: FormData): Promise<ProfileState> {

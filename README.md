@@ -53,6 +53,10 @@ Emails (magic links, confirmations) land in the Inbucket UI printed by
 Because the app runs in Docker, `NEXT_PUBLIC_SUPABASE_URL` must be
 `http://host.docker.internal:54321`, not `127.0.0.1` — see `.env.example`.
 
+**Account deletion** (Settings → Profile) only appears when
+`SUPABASE_SERVICE_ROLE_KEY` is set on the server — never as `NEXT_PUBLIC_`.
+Locally it is printed by `supabase status`.
+
 **Test user.** `make dev-user` creates `dev@sledger.local` / `sledger-dev-1234`
 in the local Supabase (override with `DEV_USER_EMAIL` / `DEV_USER_PASSWORD`).
 Accounts and categories are seeded on the first sign-in, so a fresh
@@ -84,6 +88,7 @@ cookies; without a session they answer `401`.
 | `POST /api/recurrences/generate` | `{ "period"?: "2026-11", "dryRun"?: true }` |
 | `GET /api/summary?period=2026-11` | the month's metrics, categories and planned entries |
 | `GET /api/statements` | every card with open and past statements |
+| `GET /api/export` | everything the user owns as one JSON file (Settings → Profile → Download export) |
 
 ## Tests
 

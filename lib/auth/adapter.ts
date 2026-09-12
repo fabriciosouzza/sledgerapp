@@ -83,3 +83,31 @@ export async function updateEmail(email: string, redirectTo: string): Promise<Au
   if (error) return { ok: false, error: error.message };
   return { ok: true, userId: data.user.id };
 }
+
+/** Emails a recovery link; the callback signs the user in and lands on the profile to set a new password. */
+export async function sendPasswordReset(email: string, redirectTo: string): Promise<AuthResult> {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, userId: null };
+}
+
+/**
+ * Deletes the auth user; every table cascades from `auth.users`. Needs the
+ * service-role key, which stays on the server (`SUPABASE_SERVICE_ROLE_KEY`).
+ */
+export function canDeleteAccounts(): boolean {
+  return Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+}
+
+export async function deleteUser(userId: string): Promise<AuthResult> {
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!key) return { ok: false, error: "Account deletion is not configured on this server." };
+  const { createClient: createAdmin } = await import("@supabase/supabase-js");
+  const { supabaseEnv } = await import("@/lib/db/env");
+  const admin = createAdmin(supabaseEnv().url, key, { auth: { persistSession: false, autoRefreshToken: false } });
+  const { error } = await admin.auth.admin.deleteUser(userId);
+  if (error) return { ok: false, error: error.message };
+  await signOut();
+  return { ok: true, userId };
+}
