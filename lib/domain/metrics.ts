@@ -2,9 +2,10 @@
 // Transfers never enter any of these; contributions are not expenses; a
 // division by zero returns `null`, which the UI renders as `—`.
 
+import { dayOf, daysInMonth, parsePeriod, periodOf } from "./dates";
 import { ratio, sumCents } from "./money";
 import { monthlyFixedCost } from "./recurrences";
-import type { Category, Entry, IsoDate, Recurrence } from "./types";
+import type { Category, Entry, IsoDate, Period, Recurrence } from "./types";
 
 export interface PeriodMetrics {
   incomeCents: number;
@@ -157,4 +158,50 @@ export function spendingByCategory(
     const planned = self.planned + children.reduce((sum, c) => sum + c.plannedCents, 0);
     return line(rootId, settled, planned, children);
   });
+}
+
+/** Settled expense accumulated day by day through the period (index 0 = day 1). */
+export function dailyCumulativeExpense(entries: Entry[], period: Period): number[] {
+  const { year, month } = parsePeriod(period);
+  const days = daysInMonth(year, month);
+  const perDay = new Array<number>(days).fill(0);
+  for (const e of entries) {
+    if (e.kind !== "expense" || e.status !== "settled" || periodOf(e.date) !== period) continue;
+    perDay[dayOf(e.date) - 1] += e.amountCents;
+  }
+  let running = 0;
+  return perDay.map((v) => (running += v));
+}
+
+/**
+ * The month's budget is the sum of category caps (DESIGN.md §5): a root's cap
+ * when it has one, otherwise its children's caps. `null` with no caps at all.
+ */
+export function budgetFromCaps(categories: Pick<Category, "id" | "parentId" | "monthlyCapCents" | "isActive">[]): number | null {
+  const active = categories.filter((c) => c.isActive);
+  let total = 0;
+  let any = false;
+  for (const root of active.filter((c) => c.parentId === null)) {
+    if (root.monthlyCapCents !== null) {
+      total += root.monthlyCapCents;
+      any = true;
+      continue;
+    }
+    for (const child of active.filter((c) => c.parentId === root.id)) {
+      if (child.monthlyCapCents !== null) {
+        total += child.monthlyCapCents;
+        any = true;
+      }
+    }
+  }
+  return any ? total : null;
+}
+
+export type BudgetStatus = "within" | "risk" | "over";
+
+/** Under 80% within, up to 100% at risk, beyond that over; `null` without a budget. */
+export function budgetStatus(spentCents: number, budgetCents: number | null): BudgetStatus | null {
+  if (budgetCents === null || budgetCents <= 0) return null;
+  const usage = spentCents / budgetCents;
+  return usage > 1 ? "over" : usage >= 0.8 ? "risk" : "within";
 }

@@ -2,8 +2,17 @@
 // from one period's rows. Cash is the latest snapshot at or before the period;
 // without one, runway is unknown, not zero.
 
-import { addMonths } from "@/lib/domain/dates";
-import { computeMetrics, spendingByCategory, type CategorySpending, type PeriodMetrics } from "@/lib/domain/metrics";
+import { addMonths, periodEnd, periodOf, periodRange, periodStart } from "@/lib/domain/dates";
+import {
+  budgetFromCaps,
+  budgetStatus,
+  computeMetrics,
+  dailyCumulativeExpense,
+  spendingByCategory,
+  type BudgetStatus,
+  type CategorySpending,
+  type PeriodMetrics,
+} from "@/lib/domain/metrics";
 import { latestCash } from "@/lib/domain/netWorth";
 import type { Category, Entry, Period } from "@/lib/domain/types";
 import type { Repositories } from "@/lib/repositories";
@@ -14,20 +23,39 @@ export interface CategoryLine extends Omit<CategorySpending, "children"> {
   children: CategoryLine[];
 }
 
+export interface BudgetMonth {
+  period: Period;
+  expenseCents: number;
+  budgetCents: number | null;
+  status: BudgetStatus | null;
+}
+
 export interface MonthSummary {
   period: Period;
   metrics: PeriodMetrics;
   categories: CategoryLine[];
   planned: Entry[];
   entries: Entry[];
+  /** Σ category caps (DESIGN.md §5); `null` without caps. */
+  budgetCents: number | null;
+  budgetStatus: BudgetStatus | null;
+  /** Settled expense accumulated per day, this month and the previous one. */
+  dailySpend: { current: number[]; previous: number[] };
+  /** The last six months, oldest first, against today's caps. */
+  history: BudgetMonth[];
 }
 
+const HISTORY_MONTHS = 6;
+
 export async function monthSummary(repos: Repositories, userId: string, period: Period): Promise<MonthSummary> {
-  const [entries, categories, recurrences, snapshots] = await Promise.all([
+  const historyFrom = addMonths(period, -(HISTORY_MONTHS - 1));
+  const [entries, categories, recurrences, snapshots, past] = await Promise.all([
     repos.entries.list(userId, { period }),
     repos.categories.list(userId),
     repos.recurrences.list(userId),
     repos.snapshots.listBetween(userId, addMonths(period, -12), period),
+    // One bounded range for the history and last month's daily line (§4.5).
+    repos.entries.list(userId, { from: periodStart(historyFrom), to: periodEnd(addMonths(period, -1)), kind: "expense", status: "settled" }),
   ]);
 
   const metrics = computeMetrics({ entries, categories, recurrences, cashCents: latestCash(snapshots, period) });
@@ -44,11 +72,27 @@ export async function monthSummary(repos: Repositories, userId: string, period: 
   };
   const lines = spendingByCategory(entries, categories).map(named).sort(bySize);
 
+  const budgetCents = budgetFromCaps(categories);
+  const byPeriod = new Map<Period, Entry[]>();
+  for (const e of past) byPeriod.set(periodOf(e.date), [...(byPeriod.get(periodOf(e.date)) ?? []), e]);
+  const history: BudgetMonth[] = periodRange(historyFrom, period).map((p) => {
+    const rows = p === period ? entries : (byPeriod.get(p) ?? []);
+    const expenseCents = rows.filter((e) => e.kind === "expense" && e.status === "settled").reduce((sum, e) => sum + e.amountCents, 0);
+    return { period: p, expenseCents, budgetCents, status: budgetStatus(expenseCents, budgetCents) };
+  });
+
   return {
     period,
     metrics,
     categories: lines,
     planned: entries.filter((e) => e.status === "planned"),
     entries,
+    budgetCents,
+    budgetStatus: budgetStatus(metrics.expenseCents, budgetCents),
+    dailySpend: {
+      current: dailyCumulativeExpense(entries, period),
+      previous: dailyCumulativeExpense(byPeriod.get(addMonths(period, -1)) ?? [], addMonths(period, -1)),
+    },
+    history,
   };
 }

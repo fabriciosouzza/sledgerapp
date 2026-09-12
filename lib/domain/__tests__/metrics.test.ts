@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { committedCents, computeMetrics, entryTiming, spendingByCategory } from "../metrics";
+import { budgetFromCaps, budgetStatus, committedCents, computeMetrics, dailyCumulativeExpense, entryTiming, spendingByCategory } from "../metrics";
 import { entry, recurrence, settled } from "./fixtures";
 
 const categories = [
@@ -166,5 +166,45 @@ describe("spendingByCategory", () => {
       },
       { categoryId: "misc", settledCents: 5_000, plannedCents: 0, capCents: null, capUsage: null, children: [] },
     ]);
+  });
+});
+
+describe("dailyCumulativeExpense", () => {
+  it("accumulates settled expenses by day of the period only", () => {
+    const series = dailyCumulativeExpense(
+      [
+        settled({ date: "2026-02-01", amountCents: 100 }),
+        settled({ date: "2026-02-03", amountCents: 50 }),
+        entry({ date: "2026-02-05", amountCents: 999 }), // planned: not spent yet
+        settled({ date: "2026-01-31", amountCents: 999 }), // other month
+        settled({ kind: "income", categoryId: "cat-salario", date: "2026-02-02", amountCents: 999 }),
+      ],
+      "2026-02",
+    );
+    expect(series).toHaveLength(28);
+    expect(series.slice(0, 5)).toEqual([100, 100, 150, 150, 150]);
+    expect(series[27]).toBe(150);
+  });
+});
+
+describe("budget from caps", () => {
+  const cats = [
+    { id: "food", parentId: null, monthlyCapCents: 100_000, isActive: true },
+    { id: "food-out", parentId: "food", monthlyCapCents: 40_000, isActive: true }, // under a capped root: not added twice
+    { id: "home", parentId: null, monthlyCapCents: null, isActive: true },
+    { id: "rent", parentId: "home", monthlyCapCents: 250_000, isActive: true },
+    { id: "old", parentId: null, monthlyCapCents: 999, isActive: false },
+  ];
+
+  it("sums root caps, or children caps when the root has none", () => {
+    expect(budgetFromCaps(cats)).toBe(350_000);
+    expect(budgetFromCaps([{ id: "x", parentId: null, monthlyCapCents: null, isActive: true }])).toBeNull();
+  });
+
+  it("classifies usage", () => {
+    expect(budgetStatus(50, 100)).toBe("within");
+    expect(budgetStatus(80, 100)).toBe("risk");
+    expect(budgetStatus(101, 100)).toBe("over");
+    expect(budgetStatus(10, null)).toBeNull();
   });
 });
