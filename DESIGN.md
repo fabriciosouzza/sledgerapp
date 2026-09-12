@@ -137,6 +137,27 @@ Proposal: category `icon` and `color` columns already exist in the schema.
 Expose them in the category form (a small icon picker from lucide + a colour
 swatch) and show the icon in entry rows, the category table and the donut.
 
+### 9. Bulk settle: the "Select" control is unclear (high priority, small)
+
+Reported on Today's overdue block: a lone "Select" button floating above the
+list says nothing about what it does, and once tapped it disappears — it turns
+into "Cancel" + a disabled "Settle" pair, which reads as the control vanishing.
+
+Proposal (`components/entries/entry-list.tsx`):
+
+- Rename the entry point to what it does: **"Settle several…"** (icon
+  `CheckCheck`), aligned with the list title instead of floating in a row of
+  its own; hide it when there is a single planned entry (one tap already does
+  the job).
+- In select mode, keep the trigger visible but pressed, show the checkboxes,
+  and put the actions in a **sticky bar at the bottom** (above the nav):
+  "N selected · Settle" + "Cancel". Never a disabled "Settle" with no context.
+- "Select all" in the bar for the visible planned entries.
+- On Today, the overdue block gets no select mode at all: the block is small
+  and the point is one-tap settle. `/entries` and `/month` keep it.
+- Desktop: the list is narrow inside a wide main area; cap the list width or
+  use the space for the sticky bar and filters rather than leaving it empty.
+
 ## Not taking from the reference
 
 - **AI chat / "Super AI search"**: out of scope by `PROMPT.md` §1.
@@ -147,13 +168,14 @@ swatch) and show the icon in entry rows, the category table and the donut.
 
 ## Suggested order for the next session
 
-1. Theme toggle (system / light / dark) + light palette review.
-2. FAB in the bottom nav.
-3. Today hierarchy (hero, insight card, account strip, quick actions).
-4. Month: spending line, donut, budget summary and last-6-months bars.
-5. Entries: kind tabs; Today → "See all".
-6. Yearly view.
-7. Category icons/colours; delta tiles.
+1. Bulk-settle control (item 9) — small and already confusing in use.
+2. Theme toggle (system / light / dark) + light palette review.
+3. FAB in the bottom nav.
+4. Today hierarchy (hero, insight card, account strip, quick actions).
+5. Month: spending line, donut, budget summary and last-6-months bars.
+6. Entries: kind tabs; Today → "See all".
+7. Yearly view.
+8. Category icons/colours; delta tiles.
 
 Each step ships on its own commit; 360px pass on every screen touched (§8).
 
