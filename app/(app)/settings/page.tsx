@@ -10,7 +10,7 @@ const SECTIONS = [
   { href: "/settings/profile", label: "Profile", description: "Name, email, password", icon: UserRound },
   { href: "/settings/accounts", label: "Accounts", description: "Cash, cards with closing and due days, brokerage", icon: Landmark },
   { href: "/settings/categories", label: "Categories", description: "Caps, benefits, sub-categories", icon: Tags },
-  { href: "/settings/assets", label: "Assets", description: "What you invest in (stage 9)", icon: Coins },
+  { href: "/settings/assets", label: "Assets", description: "What you invest in", icon: Coins },
 ] as const;
 
 export default async function SettingsPage() {
