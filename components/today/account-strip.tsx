@@ -8,9 +8,9 @@ import type { AccountTile } from "@/lib/services/today";
 export function AccountStrip({ accounts, cards }: { accounts: AccountTile[]; cards: CardView[] }) {
   if (accounts.length === 0 && cards.length === 0) return null;
 
-  // Tiles with a number first, empty ones last, whatever their type.
+  // Tiles with something in them first; zeros and not-yet-open accounts last, whatever their type.
   const tiles = [
-    ...accounts.map((a) => ({ key: a.account.id, known: a.balanceCents !== null, node: <CashTile account={a} /> })),
+    ...accounts.map((a) => ({ key: a.account.id, known: a.balanceCents !== null && a.balanceCents !== 0, node: <CashTile account={a} /> })),
     ...cards.map((c) => ({
       key: c.account.id,
       known: c.open.totalCents > 0 || c.debtCents > 0,

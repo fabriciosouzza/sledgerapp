@@ -68,7 +68,7 @@ export async function todayOverview(repos: Repositories, userId: string, today: 
     insight: monthInsight(summary.metrics, previous),
     accounts: netWorth.balances
       .filter((b) => b.account.isActive)
-      .sort((a, b) => Number(b.balanceCents !== null) - Number(a.balanceCents !== null)),
+      .sort((a, b) => Number(b.balanceCents !== null && b.balanceCents !== 0) - Number(a.balanceCents !== null && a.balanceCents !== 0)),
     toGenerate: generation.toCreate.length,
     overdue,
     upcoming,
