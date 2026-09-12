@@ -29,7 +29,7 @@ export function QuickActions({ dueTodayIds, toGenerate }: { dueTodayIds: string[
   }
 
   return (
-    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-hide md:mx-0 md:flex-wrap md:px-0" role="group" aria-label="Quick actions">
+    <div className="tile-strip" role="group" aria-label="Quick actions">
       <Link href="/add?kind=expense" className={base}>
         <ArrowUpRight className="size-4 text-red-600 dark:text-red-400" aria-hidden />
         Expense

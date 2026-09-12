@@ -128,10 +128,32 @@
     @apply font-sans;
   }
 }
-/* Horizontal strips scroll without a visible bar. */
-@utility scrollbar-hide {
+/*
+ * A row of tiles: scrolls sideways on small screens (snapping, with room for
+ * the tiles' rings so they are not clipped) and wraps from md up.
+ */
+@utility tile-strip {
+  display: flex;
+  gap: --spacing(2);
+  margin-inline: calc(--spacing(4) * -1);
+  padding: --spacing(1) --spacing(4);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: --spacing(4);
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
   }
+  & > * {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+  }
+  @media (width >= 48rem) {
+    margin-inline: calc(--spacing(1) * -1);
+    padding-inline: --spacing(1);
+    flex-wrap: wrap;
+    overflow: visible;
+    scroll-snap-type: none;
+  }
 }
+

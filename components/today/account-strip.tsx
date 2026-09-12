@@ -23,11 +23,9 @@ export function AccountStrip({ accounts, cards }: { accounts: AccountTile[]; car
   ].sort((a, b) => Number(b.known) - Number(a.known));
 
   return (
-    <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-hide md:mx-0 md:px-0">
+    <div className="tile-strip">
       {tiles.map((t) => (
-        <div key={t.key} className="shrink-0">
-          {t.node}
-        </div>
+        <div key={t.key}>{t.node}</div>
       ))}
     </div>
   );

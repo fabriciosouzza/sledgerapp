@@ -50,13 +50,13 @@ export default async function CardsPage(props: PageProps<"/cards">) {
       <div className="space-y-6">
         <Stat label="Total card debt" cents={overview.totalDebtCents} tone="negative" hint="unpaid statements, all cards" />
 
-        <nav aria-label="Card" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-hide md:mx-0 md:px-0">
+        <nav aria-label="Card" className="tile-strip">
           {overview.cards.map((card) => (
             <Link
               key={card.account.id}
               href={`/cards?card=${card.account.id}`}
               aria-current={card === selected ? "page" : undefined}
-              className={`block shrink-0 rounded-xl transition-shadow focus-visible:outline-2 focus-visible:outline-ring ${card === selected ? "ring-2 ring-primary" : "opacity-80 hover:opacity-100"}`}
+              className={`block rounded-xl transition-shadow focus-visible:outline-2 focus-visible:outline-ring ${card === selected ? "ring-2 ring-primary" : "opacity-80 hover:opacity-100"}`}
             >
               <CardTile card={card} />
             </Link>
