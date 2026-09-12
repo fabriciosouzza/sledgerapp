@@ -60,3 +60,26 @@ export async function completeEmailLink(
   if (error) return { ok: false, error: error.message };
   return { ok: true, userId: data.user?.id ?? null };
 }
+
+/** Display name lives in the auth user's metadata. */
+export async function updateName(name: string): Promise<AuthResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.updateUser({ data: { full_name: name } });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, userId: data.user.id };
+}
+
+export async function updatePassword(password: string): Promise<AuthResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.updateUser({ password });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, userId: data.user.id };
+}
+
+/** Starts an email change; the provider sends confirmation links to both addresses. */
+export async function updateEmail(email: string, redirectTo: string): Promise<AuthResult> {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.updateUser({ email }, { emailRedirectTo: redirectTo });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, userId: data.user.id };
+}

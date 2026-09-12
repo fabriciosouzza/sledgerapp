@@ -11,6 +11,20 @@ export type DbClient = SupabaseClient<Database>;
 
 type CookieStore = Awaited<ReturnType<typeof cookies>>;
 
+/**
+ * PostgREST answers 401 "JWT issued at future" when a token's `iat` is more
+ * than 30 s ahead of its own clock. It has happened here with every clock
+ * aligned — right after a sign-in or a token refresh — and passes a moment
+ * later, so one retry after a short pause covers it. Every other 401 is real.
+ */
+async function fetchWithSkewRetry(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const response = await fetch(input, init);
+  if (response.status !== 401 || !/issued at future/i.test(response.headers.get("www-authenticate") ?? "")) return response;
+  console.warn("[db] JWT issued at future; retrying once");
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  return fetch(input, init);
+}
+
 
 /**
  * One client per request. The request's cookie store is the memo key: it is
@@ -40,6 +54,7 @@ export async function createClient(): Promise<DbClient> {
   const written = new Map<string, string | null>();
 
   const client = createServerClient<Database>(url, anonKey, {
+    global: { fetch: fetchWithSkewRetry },
     cookies: {
       getAll() {
         const merged = new Map(cookieStore.getAll().map((c) => [c.name, c.value]));

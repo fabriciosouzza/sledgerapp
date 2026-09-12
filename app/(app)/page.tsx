@@ -24,14 +24,14 @@ export default async function TodayPage() {
   const lookups = buildLookups(accounts, categories);
   const m = overview.metrics;
   const latest = overview.netWorth[overview.netWorth.length - 1];
-  const initial = (user.email ?? "?").slice(0, 1).toUpperCase();
+  const initial = (user.name ?? user.email ?? "?").slice(0, 1).toUpperCase();
 
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between gap-3">
         <div>
           <p className="text-xs text-muted-foreground">{formatDate(now)}</p>
-          <h1 className="text-xl font-semibold tracking-tight">Today</h1>
+          <h1 className="text-xl font-semibold tracking-tight">{user.name ? `Hi, ${user.name.split(" ")[0]}` : "Today"}</h1>
         </div>
         <Link
           href="/settings"

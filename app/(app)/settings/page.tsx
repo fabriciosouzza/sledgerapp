@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Coins, Landmark, LogOut, Tags } from "lucide-react";
+import { ChevronRight, Coins, Landmark, LogOut, Tags, UserRound } from "lucide-react";
 import { signOutAction } from "@/app/(auth)/actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { getContext } from "@/lib/services/context";
 
 const SECTIONS = [
+  { href: "/settings/profile", label: "Profile", description: "Name, email, password", icon: UserRound },
   { href: "/settings/accounts", label: "Accounts", description: "Cash, cards with closing and due days, brokerage", icon: Landmark },
   { href: "/settings/categories", label: "Categories", description: "Caps, benefits, sub-categories", icon: Tags },
   { href: "/settings/assets", label: "Assets", description: "What you invest in (stage 9)", icon: Coins },
@@ -16,7 +17,7 @@ export default async function SettingsPage() {
   const { user } = await getContext();
   return (
     <>
-      <PageHeader title="Settings" description={user.email ?? undefined} />
+      <PageHeader title="Settings" description={user.name ? `${user.name} · ${user.email ?? ""}` : (user.email ?? undefined)} />
       <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
         {SECTIONS.map(({ href, label, description, icon: Icon }) => (
           <li key={href}>
