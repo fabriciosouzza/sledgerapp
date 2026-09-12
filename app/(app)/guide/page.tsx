@@ -1,7 +1,7 @@
 import { PageHeader } from "@/components/layout/page-header";
 
 type Term = { term: string; meaning: string };
-type Section = { title: string; intro?: string; terms: Term[] };
+type Section = { title: string; intro?: string; terms: Term[]; example?: string[] };
 
 const SECTIONS: Section[] = [
   {
@@ -9,33 +9,35 @@ const SECTIONS: Section[] = [
     intro:
       "sledger is built for one sitting a week: open Today, settle what was paid, add what is new, glance at the month. Nothing updates itself from a bank — every number comes from what you typed, so the app never pretends to know something it does not.",
     terms: [
-      { term: "Today", meaning: "What needs doing now: cash on hand, what is overdue, what is due in the next 7 days, the cards, and one sentence about the month." },
-      { term: "Review", meaning: "How the month, the year or the last 12 months went: income, expense, contributions, both savings rates, spending by category against caps, recurring entries still to apply, and what is still planned." },
+      { term: "Today", meaning: "What needs doing now: cash on hand, one sentence about the month, what is due in the next 7 days, your accounts and cards, what is overdue. Tap a number to open the entries behind it; tap an account to see its balance and its entries." },
+      { term: "Review", meaning: "How a month went — or a calendar year, or the last 12 months. Income, expense, contributions, both savings rates, spending against your caps, the recurring entries still to apply, and what is still planned. Every tile opens the matching list in Entries." },
+      { term: "Entries", meaning: "Every entry, a month at a time, with tabs All · Spending · Income · Moves (transfers and contributions), search and more filters. Settle several at once from here." },
       { term: "Portfolio", meaning: "Your investments as the sum of their movements — no market quotes." },
-      { term: "More", meaning: "Everything else: the full list of entries, cards, recurrences, net worth, settings and this guide." },
-      { term: "Your data", meaning: "Settings → Profile downloads everything as one JSON file; forgot your password? The login screen sends a link that signs you in to set a new one." },
+      { term: "More", meaning: "Entries, Cards, Recurrences, Net worth, Settings, this guide. On a wide screen they sit in the sidebar." },
     ],
   },
   {
     title: "Entries",
-    intro: "An entry is one thing that happens to your money. It has a kind, a date, an amount and a status.",
+    intro: "An entry is one thing that happens to your money. It has a kind, a date, an amount, an account and a status.",
     terms: [
       { term: "Expense", meaning: "Money spent on consumption. Counts against you." },
       { term: "Income", meaning: "Salary, benefit, refund. Counts for you." },
-      { term: "Transfer", meaning: "Money moving between two of your accounts. Neither income nor expense — paying a card statement is a transfer, because the purchases were already expenses." },
-      { term: "Contribution", meaning: "Cash that leaves an account to become an investment. Not an expense: investing should never lower your savings rate." },
-      { term: "Planned", meaning: "It will happen: a bill to pay, income to receive, a future installment, a generated recurrence." },
-      { term: "Settled", meaning: "It happened. Tap the circle on any entry to settle it today; hold it to pick another day; tap the check to undo." },
-      { term: "Overdue", meaning: "Planned, and its date has passed. Shown in red on Today until you settle it." },
-      { term: "Date vs. settled on", meaning: "Date is when it falls due; settled on is when the money moved. A bill due on the 5th paid on the 7th keeps its date and gets settled on the 7th." },
+      { term: "Transfer", meaning: "Money moving between two of your accounts. Neither income nor expense — paying a card statement is a transfer, because the purchases were already expenses when they happened." },
+      { term: "Contribution", meaning: "Cash that leaves an account to become an investment. Not an expense: investing should never lower your savings rate. Record it from the Portfolio so the asset moves too." },
+      { term: "Planned", meaning: "It will happen: a bill to pay, income to receive, a future installment, a recurring entry you applied to the month." },
+      { term: "Settled", meaning: "It happened. Tap the circle on any entry to settle it today; hold the circle to pick another day; tap the check to undo." },
+      { term: "Overdue", meaning: "Planned, and its date has passed. Shown in red on Today until you settle it, however old it is." },
+      { term: "Date vs. settled on", meaning: "Date is when it falls due; settled on is when the money moved. A bill due on the 5th paid on the 7th keeps its date and gets settled on the 7th — and that is the day it leaves your balance." },
       { term: "Installments", meaning: "One purchase in N parts creates N planned entries at once, one per month, numbered 1/N … N/N. Editing or deleting asks whether it applies to this part, this and future ones, or all." },
+      { term: "On a card", meaning: "A purchase on a credit card counts the day it is made — you never settle it one by one; you pay the statement. Card installments wait for their statement: they settle when it is paid." },
     ],
   },
   {
     title: "Recurrences",
-    intro: "A recurrence is a template — rent, a subscription, a salary — not an entry.",
+    intro: "A recurrence is a template — rent, a subscription, a salary — not an entry. Each month it becomes entries when you apply it.",
     terms: [
-      { term: "Generate month", meaning: "Turns every active template into that month's planned entries. Running it twice creates nothing the second time." },
+      { term: "Apply to the month", meaning: "Review shows a card whenever the month still has recurring entries to apply, with each amount editable before it exists. Applying twice creates nothing the second time." },
+      { term: "Variable", meaning: "Water, electricity: the template holds an estimate; you type the real amount when applying, and the template keeps its estimate." },
       { term: "Due day", meaning: "Day of the month the entry falls on. Day 31 becomes the 28th, 29th or 30th in shorter months." },
       { term: "Fixed cost", meaning: "The sum of your active expense recurrences: what a month costs before any choice. It sizes the emergency fund." },
       { term: "Repeat monthly", meaning: "On the add screen: creates the template and this month's entry in one go." },
@@ -45,39 +47,46 @@ const SECTIONS: Section[] = [
     title: "Cards",
     intro: "A credit card is an account with a closing day and a due day. Its balance is debt, never cash.",
     terms: [
-      { term: "Statement", meaning: "Everything bought on the card in one cycle. A purchase after the closing day lands on the next statement." },
-      { term: "Pay statement", meaning: "Records a transfer from a cash account into the card for the statement total and marks it paid." },
-      { term: "Card debt", meaning: "The sum of unpaid statements across every card." },
+      { term: "Statement", meaning: "Everything bought on the card in one cycle. A purchase after the closing day lands on the next statement. The cycle that contains today is the open statement." },
+      { term: "Pay statement", meaning: "Once a statement has closed, Pay records a transfer from a cash account into the card for its total and marks it paid. An open statement cannot be paid yet." },
+      { term: "Card debt", meaning: "Everything bought and not yet paid, across every card — open statements included." },
     ],
   },
   {
     title: "Investments",
     intro: "An asset's balance is the running sum of its movements. There are no quotes and no average price.",
     terms: [
-      { term: "Contribution", meaning: "New money in. Can also record the matching cash entry from your account to the brokerage." },
+      { term: "Contribution", meaning: "New money in. From the Portfolio it can also record the cash entry from your account to the brokerage, so cash flow and portfolio agree." },
       { term: "Yield", meaning: "Interest or dividends, entered by hand. Raises net worth; not income for the savings rate." },
       { term: "Market adjustment", meaning: "The difference between what the broker shows and what sledger has. The only amount that may be negative." },
-      { term: "Withdrawal · Fee/tax", meaning: "Money out and costs." },
+      { term: "Withdrawal · Fee/tax", meaning: "Money out and costs. Record the cash arriving as a transfer from the brokerage account." },
       { term: "Contributed vs. earned", meaning: "Contributed = contributions − withdrawals. Earned = yield + adjustments − fees. Balance = contributed + earned." },
     ],
   },
   {
     title: "Balances and net worth",
     terms: [
-      { term: "Starting point", meaning: "Each cash account has a balance on the day you start tracking it (in its settings). From then on, every settled entry moves it: income in, expenses out, transfers between accounts." },
-      { term: "Cash on hand", meaning: "The sum of your cash accounts today, derived from what you recorded. If the bank shows something else, an entry is missing — add it." },
+      { term: "Starting point", meaning: "Each cash account has a balance on the day you start tracking it (Settings → Accounts). From then on, every settled entry moves it: income in, expenses out, transfers between accounts." },
+      { term: "Account screen", meaning: "Tap an account on Today or on Net worth: balance today, starting point, what changed since, and only that account's entries. If the bank shows a different number, the missing entry is somewhere in that list — or not yet recorded." },
+      { term: "Cash on hand", meaning: "The sum of your cash accounts today, derived from what you recorded." },
       { term: "Net worth", meaning: "cash + investments − debt, for any month. Months before your first account stay empty, never zero." },
     ],
   },
   {
     title: "The numbers",
+    intro:
+      "All of them come from settled entries of one month, in cents, with no rounding tricks. Take a month with R$ 5.000 salary, R$ 800 meal voucher (a benefit), R$ 3.200 spent, R$ 1.000 contributed, R$ 2.500 in fixed recurrences and R$ 10.000 of cash: the examples below use it.",
     terms: [
-      { term: "Leftover", meaning: "income − expense − contributions, settled only." },
-      { term: "Savings rate", meaning: "(income − expense) ÷ income. What you kept of what came in." },
-      { term: "Savings rate ex-benefits", meaning: "The same, but benefits (meal voucher, allowances) are removed from income. Mark a category as a benefit in settings." },
-      { term: "Budget", meaning: "The sum of the caps you set on categories. Within under 80%, at risk up to 100%, over beyond." },
-      { term: "Months of runway", meaning: "cash on hand ÷ fixed cost: how long the cash would last with no income." },
-      { term: "—", meaning: "Unknown. It appears when a number cannot be computed yet (no cash account yet, no income this month). It is never a zero in disguise." },
+      { term: "Income · Expense · Contributions", meaning: "Sums of settled entries of each kind. Transfers are never in any of them. Planned entries show separately (\"+ R$ 120,00 planned\") and only count once settled. Example: income R$ 5.800, expense R$ 3.200, contributions R$ 1.000." },
+      { term: "Leftover", meaning: "income − expense − contributions: what stayed in cash after everything, investing included. Example: 5.800 − 3.200 − 1.000 = R$ 1.600. Negative means the month ate into what you had." },
+      { term: "Savings rate", meaning: "(income − expense) ÷ income: the share of what came in that you did not consume. Contributions are not subtracted — they are saving, not spending. Example: (5.800 − 3.200) ÷ 5.800 = 44,8%." },
+      { term: "Savings rate ex-benefits", meaning: "The same, but benefits (meal voucher, allowances — categories marked as benefit) are removed from income, because they enter and leave in the same month and inflate both sides. Example: (5.800 − 3.200) ÷ (5.800 − 800) = 52%. This is the honest one." },
+      { term: "Budget", meaning: "The sum of the caps you set on categories; a category without a cap adds nothing. \"Spent R$ 3.200 of R$ 3.500 · 91%\" — within under 80%, at risk between 80% and 100%, over beyond. Sub-categories keep their own caps and roll up into their parent." },
+      { term: "Fixed cost", meaning: "Σ active expense recurrences, whatever was applied this month. Example: R$ 2.500." },
+      { term: "Months of runway", meaning: "cash on hand ÷ fixed cost: how long the cash would last with no income at all. Example: 10.000 ÷ 2.500 = 4,0 months." },
+      { term: "vs last month", meaning: "The change in income or expense against the previous month: (this − last) ÷ last. It compares the month so far with a whole month, so early in the month it exaggerates; read it after the 20th." },
+      { term: "The sentence on Today", meaning: "Picks the most useful true statement: spending up or down vs last month when both months have expenses; otherwise the savings rate; otherwise what is still planned. The ring is the savings rate." },
+      { term: "—", meaning: "Unknown. It appears when a number cannot be computed yet (no cash account, no income this month, no fixed cost). It is never a zero in disguise." },
     ],
   },
 ];
