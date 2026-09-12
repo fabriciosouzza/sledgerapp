@@ -128,3 +128,10 @@
     @apply font-sans;
   }
 }
+/* Horizontal strips scroll without a visible bar. */
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
