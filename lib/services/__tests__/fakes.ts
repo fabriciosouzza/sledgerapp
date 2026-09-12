@@ -2,13 +2,17 @@
 // no database. Each fake enforces the invariants the real database would.
 
 import { periodEnd, periodStart } from "@/lib/domain/dates";
-import type { Account, Category, Entry, NewEntry, Recurrence, Statement } from "@/lib/domain/types";
+import type { Account, Asset, AssetMovement, Category, Entry, NewEntry, Recurrence, Statement } from "@/lib/domain/types";
 import type {
   AccountsRepo,
+  AssetsRepo,
   CategoriesRepo,
   EntriesRepo,
+  MovementsRepo,
   NewAccount,
+  NewAsset,
   NewCategory,
+  NewMovement,
   NewRecurrence,
   RecurrencesRepo,
   Repositories,
@@ -34,6 +38,8 @@ export function fakeRepositories(): FakeRepositories {
   const entries: Owned<Entry>[] = [];
   const recurrences: Owned<Recurrence>[] = [];
   const statements: Owned<Statement>[] = [];
+  const assets: Owned<Asset>[] = [];
+  const movements: Owned<AssetMovement>[] = [];
   const accountsInUse = new Set<string>();
   const categoriesInUse = new Set<string>();
 
@@ -240,12 +246,69 @@ export function fakeRepositories(): FakeRepositories {
     },
   };
 
+  const assetsRepo: AssetsRepo = {
+    async list(userId) {
+      return assets.filter((a) => a.userId === userId).map(strip);
+    },
+    async getById(userId, id) {
+      const row = assets.find((a) => a.userId === userId && a.id === id);
+      return row ? strip(row) : null;
+    },
+    async insert(userId, data: NewAsset) {
+      const row = { ...data, id: nextId(), userId };
+      assets.push(row);
+      return strip(row);
+    },
+    async update(userId, id, patch) {
+      const row = assets.find((a) => a.userId === userId && a.id === id);
+      if (!row) throw new RepositoryError("not_found", "asset not found");
+      Object.assign(row, patch);
+      return strip(row);
+    },
+    async delete(userId, id) {
+      if (movements.some((m) => m.assetId === id)) throw new RepositoryError("in_use", "referenced");
+      const i = assets.findIndex((a) => a.userId === userId && a.id === id);
+      if (i >= 0) assets.splice(i, 1);
+    },
+  };
+
+  const movementsRepo: MovementsRepo = {
+    async list(userId) {
+      return movements.filter((m) => m.userId === userId).map(strip);
+    },
+    async listByAsset(userId, assetId) {
+      return movements.filter((m) => m.userId === userId && m.assetId === assetId).map(strip);
+    },
+    async getById(userId, id) {
+      const row = movements.find((m) => m.userId === userId && m.id === id);
+      return row ? strip(row) : null;
+    },
+    async insert(userId, data: NewMovement) {
+      if (data.kind !== "market_adjustment" && data.amountCents <= 0) throw new RepositoryError("invalid", "amount");
+      const row = { ...data, id: nextId(), userId };
+      movements.push(row);
+      return strip(row);
+    },
+    async update(userId, id, patch) {
+      const row = movements.find((m) => m.userId === userId && m.id === id);
+      if (!row) throw new RepositoryError("not_found", "movement not found");
+      Object.assign(row, patch);
+      return strip(row);
+    },
+    async delete(userId, id) {
+      const i = movements.findIndex((m) => m.userId === userId && m.id === id);
+      if (i >= 0) movements.splice(i, 1);
+    },
+  };
+
   return {
     accounts: accountsRepo,
     categories: categoriesRepo,
     entries: entriesRepo,
     recurrences: recurrencesRepo,
     statements: statementsRepo,
+    assets: assetsRepo,
+    movements: movementsRepo,
     accountsInUse,
     categoriesInUse,
     rows: { entries, recurrences, statements },
