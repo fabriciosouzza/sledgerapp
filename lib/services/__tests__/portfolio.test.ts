@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { computeMetrics } from "@/lib/domain/metrics";
 import { assetInputSchema, movementInputSchema, movementUpdateSchema } from "@/lib/schemas/assets";
-import { addMovement, createAsset, deleteAsset, deleteMovement, portfolioOverview, updateMovement } from "../portfolio";
+import { addMovement, assetBalances, createAsset, deleteAsset, deleteMovement, portfolioOverview, recordBatch, updateMovement } from "../portfolio";
 import { seedUserIfEmpty } from "../seed";
 import { fakeRepositories, type FakeRepositories } from "./fakes";
 
@@ -97,5 +97,30 @@ describe("delete", () => {
     expect(await repos.entries.getById(U, movement.entryId!)).toBeNull();
     await deleteAsset(repos, U, cdb);
     expect(await repos.assets.list(U)).toHaveLength(0);
+  });
+});
+
+describe("recordBatch", () => {
+  it("records the difference from the broker balance and skips unchanged lines", async () => {
+    const repos = fakeRepositories();
+    const a = await createAsset(repos, U, assetInputSchema.parse({ name: "CDB", assetClass: "fixed_income" }));
+    const b = await createAsset(repos, U, assetInputSchema.parse({ name: "ETF", assetClass: "stocks" }));
+    await repos.movements.insert(U, { assetId: a.id, date: "2026-01-01", kind: "contribution", amountCents: 100_000, entryId: null, notes: null });
+    await repos.movements.insert(U, { assetId: b.id, date: "2026-01-01", kind: "contribution", amountCents: 50_000, entryId: null, notes: null });
+
+    const created = await recordBatch(repos, U, {
+      kind: "market_adjustment",
+      date: "2026-02-01",
+      mode: "balance",
+      values: [
+        { assetId: a.id, cents: 101_500 },
+        { assetId: b.id, cents: 50_000 },
+      ],
+    });
+    expect(created).toHaveLength(1);
+    expect(created[0]).toMatchObject({ assetId: a.id, kind: "market_adjustment", amountCents: 1_500 });
+    expect(await assetBalances(repos, U)).toEqual({ [a.id]: 101_500, [b.id]: 50_000 });
+
+    await expect(recordBatch(repos, U, { kind: "yield", date: "2026-02-01", mode: "balance", values: [{ assetId: b.id, cents: 49_000 }] })).rejects.toThrow(/negative/);
   });
 });

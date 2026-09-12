@@ -1,13 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { movementInputSchema, movementUpdateSchema } from "@/lib/schemas/assets";
+import { parseBRL } from "@/lib/domain/money";
+import { batchInputSchema, movementInputSchema, movementUpdateSchema } from "@/lib/schemas/assets";
 import { firstIssue, formToObject } from "@/lib/schemas/form";
 import { getContext } from "@/lib/services/context";
 import { ServiceError } from "@/lib/services/errors";
-import { addMovement, deleteMovement, updateMovement } from "@/lib/services/portfolio";
+import { addMovement, deleteMovement, recordBatch, updateMovement } from "@/lib/services/portfolio";
 
-export type MovementActionResult = { ok: true; assetId: string } | { ok: false; error: string };
+export type MovementActionResult = { ok: true; assetId: string; id: string } | { ok: false; error: string };
 
 function revalidate() {
   for (const path of ["/portfolio", "/portfolio/[id]", "/", "/entries", "/review", "/net-worth"]) revalidatePath(path, "page");
@@ -20,7 +21,29 @@ export async function addMovementAction(formData: FormData): Promise<MovementAct
   try {
     const movement = await addMovement(repos, userId, parsed.data);
     revalidate();
-    return { ok: true, assetId: movement.assetId };
+    return { ok: true, assetId: movement.assetId, id: movement.id };
+  } catch (error) {
+    if (error instanceof ServiceError) return { ok: false, error: error.message };
+    throw error;
+  }
+}
+
+export async function recordBatchAction(formData: FormData): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
+  const { userId, repos } = await getContext();
+  const parsed = batchInputSchema.safeParse(formToObject(formData));
+  if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
+  const values: { assetId: string; cents: number }[] = [];
+  for (const [key, value] of formData.entries()) {
+    if (!key.startsWith("amount:") || typeof value !== "string" || value.trim() === "") continue;
+    const cents = parseBRL(value);
+    if (cents === null) return { ok: false, error: "Enter amounts like 1.234,56." };
+    values.push({ assetId: key.slice("amount:".length), cents });
+  }
+  if (values.length === 0) return { ok: false, error: "Fill in at least one asset." };
+  try {
+    const created = await recordBatch(repos, userId, { ...parsed.data, values });
+    revalidate();
+    return { ok: true, count: created.length };
   } catch (error) {
     if (error instanceof ServiceError) return { ok: false, error: error.message };
     throw error;
@@ -34,7 +57,7 @@ export async function updateMovementAction(formData: FormData): Promise<Movement
   try {
     const movement = await updateMovement(repos, userId, parsed.data);
     revalidate();
-    return { ok: true, assetId: movement.assetId };
+    return { ok: true, assetId: movement.assetId, id: movement.id };
   } catch (error) {
     if (error instanceof ServiceError) return { ok: false, error: error.message };
     throw error;

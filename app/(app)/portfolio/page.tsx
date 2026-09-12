@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, ListChecks, Plus } from "lucide-react";
 import { ClassDonut } from "@/components/charts/class-donut";
 import { PortfolioArea } from "@/components/charts/portfolio-area";
 import { PageHeader } from "@/components/layout/page-header";
@@ -37,10 +37,16 @@ export default async function PortfolioPage() {
       <PageHeader
         title="Portfolio"
         action={
-          <Button render={<Link href="/portfolio/new" />} nativeButton={false} size="lg" className="h-11">
-            <Plus data-icon="inline-start" aria-hidden />
-            Movement
-          </Button>
+          <div className="flex gap-2">
+            <Button render={<Link href="/portfolio/record" />} nativeButton={false} variant="outline" size="lg" className="h-11">
+              <ListChecks data-icon="inline-start" aria-hidden />
+              Record month
+            </Button>
+            <Button render={<Link href="/portfolio/new" />} nativeButton={false} size="lg" className="h-11">
+              <Plus data-icon="inline-start" aria-hidden />
+              Movement
+            </Button>
+          </div>
         }
       />
       <div className="space-y-6">

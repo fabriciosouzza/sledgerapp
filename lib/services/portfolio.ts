@@ -73,6 +73,36 @@ export async function portfolioOverview(repos: Repositories, userId: string, tod
   };
 }
 
+/** Recorded balance per asset id (running sum of movements). */
+export async function assetBalances(repos: Repositories, userId: string): Promise<Record<string, number>> {
+  const movements = await repos.movements.list(userId);
+  const out: Record<string, number> = {};
+  for (const m of movements) out[m.assetId] = (out[m.assetId] ?? 0) + m.amountCents;
+  return out;
+}
+
+export interface BatchInput {
+  kind: "yield" | "market_adjustment";
+  date: IsoDate;
+  /** `amount`: each value is the movement; `balance`: each value is what the broker shows, the movement is the difference. */
+  mode: "amount" | "balance";
+  values: { assetId: string; cents: number }[];
+}
+
+/** One movement per asset in a single pass — the monthly "record every yield" round. */
+export async function recordBatch(repos: Repositories, userId: string, input: BatchInput): Promise<AssetMovement[]> {
+  const balances = input.mode === "balance" ? await assetBalances(repos, userId) : {};
+  const created: AssetMovement[] = [];
+  for (const { assetId, cents } of input.values) {
+    const amountCents = input.mode === "balance" ? cents - (balances[assetId] ?? 0) : cents;
+    if (amountCents === 0) continue;
+    if (amountCents < 0 && input.kind !== "market_adjustment") throw new ServiceError("invalid", "A yield cannot be negative; record a market adjustment instead.");
+    const asset = await getAsset(repos, userId, assetId);
+    created.push(await repos.movements.insert(userId, { assetId: asset.id, date: input.date, kind: input.kind, amountCents, entryId: null, notes: null }));
+  }
+  return created;
+}
+
 export interface AssetDetail {
   asset: Asset;
   summary: PortfolioSummary;

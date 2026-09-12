@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -13,18 +14,40 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { MOVEMENT_KINDS } from "@/lib/domain/assets";
+import { useLocalMemory } from "@/lib/client/local-memory";
+import { MOVEMENT_KINDS, movementKindLabel } from "@/lib/domain/assets";
+import { formatBRL } from "@/lib/domain/money";
 import type { Account, Asset, AssetMovement, MovementKind } from "@/lib/domain/types";
+import { cn } from "@/lib/utils";
+
+const KIND_MEMORY = "sledger.lastMovementKind";
+
+/** The signed amount as the schemas read it (`-1.234,56`). */
+function toField(cents: number): string {
+  const abs = Math.abs(cents);
+  return `${cents < 0 ? "-" : ""}${Math.floor(abs / 100)},${(abs % 100).toString().padStart(2, "0")}`;
+}
+
+interface SessionRow {
+  id: string;
+  assetId: string;
+  assetName: string;
+  kind: MovementKind;
+  amountCents: number;
+}
 
 export function MovementForm({
   assets,
   accounts,
+  balances,
   today,
   defaultAssetId,
   movement,
 }: {
   assets: Asset[];
   accounts: Account[];
+  /** Recorded balance per asset, so an adjustment can be typed as the broker's balance. */
+  balances: Record<string, number>;
   today: string;
   defaultAssetId?: string;
   /** Present when editing. */
@@ -34,20 +57,33 @@ export function MovementForm({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string>();
-  const [kind, setKind] = useState<MovementKind>(movement?.kind ?? "contribution");
+  const [formKey, setFormKey] = useState(0);
+  const [assetId, setAssetId] = useState(movement?.assetId ?? defaultAssetId ?? assets[0]?.id ?? "");
+  const [kindChoice, setKindChoice] = useState<MovementKind | null>(movement?.kind ?? null);
   const [negative, setNegative] = useState((movement?.amountCents ?? 0) < 0);
+  const [byBalance, setByBalance] = useState(!editing);
   const [pair, setPair] = useState(true);
   const [cents, setCents] = useState<number | null>(null);
+  const [added, setAdded] = useState<SessionRow[]>([]);
+
+  // The last kind recorded for each asset is usually the next one (monthly yield, say).
+  const [lastKinds, rememberKind] = useLocalMemory<Record<string, MovementKind>>(KIND_MEMORY, {});
+  const kind: MovementKind = kindChoice ?? (editing ? "contribution" : (lastKinds[assetId] ?? "contribution"));
 
   const cash = accounts.filter((a) => a.type !== "brokerage" && a.type !== "credit_card");
   const brokerages = accounts.filter((a) => a.type === "brokerage");
   const canPair = kind === "contribution" && cash.length > 0 && brokerages.length > 0;
   const hint = MOVEMENT_KINDS.find((k) => k.value === kind)?.hint;
+  const recorded = balances[assetId] ?? 0;
+  const adjustment = kind === "market_adjustment" ? (byBalance ? (cents === null ? null : cents - recorded) : cents === null ? null : negative ? -cents : cents) : null;
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    if (kind === "market_adjustment" && negative && cents) formData.set("amountCents", `-${formData.get("amountCents")}`);
+    if (kind === "market_adjustment") {
+      if (adjustment === null || adjustment === 0) return setError(byBalance ? "The broker balance equals what is recorded: nothing to adjust." : "Enter an amount.");
+      formData.set("amountCents", toField(adjustment));
+    }
     if (!(canPair && pair)) {
       formData.delete("fromAccountId");
       formData.delete("brokerageAccountId");
@@ -56,18 +92,32 @@ export function MovementForm({
     startTransition(async () => {
       const result = editing ? await updateMovementAction(formData) : await addMovementAction(formData);
       if (!result.ok) return setError(result.error);
-      toast.success("Movement saved");
-      router.push(`/portfolio/${result.assetId}`);
+      if (editing) {
+        toast.success("Movement saved");
+        router.push(`/portfolio/${result.assetId}`);
+        return;
+      }
+      rememberKind((m) => ({ ...m, [assetId]: kind }));
+      const asset = assets.find((a) => a.id === assetId);
+      setAdded((prev) => [{ id: result.id, assetId, assetName: asset?.name ?? "", kind, amountCents: adjustment ?? cents ?? 0 }, ...prev]);
+      toast.success(`${movementKindLabel(kind)} saved · ${asset?.name ?? ""}`);
+      // Recording a round for every asset: move on to the next one, same kind.
+      const index = assets.findIndex((a) => a.id === assetId);
+      const next = assets[index + 1];
+      if (next) setAssetId(next.id);
+      setKindChoice(kind);
+      setCents(null);
+      setFormKey((k) => k + 1);
     });
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5">
+    <form key={formKey} onSubmit={onSubmit} className="space-y-5">
       <FormError message={error} />
       {movement && <input type="hidden" name="id" value={movement.id} />}
 
-      <Field label="Asset" htmlFor="assetId">
-        <NativeSelect id="assetId" name="assetId" defaultValue={movement?.assetId ?? defaultAssetId ?? assets[0]?.id} required disabled={editing} className="w-full [&>select]:h-11">
+      <Field label="Asset" htmlFor="assetId" hint={editing ? undefined : `Recorded balance ${formatBRL(recorded)}`}>
+        <NativeSelect id="assetId" name="assetId" value={assetId} onChange={(e) => setAssetId(e.target.value)} required disabled={editing} className="w-full [&>select]:h-11" aria-describedby="assetId-hint">
           {assets.map((a) => (
             <NativeSelectOption key={a.id} value={a.id}>
               {a.name}
@@ -77,7 +127,7 @@ export function MovementForm({
       </Field>
 
       <Field label="Kind" htmlFor="kind" hint={hint}>
-        <NativeSelect id="kind" name="kind" value={kind} onChange={(e) => setKind(e.target.value as MovementKind)} disabled={editing && movement.entryId !== null} className="w-full [&>select]:h-11" aria-describedby="kind-hint">
+        <NativeSelect id="kind" name="kind" value={kind} onChange={(e) => setKindChoice(e.target.value as MovementKind)} disabled={editing && movement.entryId !== null} className="w-full [&>select]:h-11" aria-describedby="kind-hint">
           {MOVEMENT_KINDS.map((k) => (
             <NativeSelectOption key={k.value} value={k.value}>
               {k.label}
@@ -86,16 +136,59 @@ export function MovementForm({
         </NativeSelect>
       </Field>
 
+      {kind === "market_adjustment" && (
+        <div role="radiogroup" aria-label="How to enter the adjustment" className="grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
+          {(
+            [
+              [true, "Balance at the broker"],
+              [false, "Difference"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={label}
+              type="button"
+              role="radio"
+              aria-checked={byBalance === value}
+              onClick={() => setByBalance(value)}
+              className={cn(
+                "h-9 rounded-md text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
+                byBalance === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Amount" htmlFor="amountCents">
-          <CurrencyInput id="amountCents" name="amountCents" required autoFocus defaultCents={movement ? Math.abs(movement.amountCents) : null} onCentsChange={setCents} className="h-11" />
+        <Field label={kind === "market_adjustment" && byBalance ? "Balance at the broker" : "Amount"} htmlFor="amountCents">
+          <CurrencyInput
+            id="amountCents"
+            name={kind === "market_adjustment" && byBalance ? "brokerBalance" : "amountCents"}
+            required
+            autoFocus
+            defaultCents={movement ? Math.abs(movement.amountCents) : null}
+            onCentsChange={setCents}
+            className="h-11"
+          />
         </Field>
         <Field label="Date" htmlFor="date">
           <DatePicker id="date" name="date" required defaultValue={movement?.date ?? today} />
         </Field>
       </div>
 
-      {kind === "market_adjustment" && (
+      {kind === "market_adjustment" && byBalance && (
+        <p className="text-sm text-muted-foreground" aria-live="polite">
+          {adjustment === null
+            ? `Recorded ${formatBRL(recorded)}. Type what the broker shows; the difference is the adjustment.`
+            : adjustment === 0
+              ? "Same as recorded: nothing to adjust."
+              : `Adjustment ${adjustment > 0 ? "+" : "−"}${formatBRL(Math.abs(adjustment))} (${formatBRL(recorded)} → ${formatBRL(recorded + adjustment)})`}
+        </p>
+      )}
+
+      {kind === "market_adjustment" && !byBalance && (
         <div className="flex min-h-11 items-center justify-between gap-3">
           <div>
             <Label htmlFor="negative">Loss</Label>
@@ -146,6 +239,29 @@ export function MovementForm({
       <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={pending}>
         {pending ? "Saving…" : editing ? "Save changes" : "Save movement"}
       </Button>
+
+      {added.length > 0 && (
+        <section aria-label="Added now" className="rounded-xl bg-muted/40 p-3">
+          <div className="mb-1 flex items-center justify-between">
+            <h2 className="text-xs font-medium text-muted-foreground">Added now · {added.length}</h2>
+            <Link href="/portfolio" className="text-xs underline-offset-4 hover:underline">
+              Done → portfolio
+            </Link>
+          </div>
+          <ul className="divide-y divide-border">
+            {added.map((row) => (
+              <li key={row.id}>
+                <Link href={`/portfolio/movements/${row.id}`} className="flex min-h-10 items-center justify-between gap-3 text-sm">
+                  <span className="truncate">
+                    {row.assetName} <span className="text-muted-foreground">· {movementKindLabel(row.kind)}</span>
+                  </span>
+                  <span className={cn("shrink-0 tabular-nums", row.amountCents < 0 && "text-red-600 dark:text-red-400")}>{formatBRL(row.amountCents)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </form>
   );
 }
