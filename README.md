@@ -7,7 +7,9 @@ before changing anything.
 **Status:** all 13 stages of [PROMPT.md §11](PROMPT.md#11-build-order) are
 in: auth, settings and seed, entries with installments and settling, month,
 recurrences and generation, cards, portfolio, net worth, Today, the API, and
-polish (dark mode, skeletons, empty states, 360px).
+polish (dark mode, skeletons, empty states, 360px). Next: the UI direction in
+[DESIGN.md](DESIGN.md) — hierarchy on Today, a floating add button, more
+dashboards, a theme toggle.
 
 ## Run it locally
 
