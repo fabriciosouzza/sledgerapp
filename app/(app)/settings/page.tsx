@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight, Coins, Landmark, LogOut, Tags } from "lucide-react";
 import { signOutAction } from "@/app/(auth)/actions";
 import { PageHeader } from "@/components/layout/page-header";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { getContext } from "@/lib/services/context";
 
@@ -33,6 +34,10 @@ export default async function SettingsPage() {
           </li>
         ))}
       </ul>
+      <section className="mt-6 space-y-2">
+        <h2 className="text-sm font-semibold">Theme</h2>
+        <ThemeToggle />
+      </section>
       <form action={signOutAction} className="mt-6">
         <Button type="submit" variant="outline" className="h-11 w-full">
           <LogOut data-icon="inline-start" aria-hidden />

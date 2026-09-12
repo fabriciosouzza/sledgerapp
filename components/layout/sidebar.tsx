@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { NAV_ITEMS, isNavActive } from "./nav-items";
+import { ThemeToggle } from "./theme-toggle";
 
 export function Sidebar({ email }: { email: string | null }) {
   const pathname = usePathname();
@@ -34,7 +35,10 @@ export function Sidebar({ email }: { email: string | null }) {
           })}
         </ul>
       </nav>
-      {email && <p className="truncate px-3 text-xs text-muted-foreground">{email}</p>}
+      <div className="space-y-3">
+        <ThemeToggle compact />
+        {email && <p className="truncate px-3 text-xs text-muted-foreground">{email}</p>}
+      </div>
     </aside>
   );
 }
