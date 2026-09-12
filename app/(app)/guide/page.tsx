@@ -24,7 +24,7 @@ const SECTIONS: Section[] = [
       { term: "Transfer", meaning: "Money moving between two of your accounts. Neither income nor expense — paying a card statement is a transfer, because the purchases were already expenses." },
       { term: "Contribution", meaning: "Cash that leaves an account to become an investment. Not an expense: investing should never lower your savings rate." },
       { term: "Planned", meaning: "It will happen: a bill to pay, income to receive, a future installment, a generated recurrence." },
-      { term: "Settled", meaning: "It happened. Tap the circle on any entry to settle it; tap the check to undo." },
+      { term: "Settled", meaning: "It happened. Tap the circle on any entry to settle it today; hold it to pick another day; tap the check to undo." },
       { term: "Overdue", meaning: "Planned, and its date has passed. Shown in red on Today until you settle it." },
       { term: "Date vs. settled on", meaning: "Date is when it falls due; settled on is when the money moved. A bill due on the 5th paid on the 7th keeps its date and gets settled on the 7th." },
       { term: "Installments", meaning: "One purchase in N parts creates N planned entries at once, one per month, numbered 1/N … N/N. Editing or deleting asks whether it applies to this part, this and future ones, or all." },

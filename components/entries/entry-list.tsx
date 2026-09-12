@@ -18,6 +18,7 @@ import type { EntryFilters } from "@/lib/repositories";
 import { cn } from "@/lib/utils";
 import { Amount } from "./amount";
 import type { Lookups } from "./lookups";
+import { SettleOnSheet } from "./settle-on-sheet";
 
 type Patch = { id: string; status: Entry["status"]; settledOn: string | null };
 
@@ -76,18 +77,19 @@ export function EntryList({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pending, startTransition] = useTransition();
   const [loadingMore, startLoading] = useTransition();
+  const [settleOnTarget, setSettleOnTarget] = useState<Entry | null>(null);
 
-  function settle(id: string) {
+  function settle(id: string, settledOn: string = today) {
     startTransition(async () => {
-      patchOptimistic({ id, status: "settled", settledOn: today });
-      const result = await settleEntryAction(id);
+      patchOptimistic({ id, status: "settled", settledOn });
+      const result = await settleEntryAction(id, settledOn);
       if (!result.ok) {
         toast.error(result.error);
         return;
       }
-      setEntries((prev) => applyPatch(prev, { id, status: "settled", settledOn: today }));
+      setEntries((prev) => applyPatch(prev, { id, status: "settled", settledOn }));
       setRecent((prev) => new Set(prev).add(id));
-      toast.success("Settled", { action: { label: "Undo", onClick: () => unsettle(id) } });
+      toast.success(settledOn === today ? "Settled" : `Settled on ${formatDate(settledOn)}`, { action: { label: "Undo", onClick: () => unsettle(id) } });
     });
   }
 
@@ -244,6 +246,7 @@ export function EntryList({
                       justSettled={recent.has(entry.id)}
                       onToggle={() => toggle(entry.id)}
                       onSettle={() => settle(entry.id)}
+                      onSettleOn={() => setSettleOnTarget(entry)}
                       onUnsettle={() => unsettle(entry.id)}
                     />
                   ))}
@@ -255,6 +258,8 @@ export function EntryList({
       ))}
 
       {selecting && <div className="h-16" aria-hidden />}
+
+      <SettleOnSheet entry={settleOnTarget} today={today} onClose={() => setSettleOnTarget(null)} onSettle={(id, date) => settle(id, date)} />
 
       {infinite && (
         <Button variant="outline" className="h-11 w-full" onClick={loadEarlier} disabled={loadingMore}>
@@ -277,6 +282,7 @@ function EntryRow({
   justSettled,
   onToggle,
   onSettle,
+  onSettleOn,
   onUnsettle,
 }: {
   entry: Entry;
@@ -287,6 +293,8 @@ function EntryRow({
   justSettled: boolean;
   onToggle: () => void;
   onSettle: () => void;
+  /** Long press on the settle circle: pick the date. */
+  onSettleOn: () => void;
   onUnsettle: () => void;
 }) {
   const timing = entryTiming(entry, today);
@@ -300,6 +308,20 @@ function EntryRow({
   // Swipe right to settle, left to edit (§7 /entries). Mouse users have the buttons.
   const router = useRouter();
   const startX = useRef<number | null>(null);
+  // Long press on the settle circle opens the date sheet; a normal tap settles today.
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressed = useRef(false);
+  function pressStart() {
+    longPressed.current = false;
+    pressTimer.current = setTimeout(() => {
+      longPressed.current = true;
+      onSettleOn();
+    }, 450);
+  }
+  function pressEnd() {
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+    pressTimer.current = null;
+  }
   const [dx, setDx] = useState(0);
   const editHref = `/entries/${entry.id}`;
 
@@ -382,8 +404,16 @@ function EntryRow({
           (entry.status === "planned" ? (
             <button
               type="button"
-              onClick={onSettle}
-              aria-label={`Settle ${entry.description}`}
+              onClick={() => {
+                if (longPressed.current) return;
+                onSettle();
+              }}
+              onPointerDown={pressStart}
+              onPointerUp={pressEnd}
+              onPointerLeave={pressEnd}
+              onPointerCancel={pressEnd}
+              onContextMenu={(e) => e.preventDefault()}
+              aria-label={`Settle ${entry.description} (hold to pick the date)`}
               className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
             >
               <Circle className="size-5" aria-hidden />
