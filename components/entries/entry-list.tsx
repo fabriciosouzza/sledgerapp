@@ -30,6 +30,8 @@ export function EntryList({
   lookups,
   today,
   infinite = true,
+  selectable = true,
+  ascending = false,
   emptyMessage = "Nothing here.",
 }: {
   initial: Entry[];
@@ -39,6 +41,10 @@ export function EntryList({
   today: string;
   /** Show "earlier month" loading and month headers. */
   infinite?: boolean;
+  /** Offer multi-select bulk settle. */
+  selectable?: boolean;
+  /** Oldest day first (for what is coming up) instead of newest first. */
+  ascending?: boolean;
   emptyMessage?: string;
 }) {
   const [entries, setEntries] = useState(initial);
@@ -114,12 +120,12 @@ export function EntryList({
     const p = periodOf(e.date);
     byMonth.set(p, [...(byMonth.get(p) ?? []), e]);
   }
-  const months = [...byMonth.keys()].sort((a, b) => (a < b ? 1 : -1));
+  const months = [...byMonth.keys()].sort((a, b) => (a < b ? 1 : -1) * (ascending ? -1 : 1));
   const plannedCount = optimistic.filter((e) => e.status === "planned").length;
 
   return (
     <div className="space-y-4">
-      {plannedCount > 0 && (
+      {selectable && plannedCount > 0 && (
         <div className="flex items-center justify-end gap-2">
           {selecting ? (
             <>
@@ -149,7 +155,7 @@ export function EntryList({
             </h2>
           )}
           <div className="space-y-3">
-            {groupByDay(byMonth.get(month) ?? []).map((day) => (
+            {(ascending ? groupByDay(byMonth.get(month) ?? []).reverse() : groupByDay(byMonth.get(month) ?? [])).map((day) => (
               <div key={day.date}>
                 <h3 className="mb-1 px-1 text-xs font-medium text-muted-foreground">
                   {day.date === today ? "Today" : formatDate(day.date)}

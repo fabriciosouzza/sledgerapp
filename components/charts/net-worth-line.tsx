@@ -24,7 +24,7 @@ export function NetWorthLine({ data, height = 192, compact = false }: { data: Ne
               contentStyle={{ background: "var(--popover)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--popover-foreground)", fontSize: 12 }}
             />
           )}
-          <Line type="monotone" dataKey="value" stroke="var(--chart-1)" strokeWidth={2} dot={!compact} connectNulls={false} isAnimationActive={false} />
+          <Line type="monotone" dataKey="value" stroke="var(--chart-1)" strokeWidth={2} dot={!compact || known.length === 1} connectNulls={false} isAnimationActive={false} />
         </LineChart>
       </ResponsiveContainer>
     </div>
