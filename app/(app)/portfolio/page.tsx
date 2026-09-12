@@ -59,8 +59,8 @@ export default async function PortfolioPage() {
         )}
 
         <section className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-          <h2 className="mb-1 text-sm font-semibold">Contributed vs earned</h2>
-          <p className="mb-2 text-xs text-muted-foreground">Last 12 months, cumulative.</p>
+          <h2 className="mb-1 text-sm font-semibold">Contributed vs earned, accumulated</h2>
+          <p className="mb-2 text-xs text-muted-foreground">Each month shows everything up to then: your money in, and what it made on top.</p>
           <PortfolioArea data={overview.series} />
         </section>
 
