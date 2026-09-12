@@ -5,6 +5,7 @@ import { EntryList } from "@/components/entries/entry-list";
 import { buildLookups } from "@/components/entries/lookups";
 import { Stat } from "@/components/month/stat";
 import { AccountStrip } from "@/components/today/account-strip";
+import { OverdueBlock } from "@/components/today/overdue-block";
 import { QuickActions } from "@/components/today/quick-actions";
 import { Ring } from "@/components/today/ring";
 import { formatDate, formatPeriodLong } from "@/lib/domain/dates";
@@ -24,7 +25,6 @@ export default async function TodayPage() {
   const m = overview.metrics;
   const latest = overview.netWorth[overview.netWorth.length - 1];
   const initial = (user.email ?? "?").slice(0, 1).toUpperCase();
-  const overdueTotal = overview.overdue.filter((e) => e.kind === "expense").reduce((s, e) => s + e.amountCents, 0);
 
   return (
     <div className="space-y-6">
@@ -97,14 +97,21 @@ export default async function TodayPage() {
 
       <QuickActions dueTodayIds={overview.dueTodayIds} toGenerate={overview.toGenerate} />
 
-      {overview.overdue.length > 0 && (
-        <section aria-label="Overdue" className="rounded-xl border border-red-500/40 bg-red-500/5 p-3">
-          <h2 className="mb-2 text-sm font-semibold text-red-600 dark:text-red-400">
-            Overdue · {overview.overdue.length} · {formatBRL(overdueTotal)}
-          </h2>
-          <EntryList initial={overview.overdue} period={overview.period} filters={{ status: "planned" }} lookups={lookups} today={now} infinite={false} selectable={false} ascending />
-        </section>
-      )}
+      <OverdueBlock hasEntries={overview.overdue.length > 0}>
+        <EntryList
+          initial={overview.overdue}
+          period={overview.period}
+          filters={{ status: "planned" }}
+          lookups={lookups}
+          today={now}
+          infinite={false}
+          selectable={false}
+          ascending
+          title="Overdue"
+          summary
+          emptyMessage=""
+        />
+      </OverdueBlock>
 
       <section aria-label="Upcoming">
         <div className="mb-2 flex items-center justify-between">

@@ -23,7 +23,7 @@ export function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const current = mounted ? (theme ?? "system") : "system";
 
   return (
-    <div role="radiogroup" aria-label="Theme" className={cn("grid grid-cols-3 gap-1 rounded-lg bg-muted p-1", compact ? "w-full" : "w-full max-w-xs")}>
+    <div role="radiogroup" aria-label="Theme" className={cn("grid w-full grid-cols-3 gap-1 rounded-lg bg-muted p-1", !compact && "md:max-w-xs")}>
       {OPTIONS.map(({ value, label, icon: Icon }) => (
         <button
           key={value}

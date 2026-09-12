@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronRight, CreditCard, LineChart, List, LogOut, Repeat, Settings } from "lucide-react";
+import { BookOpen, ChevronRight, CreditCard, LineChart, List, LogOut, Repeat, Settings } from "lucide-react";
 import { signOutAction } from "@/app/(auth)/actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/recurrences", label: "Recurrences", description: "Fixed cost and month generation", icon: Repeat },
   { href: "/net-worth", label: "Net worth", description: "Monthly snapshots", icon: LineChart },
   { href: "/settings", label: "Settings", description: "Accounts, categories, assets", icon: Settings },
+  { href: "/guide", label: "How sledger works", description: "The terms and the weekly routine", icon: BookOpen },
 ] as const;
 
 export default function MorePage() {

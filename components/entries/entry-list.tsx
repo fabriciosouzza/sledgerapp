@@ -10,6 +10,7 @@ import { CategoryIcon } from "@/components/categories/category-icon";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { addMonths, formatDate, formatPeriodLong, periodOf } from "@/lib/domain/dates";
+import { formatBRL } from "@/lib/domain/money";
 import { groupByDay, installmentLabel } from "@/lib/domain/entries";
 import { entryTiming } from "@/lib/domain/metrics";
 import type { Entry, Period } from "@/lib/domain/types";
@@ -34,6 +35,7 @@ export function EntryList({
   selectable = true,
   ascending = false,
   title,
+  summary = false,
   emptyMessage = "Nothing here.",
 }: {
   initial: Entry[];
@@ -49,6 +51,8 @@ export function EntryList({
   ascending?: boolean;
   /** Section title, rendered on the same row as the bulk-settle trigger. */
   title?: string;
+  /** Append "N to settle · R$ X" to the title, live as rows get settled. */
+  summary?: boolean;
   emptyMessage?: string;
 }) {
   const [entries, setEntries] = useState(initial);
@@ -125,7 +129,9 @@ export function EntryList({
     byMonth.set(p, [...(byMonth.get(p) ?? []), e]);
   }
   const months = [...byMonth.keys()].sort((a, b) => (a < b ? 1 : -1) * (ascending ? -1 : 1));
-  const plannedIds = optimistic.filter((e) => e.status === "planned").map((e) => e.id);
+  const plannedRows = optimistic.filter((e) => e.status === "planned");
+  const plannedIds = plannedRows.map((e) => e.id);
+  const plannedExpense = plannedRows.filter((e) => e.kind === "expense").reduce((sum, e) => sum + e.amountCents, 0);
   // Bulk settle earns its control only when there is more than one thing to settle.
   const canSelect = selectable && plannedIds.length > 1;
 
@@ -138,7 +144,19 @@ export function EntryList({
     <div className="space-y-4">
       {(title || canSelect) && (
         <div className="flex min-h-9 items-center justify-between gap-2">
-          {title ? <h2 className="text-sm font-semibold">{title}</h2> : <span />}
+          {title ? (
+            <h2 className="text-sm font-semibold">
+              {title}
+              {summary && (
+                <span className="font-normal text-muted-foreground">
+                  {" "}
+                  · {plannedIds.length === 0 ? "all settled" : `${plannedIds.length} to settle${plannedExpense > 0 ? ` · ${formatBRL(plannedExpense)}` : ""}`}
+                </span>
+              )}
+            </h2>
+          ) : (
+            <span />
+          )}
           {canSelect && (
             <Button
               variant={selecting ? "secondary" : "ghost"}
@@ -325,6 +343,11 @@ function EntryRow({
             {timing === "overdue" && (
               <span className="shrink-0 rounded-full bg-red-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-red-600 uppercase dark:text-red-400">
                 overdue
+              </span>
+            )}
+            {timing === "settled" && (
+              <span className="shrink-0 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 uppercase dark:text-emerald-400">
+                settled
               </span>
             )}
           </span>
