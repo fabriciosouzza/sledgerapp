@@ -122,11 +122,13 @@ export default async function TodayPage() {
               label="Due in 7 days"
               cents={overview.dueSoonCents}
               tone={overview.dueSoonCents > 0 ? "negative" : "neutral"}
+              href={`/entries?month=${overview.period}&status=planned`}
             />
             <Stat
               label="Leftover this month"
               cents={m.leftoverCents}
               tone="signed"
+              href={`/entries?month=${overview.period}`}
             />
           </section>
 

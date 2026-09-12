@@ -1,3 +1,5 @@
+import Link from "next/link";
+import { ChevronRight } from "lucide-react";
 import { formatBRL } from "@/lib/domain/money";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +12,7 @@ export function Stat({
   tone = "neutral",
   hint,
   className,
+  href,
 }: {
   label: string;
   cents?: number | null;
@@ -19,6 +22,8 @@ export function Stat({
   tone?: "neutral" | "signed" | "positive" | "negative";
   hint?: string;
   className?: string;
+  /** Makes the tile a link to the rows behind the number. */
+  href?: string;
 }) {
   let value: string;
   let color = "";
@@ -35,11 +40,22 @@ export function Stat({
       if (tone === "negative") color = "text-red-600 dark:text-red-400";
     }
   }
-  return (
-    <div className={cn("rounded-xl bg-card p-3 ring-1 ring-foreground/10", className)}>
-      <p className="text-xs text-muted-foreground">{label}</p>
+  const body = (
+    <>
+      <p className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+        <span className="truncate">{label}</span>
+        {href && <ChevronRight className="size-3.5 shrink-0" aria-hidden />}
+      </p>
       <p className={cn("mt-0.5 text-lg font-semibold tabular-nums", color)}>{value}</p>
       {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
-    </div>
+    </>
   );
+  if (href) {
+    return (
+      <Link href={href} className={cn("block rounded-xl bg-card p-3 ring-1 ring-foreground/10 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring", className)}>
+        {body}
+      </Link>
+    );
+  }
+  return <div className={cn("rounded-xl bg-card p-3 ring-1 ring-foreground/10", className)}>{body}</div>;
 }
