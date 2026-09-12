@@ -83,17 +83,9 @@ export default async function CardsPage(props: PageProps<"/cards">) {
                     {card.open.daysToDue}d)
                   </p>
                 </div>
-                {card.open.statement.paidOn ? <Badge variant="secondary">paid</Badge> : <Badge variant="outline">open</Badge>}
+                <Badge variant="outline">open</Badge>
               </div>
-              {card.open.statement.paidOn === null && card.open.totalCents > 0 && (
-                <PayStatementDialog
-                  statementId={card.open.statement.id}
-                  label={`${card.account.name} ${formatPeriodShort(periodOf(card.open.statement.cycleEnd))}`}
-                  totalCents={card.open.totalCents}
-                  cashAccounts={cashAccounts}
-                  today={now}
-                />
-              )}
+              <p className="text-xs text-muted-foreground">Closes on {formatDate(card.open.statement.cycleEnd)}; pay it after that.</p>
               <EntryList
                 initial={card.open.entries}
                 period={periodOf(now)}

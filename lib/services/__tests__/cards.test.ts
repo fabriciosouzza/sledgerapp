@@ -93,7 +93,10 @@ describe("cardsOverview", () => {
     const a = (await cardsOverview(repos, U, TODAY)).cards.find((c) => c.account.id === cardA)!;
     const id = a.past[0].statement.id;
     await expect(payStatement(repos, U, { statementId: id, fromAccountId: cardB, paidOn: TODAY }, TODAY)).rejects.toMatchObject({ code: "invalid" });
-    await expect(payStatement(repos, U, { statementId: a.open.statement.id, fromAccountId: checking, paidOn: TODAY }, TODAY)).rejects.toMatchObject({ code: "invalid" });
+    // Open statements cannot be paid yet.
+    await spend(cardA, TODAY, "10,00");
+    const withOpen = (await cardsOverview(repos, U, TODAY)).cards.find((c) => c.account.id === cardA)!;
+    await expect(payStatement(repos, U, { statementId: withOpen.open.statement.id, fromAccountId: checking, paidOn: TODAY }, TODAY)).rejects.toMatchObject({ code: "invalid" });
     await payStatement(repos, U, { statementId: id, fromAccountId: checking, paidOn: TODAY }, TODAY);
     await expect(payStatement(repos, U, { statementId: id, fromAccountId: checking, paidOn: TODAY }, TODAY)).rejects.toMatchObject({ code: "invalid" });
 
@@ -108,5 +111,27 @@ describe("cardsOverview", () => {
     const { cards } = await cardsOverview(repos, U, TODAY);
     const open = cards.find((c) => c.account.id === cardA)!.open;
     expect((await repos.entries.getById(U, entry.id))!.statementId).toBe(open.statement.id);
+  });
+});
+
+describe("card purchases", () => {
+  it("are settled the day they are made, whatever the toggle says", async () => {
+    const [entry] = (await createEntry(repos, U, entryInputSchema.parse({ kind: "expense", amountCents: "80,00", date: "2026-11-10", description: "Café", categoryId: food, accountId: cardA }), { today: TODAY })).entries;
+    expect(entry).toMatchObject({ status: "settled", settledOn: "2026-11-10" });
+  });
+
+  it("installments wait for their statement to be paid", async () => {
+    const parts = (await createEntry(repos, U, entryInputSchema.parse({ kind: "expense", amountCents: "100,00", date: "2026-10-01", description: "TV", categoryId: food, accountId: cardA, installments: "on", installmentParts: "3", settled: "on" }), { today: TODAY })).entries;
+    expect(parts.every((p) => p.status === "planned")).toBe(true);
+
+    const a = (await cardsOverview(repos, U, TODAY)).cards.find((c) => c.account.id === cardA)!;
+    const october = a.past.find((s) => s.statement.cycleStart === "2026-09-06")!; // Sep 6 – Oct 5 holds part 1
+    await payStatement(repos, U, { statementId: october.statement.id, fromAccountId: checking, paidOn: "2026-10-15" }, TODAY);
+    const after = await repos.entries.list(U, { installmentGroupId: parts[0].installmentGroupId! });
+    expect(after.find((p) => p.installmentNo === 1)).toMatchObject({ status: "settled", settledOn: "2026-10-15" });
+    expect(after.find((p) => p.installmentNo === 2)!.status).toBe("planned");
+
+    await unpayStatement(repos, U, october.statement.id);
+    expect((await repos.entries.list(U, { installmentGroupId: parts[0].installmentGroupId! })).find((p) => p.installmentNo === 1)!.status).toBe("planned");
   });
 });

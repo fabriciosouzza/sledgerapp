@@ -108,6 +108,7 @@ export function EntryForm({
   const effectiveCounterId = pick(counterAccountId, remembered?.counterAccountId, counterOptions);
 
   const showInstallments = !editing && canBeInstallments(kind);
+  const onCard = canBeInstallments(kind) && accounts.find((a) => a.id === effectiveAccountId)?.type === "credit_card";
   const preview =
     installments && amountCents
       ? `${parts} × ${formatBRL(amountCents)}, ${formatPeriodShort(periodOf(date))} → ${formatPeriodShort(lastInstallmentPeriod(date, parts))}`
@@ -240,11 +241,17 @@ export function EntryForm({
         <Input id="description" name="description" required maxLength={120} defaultValue={entry?.description} className="h-11" autoComplete="off" />
       </Field>
 
-      <div className="flex min-h-11 items-center justify-between gap-3">
-        <Label htmlFor="settled">{kind === "income" ? "Already received?" : "Already paid?"}</Label>
-        <Switch id="settled" name="settled" checked={settled} onCheckedChange={setSettled} />
-      </div>
-      {settled && (
+      {onCard && !editing ? (
+        <p className="rounded-xl bg-muted/40 p-3 text-xs text-muted-foreground">
+          On a card, the purchase counts the day it is made; you pay the statement later. Installments count when their statement is paid.
+        </p>
+      ) : (
+        <div className="flex min-h-11 items-center justify-between gap-3">
+          <Label htmlFor="settled">{kind === "income" ? "Already received?" : "Already paid?"}</Label>
+          <Switch id="settled" name="settled" checked={settled} onCheckedChange={setSettled} />
+        </div>
+      )}
+      {settled && !(onCard && !editing) && (
         <Field label={kind === "income" ? "Received on" : "Paid on"} htmlFor="settledOn">
           <DatePicker id="settledOn" name="settledOn" defaultValue={entry?.settledOn ?? (date <= today ? date : today)} />
         </Field>

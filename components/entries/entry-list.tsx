@@ -56,12 +56,24 @@ export function EntryList({
   emptyMessage?: string;
 }) {
   const [entries, setEntries] = useState(initial);
+  // Settled from this list, this visit: these rows keep a "settled" badge as confirmation.
+  const [recent, setRecent] = useState<Set<string>>(new Set());
+  // When the server sends new rows (after a refresh), take them as the truth
+  // but keep the rows settled here that it no longer returns, so a settled
+  // entry stays visible with its undo instead of vanishing.
+  const [seen, setSeen] = useState(initial);
+  if (seen !== initial) {
+    setSeen(initial);
+    setEntries((local) => {
+      const serverIds = new Set(initial.map((e) => e.id));
+      const kept = local.filter((e) => !serverIds.has(e.id) && recent.has(e.id));
+      return [...initial, ...kept];
+    });
+  }
   const [optimistic, patchOptimistic] = useOptimistic(entries, applyPatch);
   const [oldest, setOldest] = useState(period);
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  // Settled from this list, this visit: these rows keep a "settled" badge as confirmation.
-  const [recent, setRecent] = useState<Set<string>>(new Set());
   const [pending, startTransition] = useTransition();
   const [loadingMore, startLoading] = useTransition();
 

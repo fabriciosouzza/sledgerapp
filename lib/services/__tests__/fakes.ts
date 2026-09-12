@@ -134,6 +134,8 @@ export function fakeRepositories(): FakeRepositories {
       return entries
         .filter((e) => e.userId === userId)
         .filter((e) => (from ? e.date >= from : true) && (to ? e.date <= to : true))
+        .filter((e) => (f.settledFrom ? e.settledOn !== null && e.settledOn >= f.settledFrom : true))
+        .filter((e) => (f.settledTo ? e.settledOn !== null && e.settledOn <= f.settledTo : true))
         .filter((e) => (f.kind ? e.kind === f.kind : true))
         .filter((e) => (f.status ? e.status === f.status : true))
         .filter((e) => (f.accountId ? e.accountId === f.accountId : true))

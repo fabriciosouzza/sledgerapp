@@ -12,6 +12,9 @@ export interface EntryFilters {
   /** Inclusive date bounds, used instead of `period` when given. */
   from?: IsoDate;
   to?: IsoDate;
+  /** Inclusive bounds on `settled_on` instead of `date` (balances move when money moves). */
+  settledFrom?: IsoDate;
+  settledTo?: IsoDate;
   kind?: EntryKind;
   status?: EntryStatus;
   accountId?: string;
@@ -101,6 +104,8 @@ export function supabaseEntriesRepo(db: DbClient): EntriesRepo {
       const to = filters.to ?? (filters.period ? periodEnd(filters.period) : undefined);
       if (from) q = q.gte("date", from);
       if (to) q = q.lte("date", to);
+      if (filters.settledFrom) q = q.gte("settled_on", filters.settledFrom);
+      if (filters.settledTo) q = q.lte("settled_on", filters.settledTo);
       if (filters.kind) q = q.eq("kind", filters.kind);
       if (filters.status) q = q.eq("status", filters.status);
       if (filters.accountId) q = q.eq("account_id", filters.accountId);
@@ -113,7 +118,7 @@ export function supabaseEntriesRepo(db: DbClient): EntriesRepo {
       if (filters.installmentGroupId) q = q.eq("installment_group_id", filters.installmentGroupId);
       if (filters.recurrenceId) q = q.eq("recurrence_id", filters.recurrenceId);
       if (filters.search) q = q.ilike("description", `%${filters.search.replace(/[%_]/g, "\\$&")}%`);
-      if (!from && !to && !filters.statementId && !filters.installmentGroupId && !filters.recurrenceId) {
+      if (!from && !to && !filters.settledFrom && !filters.settledTo && !filters.statementId && !filters.installmentGroupId && !filters.recurrenceId) {
         throw new RepositoryError("invalid", "entries.list needs a period, a date range or a group");
       }
       const { data, error } = await q.order("date", { ascending: false }).order("created_at", { ascending: false });

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { today } from "@/lib/domain/dates";
 import { optionalIsoDate } from "@/lib/schemas/entries";
 import { settleEntry, unsettleEntry } from "@/lib/services/entries";
-import { json, parseBody, withUser } from "../../../_lib/handler";
+import { json, withUser } from "../../../_lib/handler";
 
 const bodySchema = z.object({
   /** `false` reverts the settle. */
@@ -14,8 +14,10 @@ const bodySchema = z.object({
 export async function PATCH(request: Request, ctx: RouteContext<"/api/entries/[id]/settle">) {
   const { id } = await ctx.params;
   return withUser(async ({ userId, repos }) => {
-    const raw = request.headers.get("content-length") === "0" || request.headers.get("content-type") === null ? { data: bodySchema.parse({}) } : await parseBody(request, bodySchema);
-    if ("response" in raw) return raw.response;
+    const text = await request.text();
+    const parsed = bodySchema.safeParse(text.trim() === "" ? {} : JSON.parse(text));
+    if (!parsed.success) return json({ error: parsed.error.issues[0]?.message ?? "Invalid body." }, 400);
+    const raw = { data: parsed.data };
     const entry = raw.data.settled ? await settleEntry(repos, userId, id, raw.data.settledOn ?? today()) : await unsettleEntry(repos, userId, id);
     return json({ entry });
   });

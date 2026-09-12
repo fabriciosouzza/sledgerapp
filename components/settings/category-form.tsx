@@ -30,6 +30,7 @@ export function CategoryForm({
   const str = (key: string, fallback: string | number | null | undefined) =>
     typeof v[key] === "string" ? v[key] : fallback === null || fallback === undefined ? "" : String(fallback);
   const appliesTo = Array.isArray(v.appliesTo) ? v.appliesTo : (category?.appliesTo ?? ["expense"]);
+  const [forExpense, setForExpense] = useState(appliesTo.includes("expense"));
   const [icon, setIcon] = useState<string>(str("icon", category?.icon));
   const [color, setColor] = useState<string>(str("color", category?.color));
 
@@ -64,7 +65,12 @@ export function CategoryForm({
         <div className="flex gap-6">
           {(["expense", "income"] as const).map((kind) => (
             <label key={kind} className="flex min-h-11 items-center gap-2 text-sm capitalize">
-              <Checkbox name="appliesTo[]" value={kind} defaultChecked={appliesTo.includes(kind)} />
+              <Checkbox
+                name="appliesTo[]"
+                value={kind}
+                defaultChecked={appliesTo.includes(kind)}
+                onCheckedChange={kind === "expense" ? (checked) => setForExpense(checked === true) : undefined}
+              />
               {kind}
             </label>
           ))}
@@ -107,9 +113,11 @@ export function CategoryForm({
         </div>
       </fieldset>
 
-      <Field label="Monthly cap" htmlFor="monthlyCapCents" hint="Optional. The month screen shows progress against it.">
-        <CurrencyInput id="monthlyCapCents" name="monthlyCapCents" defaultCents={category?.monthlyCapCents ?? null} className="h-11" aria-describedby="monthlyCapCents-hint" />
-      </Field>
+      {forExpense && (
+        <Field label="Monthly cap" htmlFor="monthlyCapCents" hint="Optional. Review shows progress against it; the caps together are your budget.">
+          <CurrencyInput id="monthlyCapCents" name="monthlyCapCents" defaultCents={category?.monthlyCapCents ?? null} className="h-11" aria-describedby="monthlyCapCents-hint" />
+        </Field>
+      )}
 
       <div className="flex min-h-11 items-center justify-between gap-3">
         <div>

@@ -73,7 +73,14 @@ export async function createEntry(
   const kind = input.kind;
   const categoryId = needsCategory(kind) ? input.categoryId : null;
   const counterAccountId = needsCounterAccount(kind) ? input.counterAccountId : null;
-  await checkRefs(repos, userId, { kind, categoryId, accountId: input.accountId, counterAccountId });
+  const { account } = await checkRefs(repos, userId, { kind, categoryId, accountId: input.accountId, counterAccountId });
+
+  // A card purchase happened when it was made: it is settled at once, and the
+  // statement is what gets paid (§5.6). Its installments wait for their
+  // statement to be paid (payStatement settles them).
+  const onCard = isCreditCard(account) && (kind === "expense" || kind === "income");
+  const settled = onCard ? !input.installments : input.settled;
+  const settledOn = onCard ? input.date : input.settledOn;
 
   // Repeat monthly: a template, plus this month's occurrence so what was
   // just typed shows up. Later months come from "generate month" (§5.5).
@@ -95,7 +102,7 @@ export async function createEntry(
       ...expandRecurrence(recurrence, periodOf(input.date)),
       date: input.date,
       notes: input.notes,
-      ...settledFields(input.settled, input.settledOn, input.date),
+      ...settledFields(settled, settledOn, input.date),
     };
     const entries = await repos.entries.insertMany(userId, [first], { ignoreConflicts: true });
     return { entries, recurrence };
@@ -114,7 +121,7 @@ export async function createEntry(
         categoryId,
         accountId: input.accountId,
         notes: input.notes,
-        firstSettledOn: input.settled ? (input.settledOn ?? input.date) : null,
+        firstSettledOn: !onCard && input.settled ? (input.settledOn ?? input.date) : null,
       },
       (options.newId ?? (() => crypto.randomUUID()))(),
     );
@@ -137,7 +144,7 @@ export async function createEntry(
     installmentNo: null,
     installmentTotal: null,
     statementId: null,
-    ...settledFields(input.settled, input.settledOn, input.date),
+    ...settledFields(settled, settledOn, input.date),
   });
   return { entries: [entry], recurrence: null };
 }

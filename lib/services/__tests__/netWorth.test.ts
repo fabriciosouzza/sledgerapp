@@ -67,6 +67,16 @@ describe("derived balances", () => {
     expect(after.current.debtCents).toBe(0);
   });
 
+  it("moves the balance when the money moved, not when the bill was dated", async () => {
+    // Dated before the account opened, paid after: it counts, because the payment left this account.
+    await add({ amountCents: "70,00", date: "2026-09-20", settledOn: "2026-10-03" });
+    // Dated inside the range, paid after `until`: not yet.
+    await add({ amountCents: "30,00", date: "2026-10-10", settledOn: "2026-11-09" });
+    // Reserva opened on Oct 15 with R$ 500 and is part of the total from then on.
+    expect(await cashAtPeriod(repos, U, "2026-10", TODAY)).toBe(100_000 + 50_000 - 7_000);
+    expect(await cashAtPeriod(repos, U, "2026-11", TODAY)).toBe(100_000 + 50_000 - 7_000 - 3_000);
+  });
+
   it("values cash at a past month's end", async () => {
     await add({ kind: "income", amountCents: "300,00", date: "2026-10-05" });
     await add({ amountCents: "50,00", date: "2026-11-03" });

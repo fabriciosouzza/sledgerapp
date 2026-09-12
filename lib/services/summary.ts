@@ -51,14 +51,19 @@ export interface MonthSummary {
 
 const HISTORY_MONTHS = 6;
 
-export async function monthSummary(repos: Repositories, userId: string, period: Period, today?: IsoDate): Promise<MonthSummary> {
+export async function monthSummary(
+  repos: Repositories,
+  userId: string,
+  period: Period,
+  options: { today?: IsoDate; cashCents?: number | null } = {},
+): Promise<MonthSummary> {
   const historyFrom = addMonths(period, -(HISTORY_MONTHS - 1));
   const previousPeriod = addMonths(period, -1);
   const [entries, categories, recurrences, cashCents, past, previousAll] = await Promise.all([
     repos.entries.list(userId, { period }),
     repos.categories.list(userId),
     repos.recurrences.list(userId),
-    cashAtPeriod(repos, userId, period, today ?? todayInSaoPaulo()),
+    options.cashCents !== undefined ? options.cashCents : cashAtPeriod(repos, userId, period, options.today ?? todayInSaoPaulo()),
     // One bounded range for the history and last month's daily line (§4.5).
     repos.entries.list(userId, { from: periodStart(historyFrom), to: periodEnd(previousPeriod), kind: "expense", status: "settled" }),
     repos.entries.list(userId, { period: previousPeriod }),

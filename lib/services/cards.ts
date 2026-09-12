@@ -44,7 +44,12 @@ export interface CardsOverview {
 /** How far back the screen looks. A year of statements is plenty for a phone. */
 const MONTHS_BACK = 12;
 
-async function buildCard(repos: Repositories, userId: string, card: Account, today: IsoDate): Promise<CardView> {
+export interface CardsOptions {
+  /** "open": create only the open statement row (Today); "all": every cycle with entries (/cards). */
+  ensure?: "open" | "all";
+}
+
+async function buildCard(repos: Repositories, userId: string, card: Account, today: IsoDate, ensure: "open" | "all"): Promise<CardView> {
   const from = `${addMonths(periodOf(today), -MONTHS_BACK)}-01`;
   const to = resolveCardCycle(card, today).cycleEnd;
   const entries = await repos.entries.list(userId, { accountId: card.id, from, to });
@@ -55,16 +60,19 @@ async function buildCard(repos: Repositories, userId: string, card: Account, tod
     groups.unshift({ cycle: current, entries: [], totalCents: 0 });
   }
 
-  // Statement rows, created lazily, one per (card, cycle_start).
+  // Statement rows, created lazily, one per (card, cycle_start). Rows already
+  // known are reused without a write; the open cycle is always materialised.
+  const known = new Map((await repos.statements.listByAccount(userId, card.id)).map((s) => [s.cycleStart, s]));
   const views: StatementView[] = [];
   for (const group of groups) {
-    const statement = await repos.statements.ensure(userId, {
-      accountId: card.id,
-      cycleStart: group.cycle.cycleStart,
-      cycleEnd: group.cycle.cycleEnd,
-      dueDate: group.cycle.dueDate,
-      paidOn: null,
-    });
+    let statement = known.get(group.cycle.cycleStart);
+    if (!statement) {
+      if (ensure === "open" && group.cycle.cycleStart !== current.cycleStart) {
+        views.push({ statement: { id: "", accountId: card.id, ...group.cycle, paidOn: null }, entries: group.entries, totalCents: group.totalCents, isOpen: false, daysToDue: daysToDue(group.cycle, today) });
+        continue;
+      }
+      statement = await repos.statements.ensure(userId, { accountId: card.id, ...group.cycle, paidOn: null });
+    }
     const stale = group.entries.filter((e) => e.statementId !== statement.id).map((e) => e.id);
     if (stale.length > 0) await repos.entries.updateMany(userId, stale, { statementId: statement.id });
     views.push({
@@ -89,11 +97,11 @@ async function buildCard(repos: Repositories, userId: string, card: Account, tod
   };
 }
 
-export async function cardsOverview(repos: Repositories, userId: string, today: IsoDate): Promise<CardsOverview> {
+export async function cardsOverview(repos: Repositories, userId: string, today: IsoDate, options: CardsOptions = {}): Promise<CardsOverview> {
   const accounts = await repos.accounts.list(userId);
   const cards = accounts.filter((a) => isCreditCard(a) && a.isActive);
   const views: CardView[] = [];
-  for (const card of cards) views.push(await buildCard(repos, userId, card, today));
+  for (const card of cards) views.push(await buildCard(repos, userId, card, today, options.ensure ?? "all"));
   return { cards: views, totalDebtCents: views.reduce((sum, c) => sum + c.debtCents, 0) };
 }
 
@@ -108,6 +116,7 @@ export async function payStatement(repos: Repositories, userId: string, input: P
   const statement = await repos.statements.getById(userId, input.statementId);
   if (!statement) throw new ServiceError("not_found", "Statement not found.");
   if (statement.paidOn !== null) throw new ServiceError("invalid", "This statement is already paid.");
+  if (statement.cycleEnd >= today) throw new ServiceError("invalid", "This statement is still open; pay it after it closes.");
 
   const [card, from] = await Promise.all([
     repos.accounts.getById(userId, statement.accountId),
@@ -116,7 +125,7 @@ export async function payStatement(repos: Repositories, userId: string, input: P
   if (!card || !isCreditCard(card)) throw new ServiceError("invalid", "Statement is not on a card.");
   if (!from || !isCashAccount(from)) throw new ServiceError("invalid", "Pay from a cash account.");
 
-  const view = await buildCard(repos, userId, card, today);
+  const view = await buildCard(repos, userId, card, today, "all");
   const target = [view.open, ...view.past].find((v) => v.statement.id === statement.id);
   const total = target?.totalCents ?? 0;
   if (total <= 0) throw new ServiceError("invalid", "There is nothing to pay on this statement.");
@@ -141,6 +150,9 @@ export async function payStatement(repos: Repositories, userId: string, input: P
     statementId: statement.id,
   });
   await repos.statements.setPaidOn(userId, statement.id, input.paidOn);
+  // Installment parts on this statement happen now that it is paid.
+  const pending = (target?.entries ?? []).filter((e) => e.status === "planned").map((e) => e.id);
+  if (pending.length > 0) await repos.entries.updateMany(userId, pending, { status: "settled", settledOn: input.paidOn });
   return entry;
 }
 
@@ -148,8 +160,12 @@ export async function unpayStatement(repos: Repositories, userId: string, statem
   const statement = await repos.statements.getById(userId, statementId);
   if (!statement) throw new ServiceError("not_found", "Statement not found.");
   if (statement.paidOn === null) throw new ServiceError("invalid", "This statement is not paid.");
-  const payments = (await repos.entries.list(userId, { statementId })).filter((e) => e.kind === "transfer");
+  const rows = await repos.entries.list(userId, { statementId });
+  const payments = rows.filter((e) => e.kind === "transfer");
   await repos.entries.deleteMany(userId, payments.map((e) => e.id));
+  // What the payment settled goes back to waiting.
+  const settledByPayment = rows.filter((e) => e.kind !== "transfer" && e.installmentGroupId !== null && e.settledOn === statement.paidOn).map((e) => e.id);
+  if (settledByPayment.length > 0) await repos.entries.updateMany(userId, settledByPayment, { status: "planned", settledOn: null });
   await repos.statements.setPaidOn(userId, statementId, null);
 }
 

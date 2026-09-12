@@ -1,6 +1,7 @@
 // The Today screen (PROMPT.md §7 /, DESIGN.md §2): "what do I need to do
 // right now". Composes the other services; the only new rule is the insight.
 
+import { isCreditCard } from "@/lib/domain/accounts";
 import { addDays, addMonths, periodOf } from "@/lib/domain/dates";
 import { monthInsight, type Insight } from "@/lib/domain/insights";
 import { computeMetrics, entryTiming, type PeriodMetrics } from "@/lib/domain/metrics";
@@ -23,7 +24,7 @@ export interface TodayOverview {
   period: Period;
   /** Σ cash account balances today; `null` with no cash account yet. */
   cashCents: number | null;
-  /** Σ planned expenses due in the next 7 days, today included. */
+  /** Σ planned money leaving cash in the next 7 days (expenses, transfers out, contributions), today included. */
   dueSoonCents: number;
   /** Planned entries due today (for "settle all due today"). */
   dueTodayIds: string[];
@@ -38,31 +39,34 @@ export interface TodayOverview {
   netWorth: NetWorthPoint[];
 }
 
-const OVERDUE_MONTHS_BACK = 3;
 const UPCOMING_DAYS = 7;
 
 export async function todayOverview(repos: Repositories, userId: string, today: IsoDate): Promise<TodayOverview> {
   const period = periodOf(today);
   const previousPeriod = addMonths(period, -1);
-  const [summary, previousEntries, planned, cards, netWorth, generation, categories] = await Promise.all([
-    monthSummary(repos, userId, period),
+  const netWorth = await netWorthOverview(repos, userId, today);
+  const [summary, previousEntries, planned, cards, generation, categories] = await Promise.all([
+    monthSummary(repos, userId, period, { today, cashCents: netWorth.cashCents }),
     repos.entries.list(userId, { period: previousPeriod }),
-    repos.entries.list(userId, { status: "planned", from: `${addMonths(period, -OVERDUE_MONTHS_BACK)}-01`, to: addDays(today, UPCOMING_DAYS) }),
-    cardsOverview(repos, userId, today),
-    netWorthOverview(repos, userId, today),
+    // Planned rows only: whatever is still due, however old, plus the next days.
+    repos.entries.list(userId, { status: "planned", to: addDays(today, UPCOMING_DAYS) }),
+    cardsOverview(repos, userId, today, { ensure: "open" }),
     previewGeneration(repos, userId, period),
     repos.categories.list(userId),
   ]);
 
   const previous = previousEntries.length > 0 ? computeMetrics({ entries: previousEntries, categories, recurrences: [], cashCents: null }) : null;
-  const overdue = planned.filter((e) => entryTiming(e, today) === "overdue").sort((a, b) => (a.date < b.date ? -1 : 1));
-  const upcoming = planned.filter((e) => entryTiming(e, today) === "upcoming").sort((a, b) => (a.date < b.date ? -1 : 1));
+  // Card purchases are paid through their statement, never one by one (§5.6).
+  const cardIds = new Set(netWorth.accounts.filter(isCreditCard).map((a) => a.id));
+  const toSettle = planned.filter((e) => !cardIds.has(e.accountId));
+  const overdue = toSettle.filter((e) => entryTiming(e, today) === "overdue").sort((a, b) => (a.date < b.date ? -1 : 1));
+  const upcoming = toSettle.filter((e) => entryTiming(e, today) === "upcoming").sort((a, b) => (a.date < b.date ? -1 : 1));
 
   return {
     today,
     period,
     cashCents: netWorth.cashCents,
-    dueSoonCents: upcoming.filter((e) => e.kind === "expense").reduce((sum, e) => sum + e.amountCents, 0),
+    dueSoonCents: upcoming.filter((e) => e.kind !== "income").reduce((sum, e) => sum + e.amountCents, 0),
     dueTodayIds: upcoming.filter((e) => e.date === today).map((e) => e.id),
     metrics: summary.metrics,
     insight: monthInsight(summary.metrics, previous),

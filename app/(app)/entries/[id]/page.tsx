@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DeleteEntryDialog } from "@/components/entries/delete-entry-dialog";
 import { EntryForm } from "@/components/entries/entry-form";
@@ -22,7 +23,16 @@ export default async function EditEntryPage(props: PageProps<"/entries/[id]">) {
 
   return (
     <>
-      <PageHeader title={entry.description} description={parts ? `Installment ${parts}` : undefined} action={<DeleteEntryDialog entry={entry} />} />
+      <PageHeader title={entry.description} description={parts ? `Installment ${parts}` : entry.recurrenceId ? "From a recurrence" : undefined} action={<DeleteEntryDialog entry={entry} />} />
+      {entry.recurrenceId && (
+        <p className="mb-4 -mt-2 text-sm text-muted-foreground">
+          Changes here apply to this month only.{" "}
+          <Link href={`/recurrences/${entry.recurrenceId}`} className="text-primary hover:underline">
+            Edit the recurrence
+          </Link>{" "}
+          for the months to come.
+        </p>
+      )}
       <EntryForm
         accounts={accounts.filter((a) => a.isActive || a.id === entry.accountId || a.id === entry.counterAccountId)}
         categories={categories.filter((c) => c.isActive || c.id === entry.categoryId)}

@@ -12,6 +12,7 @@ import type { Account, Entry, IsoDate, Period } from "@/lib/domain/types";
 import type { Repositories } from "@/lib/repositories";
 
 export interface NetWorthOverview {
+  accounts: Account[];
   series: NetWorthPoint[];
   current: NetWorthPoint;
   /** Each cash account today; `null` before its opening date. */
@@ -24,17 +25,21 @@ async function cashEntries(repos: Repositories, userId: string, accounts: Accoun
   const cash = accounts.filter(isCashAccount);
   if (cash.length === 0) return [];
   const from = cash.reduce((min, a) => (a.openingOn < min ? a.openingOn : min), cash[0].openingOn);
-  return repos.entries.list(userId, { touchingAccountIds: cash.map((a) => a.id), from, to: until, status: "settled" });
+  return repos.entries.list(userId, { touchingAccountIds: cash.map((a) => a.id), settledFrom: from, settledTo: until, status: "settled" });
 }
 
-/** Card statements with totals over the range, for debt at any month end. */
+/**
+ * Card purchases grouped by statement, for debt at any month end. Reaches
+ * back to the range's start or the oldest unpaid statement, whichever is
+ * earlier, so an old unpaid statement is never forgotten.
+ */
 async function cardStatements(repos: Repositories, userId: string, accounts: Account[], from: IsoDate, until: IsoDate) {
   const cards = accounts.filter(isCreditCard);
   if (cards.length === 0) return [];
-  const [entries, statements] = await Promise.all([
-    repos.entries.list(userId, { touchingAccountIds: cards.map((c) => c.id), from, to: until }),
-    repos.statements.listByUser(userId),
-  ]);
+  const statements = await repos.statements.listByUser(userId);
+  const oldestUnpaid = statements.filter((s) => s.paidOn === null).reduce<IsoDate | null>((min, s) => (min === null || s.cycleStart < min ? s.cycleStart : min), null);
+  const start = oldestUnpaid !== null && oldestUnpaid < from ? oldestUnpaid : from;
+  const entries = await repos.entries.list(userId, { touchingAccountIds: cards.map((c) => c.id), from: start, to: until });
   const paidOn = new Map(statements.map((s) => [`${s.accountId}:${s.cycleStart}`, s.paidOn]));
   return cards.flatMap((card) =>
     groupByCycle(card, entries.filter((e) => e.accountId === card.id)).map((g) => ({
@@ -62,6 +67,7 @@ export async function netWorthOverview(repos: Repositories, userId: string, toda
   });
 
   return {
+    accounts,
     series,
     current: series[series.length - 1],
     balances: balancesAt(accounts, entries, today),
