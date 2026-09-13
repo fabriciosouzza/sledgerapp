@@ -6,7 +6,7 @@ import { useTransition } from "react";
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, CheckCheck, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { settleManyAction } from "@/app/(app)/entries/actions";
-import { formatPeriodShort, periodOf, today } from "@/lib/domain/dates";
+import { periodOf, today } from "@/lib/domain/dates";
 import type { PendingMonth } from "@/lib/services/recurrences";
 import { cn } from "@/lib/utils";
 
@@ -57,13 +57,7 @@ export function QuickActions({ dueToday, pending: pendingMonths }: { dueToday: {
           Settle {dueLabel}
         </button>
       )}
-      {/* Earlier months are previewed on Review before anything is created: a template may have been recorded by hand already. */}
-      {past.length > 0 && (
-        <Link href={`/review?month=${past[0].period}`} className={cn(base, "border-amber-500/60")}>
-          <Sparkles className="size-4 text-amber-600 dark:text-amber-400" aria-hidden />
-          {pastCount} recurring not applied · {past.map((m) => formatPeriodShort(m.period)).join(", ")}
-        </Link>
-      )}
+      {/* Earlier months are not flagged here: a template recorded by hand looks "not applied" forever. Review shows them. */}
       {toGenerate - pastCount > 0 && (
         <Link href="/review" className={cn(base, "border-primary/40")}>
           <Sparkles className="size-4" aria-hidden />

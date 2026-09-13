@@ -172,7 +172,7 @@ export function EntryForm({
         ))}
       </div>
 
-      <Field label={installments ? "Amount of each part" : "Amount"} htmlFor="amountCents" hint="Digits fill from the cents: 81233 → R$ 812,33. Type a comma for reais: 812,33.">
+      <Field label={installments ? "Amount of each part" : "Amount"} htmlFor="amountCents">
         <CurrencyInput
           id="amountCents"
           name="amountCents"
@@ -181,7 +181,6 @@ export function EntryForm({
           required
           autoFocus
           className="h-14 text-2xl font-semibold"
-          aria-describedby="amountCents-hint"
         />
       </Field>
 

@@ -30,29 +30,11 @@ export function CurrencyInput({
 }) {
   const [cents, setCents] = useState<number | null>(defaultCents ?? null);
 
-  // Every digit is a cent ("81233" → R$ 812,33). Typing a comma switches to
-  // plain amounts: "812," then "33" reads as R$ 812,33 until the field blurs.
-  const [raw, setRaw] = useState<string | null>(null);
   function update(next: string) {
-    if (raw !== null) {
-      const text = next.replace(/[^\d.,]/g, "");
-      const parsed = parseBRL(text);
-      setRaw(text);
-      const value = parsed === null ? null : Math.abs(parsed);
-      setCents(value);
-      onCentsChange?.(value);
-      return;
-    }
     const digits = next.replace(/\D/g, "");
     const value = digits === "" ? null : digitsToCents(digits);
     setCents(value);
     onCentsChange?.(value);
-  }
-  function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if ((e.key === "," || e.key === ".") && raw === null) {
-      e.preventDefault();
-      setRaw(`${cents ?? ""},`);
-    }
   }
 
   function paste(e: React.ClipboardEvent<HTMLInputElement>) {
@@ -74,10 +56,8 @@ export function CurrencyInput({
         inputMode="numeric"
         autoComplete="off"
         placeholder="R$ 0,00"
-        value={raw ?? (cents === null ? "" : formatBRL(cents))}
+        value={cents === null ? "" : formatBRL(cents)}
         onChange={(e) => update(e.target.value)}
-        onKeyDown={onKeyDown}
-        onBlur={() => setRaw(null)}
         onPaste={paste}
         onFocus={(e) => e.target.select()}
         required={required}
