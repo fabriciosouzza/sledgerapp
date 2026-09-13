@@ -54,9 +54,11 @@ const UPCOMING_DAYS = 7;
 
 export async function todayOverview(repos: Repositories, userId: string, today: IsoDate): Promise<TodayOverview> {
   const period = periodOf(today);
-  const netWorth = await netWorthOverview(repos, userId, today);
-  const [summary, planned, cards, generation, recurrences] = await Promise.all([
-    monthSummary(repos, userId, period, { today, cashCents: netWorth.cashCents }),
+  // Net worth feeds the month summary its cash figure; everything else runs alongside it.
+  const netWorthPromise = netWorthOverview(repos, userId, today);
+  const [netWorth, summary, planned, cards, generation, recurrences] = await Promise.all([
+    netWorthPromise,
+    netWorthPromise.then((n) => monthSummary(repos, userId, period, { today, cashCents: n.cashCents })),
     // Planned rows only: whatever is still due, however old, plus the next days.
     repos.entries.list(userId, { status: "planned", to: addDays(today, UPCOMING_DAYS) }),
     cardsOverview(repos, userId, today, { ensure: "open" }),

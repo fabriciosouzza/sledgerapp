@@ -49,10 +49,11 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     await supabase.auth.refreshSession();
   }
 
-  // The call refreshes an expired session and writes the new cookie back.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Refreshes an expiring session and writes the new cookie back. With an
+  // asymmetric signing key the token is verified locally (JWKS, cached), no
+  // round trip; with a symmetric one the library asks the Auth server as before.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const user = claimsData?.claims ?? null;
 
   const { pathname } = request.nextUrl;
 

@@ -64,16 +64,19 @@ export interface CardsOptions {
 }
 
 async function buildCard(repos: Repositories, userId: string, card: Account, today: IsoDate, ensure: "open" | "all"): Promise<CardView> {
-  // A year back — or further, so an old unpaid statement never drops off the screen it is paid from.
-  const known = new Map((await repos.statements.listByAccount(userId, card.id)).map((s) => [s.cycleStart, s]));
-  const oldestUnpaid = [...known.values()].filter((s) => s.paidOn === null).reduce<IsoDate | null>((min, s) => (min === null || s.cycleStart < min ? s.cycleStart : min), null);
+  // A year back — and further only when an old unpaid statement needs it, so
+  // the usual case is one round trip: statements, the year, the future parts.
   const yearBack = `${addMonths(periodOf(today), -MONTHS_BACK)}-01`;
-  const from = oldestUnpaid !== null && oldestUnpaid < yearBack ? oldestUnpaid : yearBack;
   const to = resolveCardCycle(card, today).cycleEnd;
-  const [entries, future] = await Promise.all([
-    repos.entries.list(userId, { accountId: card.id, from, to }),
+  const [knownRows, recent, future] = await Promise.all([
+    repos.statements.listByAccount(userId, card.id),
+    repos.entries.list(userId, { accountId: card.id, from: yearBack, to }),
     repos.entries.list(userId, { accountId: card.id, status: "planned", from: addDays(to, 1), to: `${addMonths(periodOf(to), FUTURE_MONTHS)}-28` }),
   ]);
+  const known = new Map(knownRows.map((s) => [s.cycleStart, s]));
+  const oldestUnpaid = knownRows.filter((s) => s.paidOn === null).reduce<IsoDate | null>((min, s) => (min === null || s.cycleStart < min ? s.cycleStart : min), null);
+  const older = oldestUnpaid !== null && oldestUnpaid < yearBack ? await repos.entries.list(userId, { accountId: card.id, from: oldestUnpaid, to: addDays(yearBack, -1) }) : [];
+  const entries = [...recent, ...older];
 
   const groups = groupByCycle(card, entries);
   const current = resolveCardCycle(card, today);
@@ -125,8 +128,8 @@ async function buildCard(repos: Repositories, userId: string, card: Account, tod
 export async function cardsOverview(repos: Repositories, userId: string, today: IsoDate, options: CardsOptions = {}): Promise<CardsOverview> {
   const accounts = await repos.accounts.list(userId);
   const cards = accounts.filter((a) => isCreditCard(a) && a.isActive);
-  const views: CardView[] = [];
-  for (const card of cards) views.push(await buildCard(repos, userId, card, today, options.ensure ?? "all"));
+  // Cards are independent: their queries go out together.
+  const views = await Promise.all(cards.map((card) => buildCard(repos, userId, card, today, options.ensure ?? "all")));
   const toPay: StatementDue[] = views
     .flatMap((c) => c.past.filter((s) => s.statement.paidOn === null && s.totalCents > 0).map((view) => ({ card: c.account, view, daysToDue: view.daysToDue })))
     .sort((a, b) => a.daysToDue - b.daysToDue);
