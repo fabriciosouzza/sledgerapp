@@ -95,7 +95,7 @@ export async function createEntry(
       dueDay: dayOf(input.date),
       startsOn: input.date,
       endsOn: null,
-      isVariable: false,
+      isVariable: input.variable,
       isActive: true,
     });
     const first: NewEntry = {
@@ -117,6 +117,7 @@ export async function createEntry(
         kind,
         amountCents: input.amountCents,
         parts: input.installmentParts,
+        firstNo: input.installmentFirstNo ?? 1,
         firstDate: input.date,
         categoryId,
         accountId: input.accountId,
@@ -210,7 +211,7 @@ export async function updateEntry(repos: Repositories, userId: string, input: En
   // A contribution paired with a portfolio movement (§5.7): the two must agree.
   const paired = await repos.movements.getByEntry(userId, current.id);
   if (paired) {
-    if (kind !== "contribution") throw new ServiceError("invalid", "This entry is paired with a portfolio movement; change it from the portfolio.");
+    if (kind !== current.kind) throw new ServiceError("invalid", "This entry is paired with a portfolio movement; change it from the portfolio.");
     await repos.movements.update(userId, paired.id, { amountCents: input.amountCents, date: input.date, notes: input.notes });
   }
   return [updated, ...rest];

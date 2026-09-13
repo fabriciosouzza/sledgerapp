@@ -81,6 +81,16 @@ describe("portfolioOverview", () => {
   });
 });
 
+describe("withdrawal", () => {
+  it("pairs with a transfer from the brokerage back to cash", async () => {
+    await addMovement(repos, U, move({ kind: "contribution", amountCents: "1.000,00", fromAccountId: checking, brokerageAccountId: broker }));
+    const out = await addMovement(repos, U, move({ kind: "withdrawal", amountCents: "300,00", date: "2026-11-08", fromAccountId: checking, brokerageAccountId: broker }));
+    const entry = (await repos.entries.getById(U, out.entryId!))!;
+    expect(entry).toMatchObject({ kind: "transfer", accountId: broker, counterAccountId: checking, amountCents: 30_000, status: "settled" });
+    expect((await portfolioOverview(repos, U, TODAY)).total.balanceCents).toBe(70_000);
+  });
+});
+
 describe("updateMovement", () => {
   it("edits amount and date, and the paired entry follows", async () => {
     const movement = await addMovement(repos, U, move({ kind: "contribution", amountCents: "1.000,00", fromAccountId: checking, brokerageAccountId: broker }));
@@ -135,6 +145,7 @@ describe("recordBatch", () => {
     expect(created[0]).toMatchObject({ assetId: a.id, kind: "market_adjustment", amountCents: 1_500 });
     expect(await assetBalances(repos, U)).toEqual({ [a.id]: 101_500, [b.id]: 50_000 });
 
-    await expect(recordBatch(repos, U, { kind: "yield", date: "2026-02-01", mode: "balance", values: [{ assetId: b.id, cents: 49_000 }] })).rejects.toThrow(/negative/);
+    const down = await recordBatch(repos, U, { kind: "yield", date: "2026-02-01", mode: "balance", values: [{ assetId: b.id, cents: 49_000 }] });
+    expect(down[0]).toMatchObject({ kind: "market_adjustment", amountCents: -1_000 });
   });
 });

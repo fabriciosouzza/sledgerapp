@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { assetInputSchema } from "@/lib/schemas/assets";
+import { assetInputSchema, newAssetSchema } from "@/lib/schemas/assets";
 import { firstIssue, formToObject } from "@/lib/schemas/form";
 import { getContext } from "@/lib/services/context";
 import { ServiceError } from "@/lib/services/errors";
@@ -22,7 +22,7 @@ function revalidate() {
 export async function createAssetAction(_prev: AssetFormState, formData: FormData): Promise<AssetFormState> {
   const { userId, repos } = await getContext();
   const values = formToObject(formData);
-  const parsed = assetInputSchema.safeParse(values);
+  const parsed = newAssetSchema.safeParse(values);
   if (!parsed.success) return { error: firstIssue(parsed.error), values };
   try {
     await createAsset(repos, userId, parsed.data);

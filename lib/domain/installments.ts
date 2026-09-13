@@ -10,8 +10,10 @@ export interface InstallmentPurchase {
   /** Amount of each part, not the total. */
   amountCents: number;
   parts: number;
-  /** Date of the first part; the others fall on the same day of later months. */
+  /** Date of the first part recorded (part `firstNo`); the others fall on the same day of later months. */
   firstDate: IsoDate;
+  /** Migrating a plan already under way: record from this part on (default 1). */
+  firstNo?: number;
   categoryId: string;
   accountId: string;
   notes?: string | null;
@@ -21,7 +23,9 @@ export interface InstallmentPurchase {
 
 export function expandInstallments(purchase: InstallmentPurchase, groupId: string): NewEntry[] {
   const { parts } = purchase;
+  const firstNo = purchase.firstNo ?? 1;
   if (!Number.isInteger(parts) || parts < 1) throw new RangeError("parts must be >= 1");
+  if (!Number.isInteger(firstNo) || firstNo < 1 || firstNo > parts) throw new RangeError("firstNo must be between 1 and parts");
   if (!Number.isInteger(purchase.amountCents) || purchase.amountCents <= 0) {
     throw new RangeError("amountCents must be a positive integer");
   }
@@ -29,11 +33,11 @@ export function expandInstallments(purchase: InstallmentPurchase, groupId: strin
   const firstPeriod = periodOf(purchase.firstDate);
   const day = dayOf(purchase.firstDate);
 
-  return Array.from({ length: parts }, (_, i): NewEntry => {
-    const no = i + 1;
-    const settledOn = no === 1 ? (purchase.firstSettledOn ?? null) : null;
+  return Array.from({ length: parts - firstNo + 1 }, (_, i): NewEntry => {
+    const no = firstNo + i;
+    const settledOn = i === 0 ? (purchase.firstSettledOn ?? null) : null;
     return {
-      date: no === 1 ? purchase.firstDate : clampDay(addMonths(firstPeriod, i), day),
+      date: i === 0 ? purchase.firstDate : clampDay(addMonths(firstPeriod, i), day),
       settledOn,
       kind: purchase.kind,
       status: settledOn ? "settled" : "planned",
@@ -55,8 +59,8 @@ export function expandInstallments(purchase: InstallmentPurchase, groupId: strin
 }
 
 /** Last period an installment plan touches — for the `Oct/26 → Sep/27` preview. */
-export function lastInstallmentPeriod(firstDate: IsoDate, parts: number): string {
-  return addMonths(periodOf(firstDate), parts - 1);
+export function lastInstallmentPeriod(firstDate: IsoDate, parts: number, firstNo = 1): string {
+  return addMonths(periodOf(firstDate), parts - firstNo);
 }
 
 export type InstallmentScope = "this" | "this_and_future" | "all";

@@ -40,6 +40,8 @@ export interface MonthSummary {
   entries: Entry[];
   /** Σ category caps (DESIGN.md §5); `null` without caps. */
   budgetCents: number | null;
+  /** Installment parts falling in this month — committed before any choice, like the fixed cost. */
+  installmentsCents: number;
   budgetStatus: BudgetStatus | null;
   /** Settled expense accumulated per day, this month and the previous one. */
   dailySpend: { current: number[]; previous: number[] };
@@ -112,6 +114,7 @@ export async function monthSummary(
     planned: entries.filter((e) => e.status === "planned"),
     entries,
     budgetCents,
+    installmentsCents: entries.filter((e) => e.kind === "expense" && e.installmentGroupId !== null).reduce((sum, e) => sum + e.amountCents, 0),
     budgetStatus: budgetStatus(metrics.expenseCents, budgetCents),
     dailySpend: {
       current: dailyCumulativeExpense(entries, period),

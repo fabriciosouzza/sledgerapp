@@ -16,7 +16,11 @@ export function CardTile({ card, className }: { card: CardView; className?: stri
     <div className={cn("flex h-24 w-36 flex-col overflow-hidden rounded-xl bg-card p-3 ring-1 ring-foreground/10", className)}>
       <p className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
         <span className="truncate">{card.account.name}</span>
-        {usage !== null && <span className={cn("shrink-0 tabular-nums", usage > 0.9 && "text-red-600 dark:text-red-400")}>{Math.round(usage * 100)}%</span>}
+        {usage !== null && (
+          <span className={cn("shrink-0 tabular-nums", usage > 0.9 && "text-red-600 dark:text-red-400")} title={`${Math.round(usage * 100)}% of the limit in use, future installments included`}>
+            {Math.round(usage * 100)}%
+          </span>
+        )}
       </p>
       {toPay ? (
         <>
@@ -32,7 +36,7 @@ export function CardTile({ card, className }: { card: CardView; className?: stri
         </>
       )}
       {usage !== null && (
-        <div className="mt-auto h-1 overflow-hidden rounded-full bg-muted" aria-label={`${Math.round(usage * 100)}% of the credit limit in use`} role="img">
+        <div className="mt-auto h-1 overflow-hidden rounded-full bg-muted" aria-label={`${Math.round(usage * 100)}% of the credit limit in use, future installments included`} role="img">
           <div className={cn("h-full rounded-full", usage > 0.9 ? "bg-red-500" : "bg-primary")} style={{ width: `${Math.min(100, usage * 100)}%` }} />
         </div>
       )}

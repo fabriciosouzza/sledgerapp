@@ -101,7 +101,11 @@ export default async function MonthPage(props: PageProps<"/review">) {
           <Stat label="Leftover" cents={m.leftoverCents} tone="signed" hint="income − expense − contributions · all entries" href={`/entries?month=${month}`} />
           <Stat label="Savings rate" rate={m.savingsRate} tone="signed" />
           <Stat label="Savings rate ex-benefits" rate={m.savingsRateExBenefits} tone="signed" hint={m.benefitsCents ? `benefits ${formatBRL(m.benefitsCents)}` : undefined} />
-          <Stat label="Fixed cost" cents={m.fixedCostCents} hint="active expense recurrences" />
+          <Stat
+            label="Fixed cost"
+            cents={m.fixedCostCents}
+            hint={summary.installmentsCents > 0 ? `recurrences · + ${formatBRL(summary.installmentsCents)} in installments this month` : "active expense recurrences"}
+          />
           <Stat
             label="Months of runway"
             text={m.monthsOfRunway === null ? null : `${m.monthsOfRunway.toFixed(1)} mo`}

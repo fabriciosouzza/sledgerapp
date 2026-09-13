@@ -9,7 +9,7 @@ import { Stat } from "@/components/month/stat";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { isCashAccount } from "@/lib/domain/accounts";
-import { formatDate, formatPeriodShort, periodOf, today } from "@/lib/domain/dates";
+import { addDays, formatDate, formatPeriodShort, periodOf, today } from "@/lib/domain/dates";
 import { formatBRL } from "@/lib/domain/money";
 import { listAccounts } from "@/lib/services/accounts";
 import { cardsOverview, type StatementView } from "@/lib/services/cards";
@@ -69,8 +69,15 @@ export default async function CardsPage(props: PageProps<"/cards">) {
               <h2 className="text-lg font-semibold">{card.account.name}</h2>
               <p className="text-xs text-muted-foreground">
                 Closes day {card.account.closingDay} · due day {card.account.dueDay}
-                {card.account.creditLimitCents ? ` · ${formatBRL(card.debtCents)} of ${formatBRL(card.account.creditLimitCents)} limit` : ""}
+                {card.account.creditLimitCents ? ` · ${formatBRL(card.debtCents + card.futureCents)} of ${formatBRL(card.account.creditLimitCents)} limit` : ""}
               </p>
+              {card.futureParts > 0 && (
+                <p className="mt-1 text-sm">
+                  <Link href={`/entries?account=${card.account.id}&status=planned&from=${addDays(card.open.statement.cycleEnd, 1)}`} className="underline-offset-4 hover:underline">
+                    {formatBRL(card.futureCents)} in {card.futureParts} future installment {card.futureParts === 1 ? "part" : "parts"} →
+                  </Link>
+                </p>
+              )}
             </header>
 
             <div className="space-y-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
@@ -93,6 +100,7 @@ export default async function CardsPage(props: PageProps<"/cards">) {
                 lookups={lookups}
                 today={now}
                 infinite={false}
+                settleHint={false}
                 emptyMessage="No purchases in this cycle yet."
               />
             </div>

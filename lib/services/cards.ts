@@ -3,7 +3,7 @@
 // cash. Paying a statement is a transfer (§5.2), never an expense.
 
 import { isCashAccount, isCreditCard } from "@/lib/domain/accounts";
-import { addMonths, formatPeriodShort, periodOf } from "@/lib/domain/dates";
+import { addDays, addMonths, formatPeriodShort, periodOf } from "@/lib/domain/dates";
 import {
   daysToDue,
   groupByCycle,
@@ -32,7 +32,10 @@ export interface CardView {
   past: StatementView[];
   /** Σ unpaid statements, open included. */
   debtCents: number;
-  /** debt / credit limit, `null` without a limit. */
+  /** Installment parts in cycles after the open one — money the card has already committed. */
+  futureCents: number;
+  futureParts: number;
+  /** (debt + future installments) / credit limit, `null` without a limit — what the bank shows. */
   limitUsage: number | null;
 }
 
@@ -52,6 +55,8 @@ export interface CardsOverview {
 
 /** How far back the screen looks. A year of statements is plenty for a phone. */
 const MONTHS_BACK = 12;
+/** How far ahead installments are counted against the limit. */
+const FUTURE_MONTHS = 36;
 
 export interface CardsOptions {
   /** "open": create only the open statement row (Today); "all": every cycle with entries (/cards). */
@@ -61,7 +66,10 @@ export interface CardsOptions {
 async function buildCard(repos: Repositories, userId: string, card: Account, today: IsoDate, ensure: "open" | "all"): Promise<CardView> {
   const from = `${addMonths(periodOf(today), -MONTHS_BACK)}-01`;
   const to = resolveCardCycle(card, today).cycleEnd;
-  const entries = await repos.entries.list(userId, { accountId: card.id, from, to });
+  const [entries, future] = await Promise.all([
+    repos.entries.list(userId, { accountId: card.id, from, to }),
+    repos.entries.list(userId, { accountId: card.id, status: "planned", from: addDays(to, 1), to: `${addMonths(periodOf(to), FUTURE_MONTHS)}-28` }),
+  ]);
 
   const groups = groupByCycle(card, entries);
   const current = resolveCardCycle(card, today);
@@ -98,13 +106,16 @@ async function buildCard(repos: Repositories, userId: string, card: Account, tod
   const open = views.find((v) => v.statement.cycleStart === current.cycleStart)!;
   const past = views.filter((v) => v !== open);
   const debtCents = totalCardDebt(views.map((v) => ({ paidOn: v.statement.paidOn, totalCents: v.totalCents })));
+  const futureCents = future.reduce((sum, e) => sum + (e.kind === "expense" ? e.amountCents : -e.amountCents), 0);
 
   return {
     account: card,
     open,
     past,
     debtCents,
-    limitUsage: card.creditLimitCents ? debtCents / card.creditLimitCents : null,
+    futureCents,
+    futureParts: future.length,
+    limitUsage: card.creditLimitCents ? (debtCents + futureCents) / card.creditLimitCents : null,
   };
 }
 

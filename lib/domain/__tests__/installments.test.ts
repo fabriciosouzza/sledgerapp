@@ -29,6 +29,15 @@ describe("expandInstallments", () => {
     expect(rows.every((r) => r.amountCents === 14990)).toBe(true);
   });
 
+  it("starts in the middle of a plan already under way", () => {
+    const rows = expandInstallments({ ...purchase, parts: 10, firstNo: 4, firstDate: "2026-09-10" }, "g");
+    expect(rows.map((r) => r.installmentNo)).toEqual([4, 5, 6, 7, 8, 9, 10]);
+    expect(rows.map((r) => r.date)).toEqual(["2026-09-10", "2026-10-10", "2026-11-10", "2026-12-10", "2027-01-10", "2027-02-10", "2027-03-10"]);
+    expect(new Set(rows.map((r) => r.installmentTotal))).toEqual(new Set([10]));
+    expect(lastInstallmentPeriod("2026-09-10", 10, 4)).toBe("2027-03");
+    expect(() => expandInstallments({ ...purchase, firstNo: 13 }, "g")).toThrow(RangeError);
+  });
+
   it("clamps the day in short months", () => {
     const rows = expandInstallments({ ...purchase, firstDate: "2026-01-31", parts: 4 }, "g");
     expect(rows.map((r) => r.date)).toEqual(["2026-01-31", "2026-02-28", "2026-03-31", "2026-04-30"]);

@@ -2,11 +2,11 @@
 // quotes. A contribution pairs with an `entries` row of kind contribution so
 // cash flow and portfolio agree without counting twice.
 
-import { addMonths, periodOf } from "@/lib/domain/dates";
+import { addMonths, periodOf, today as todayInSaoPaulo } from "@/lib/domain/dates";
 import { balanceByClass, portfolioSeries, summarize, type PortfolioPoint, type PortfolioSummary } from "@/lib/domain/portfolio";
 import type { Asset, AssetClass, AssetMovement, IsoDate } from "@/lib/domain/types";
 import type { Repositories } from "@/lib/repositories";
-import type { AssetInput, MovementInput, MovementUpdate } from "@/lib/schemas/assets";
+import type { AssetInput, MovementInput, MovementUpdate, NewAssetInput } from "@/lib/schemas/assets";
 import { ServiceError } from "./errors";
 
 export interface AssetLine {
@@ -32,8 +32,21 @@ export async function getAsset(repos: Repositories, userId: string, id: string):
   return asset;
 }
 
-export async function createAsset(repos: Repositories, userId: string, input: AssetInput): Promise<Asset> {
-  return repos.assets.insert(userId, input);
+export async function createAsset(repos: Repositories, userId: string, input: AssetInput | NewAssetInput): Promise<Asset> {
+  const { openingContributedCents = null, openingBalanceCents = null, openingOn = null, ...fields } = input as NewAssetInput;
+  const asset = await repos.assets.insert(userId, fields);
+  // Starting from a spreadsheet: what was put in becomes a contribution with no
+  // cash entry (the money left the bank long ago), and the rest is market movement.
+  const contributed = openingContributedCents ?? openingBalanceCents ?? 0;
+  const balance = openingBalanceCents ?? contributed;
+  const date = openingOn ?? todayInSaoPaulo();
+  if (contributed > 0) {
+    await repos.movements.insert(userId, { assetId: asset.id, date, kind: "contribution", amountCents: contributed, entryId: null, notes: "Opening balance" });
+  }
+  if (balance - contributed !== 0) {
+    await repos.movements.insert(userId, { assetId: asset.id, date, kind: "market_adjustment", amountCents: balance - contributed, entryId: null, notes: "Opening balance" });
+  }
+  return asset;
 }
 
 export async function updateAsset(repos: Repositories, userId: string, id: string, input: AssetInput): Promise<Asset> {
@@ -96,9 +109,10 @@ export async function recordBatch(repos: Repositories, userId: string, input: Ba
   for (const { assetId, cents } of input.values) {
     const amountCents = input.mode === "balance" ? cents - (balances[assetId] ?? 0) : cents;
     if (amountCents === 0) continue;
-    if (amountCents < 0 && input.kind !== "market_adjustment") throw new ServiceError("invalid", "A yield cannot be negative; record a market adjustment instead.");
+    // A yield cannot be negative; a line that went down is market movement.
+    const kind = amountCents < 0 ? "market_adjustment" : input.kind;
     const asset = await getAsset(repos, userId, assetId);
-    created.push(await repos.movements.insert(userId, { assetId: asset.id, date: input.date, kind: input.kind, amountCents, entryId: null, notes: null }));
+    created.push(await repos.movements.insert(userId, { assetId: asset.id, date: input.date, kind, amountCents, entryId: null, notes: null }));
   }
   return created;
 }
@@ -118,25 +132,30 @@ export async function assetDetail(repos: Repositories, userId: string, id: strin
 export async function addMovement(repos: Repositories, userId: string, input: MovementInput): Promise<AssetMovement> {
   const asset = await getAsset(repos, userId, input.assetId);
 
+  // A contribution pairs with a contribution entry (cash → brokerage); a
+  // withdrawal with a transfer back (brokerage → cash). Both keep the cash
+  // side and the portfolio in step without counting twice.
   let entryId: string | null = null;
-  if (input.kind === "contribution" && input.fromAccountId !== null && input.brokerageAccountId !== null) {
-    const [from, brokerage] = await Promise.all([
-      repos.accounts.getById(userId, input.fromAccountId),
-      repos.accounts.getById(userId, input.brokerageAccountId),
+  const pairs = (input.kind === "contribution" || input.kind === "withdrawal") && input.fromAccountId !== null && input.brokerageAccountId !== null;
+  if (pairs) {
+    const [cash, brokerage] = await Promise.all([
+      repos.accounts.getById(userId, input.fromAccountId!),
+      repos.accounts.getById(userId, input.brokerageAccountId!),
     ]);
-    if (!from) throw new ServiceError("invalid", "Source account not found.");
+    if (!cash) throw new ServiceError("invalid", "Cash account not found.");
     if (!brokerage || brokerage.type !== "brokerage") throw new ServiceError("invalid", "Pick a brokerage account.");
-    if (from.id === brokerage.id) throw new ServiceError("invalid", "Source and brokerage must differ.");
+    if (cash.id === brokerage.id) throw new ServiceError("invalid", "Cash and brokerage accounts must differ.");
+    const outgoing = input.kind === "contribution";
     const entry = await repos.entries.insert(userId, {
       date: input.date,
       settledOn: input.date,
-      kind: "contribution",
+      kind: outgoing ? "contribution" : "transfer",
       status: "settled",
       amountCents: input.amountCents,
-      description: `Aporte ${asset.name}`,
+      description: outgoing ? `Aporte ${asset.name}` : `Resgate ${asset.name}`,
       categoryId: null,
-      accountId: from.id,
-      counterAccountId: brokerage.id,
+      accountId: outgoing ? cash.id : brokerage.id,
+      counterAccountId: outgoing ? brokerage.id : cash.id,
       notes: input.notes,
       source: "manual",
       recurrenceId: null,
@@ -169,7 +188,7 @@ export async function getMovement(repos: Repositories, userId: string, id: strin
 export async function updateMovement(repos: Repositories, userId: string, input: MovementUpdate): Promise<AssetMovement> {
   const current = await getMovement(repos, userId, input.id);
   if (current.entryId !== null) {
-    if (input.kind !== "contribution") throw new ServiceError("invalid", "A movement paired with a cash entry stays a contribution; delete it to change that.");
+    if (input.kind !== current.kind) throw new ServiceError("invalid", "A movement paired with a cash entry keeps its kind; delete it to change that.");
     await repos.entries.update(userId, current.entryId, { amountCents: input.amountCents, date: input.date, settledOn: input.date, notes: input.notes });
   }
   return repos.movements.update(userId, input.id, { kind: input.kind, date: input.date, amountCents: input.amountCents, notes: input.notes });

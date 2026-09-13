@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { ConfirmDialog } from "@/components/forms/confirm-dialog";
+import { today } from "@/lib/domain/dates";
 import { PageHeader } from "@/components/layout/page-header";
 import { AssetForm } from "@/components/settings/asset-form";
 import { Button } from "@/components/ui/button";
@@ -35,7 +36,7 @@ export default async function EditAssetPage(props: PageProps<"/settings/assets/[
           />
         }
       />
-      <AssetForm asset={asset} action={updateAssetAction} />
+      <AssetForm asset={asset} action={updateAssetAction} today={today()} />
     </>
   );
 }

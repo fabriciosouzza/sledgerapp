@@ -35,11 +35,15 @@ export function PayStatementDialog({
   statementId: string;
   label: string;
   totalCents: number;
-  cashAccounts: Pick<Account, "id" | "name">[];
+  /** With today's balance when known, so "can I pay without touching savings?" is answered in the sheet. */
+  cashAccounts: (Pick<Account, "id" | "name"> & { balanceCents?: number | null })[];
   today: string;
   small?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [fromId, setFromId] = useState(cashAccounts[0]?.id ?? "");
+  const from = cashAccounts.find((a) => a.id === fromId);
+  const short = from?.balanceCents !== undefined && from.balanceCents !== null ? totalCents - from.balanceCents : null;
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -82,15 +86,23 @@ export function PayStatementDialog({
                 id={`from-${statementId}`}
                 name="fromAccountId"
                 required
+                value={fromId}
+                onChange={(e) => setFromId(e.target.value)}
                 className="w-full [&>select]:h-11"
               >
                 {cashAccounts.map((a) => (
                   <NativeSelectOption key={a.id} value={a.id}>
                     {a.name}
+                    {a.balanceCents !== undefined && a.balanceCents !== null ? ` · ${formatBRL(a.balanceCents)}` : ""}
                   </NativeSelectOption>
                 ))}
               </NativeSelect>
             </Field>
+            {short !== null && short > 0 && (
+              <p className="text-sm text-amber-700 dark:text-amber-400" role="status">
+                {formatBRL(short)} short on {from?.name}: pay from another account, or transfer first.
+              </p>
+            )}
             <Field label="Paid on" htmlFor={`paid-${statementId}`}>
               <DatePicker id={`paid-${statementId}`} name="paidOn" required defaultValue={today} />
             </Field>

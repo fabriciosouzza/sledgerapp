@@ -94,6 +94,8 @@ export function EntryForm({
   const [settledChoice, setSettledChoice] = useState<boolean | null>(entry ? entry.status === "settled" : null);
   const [installments, setInstallments] = useState(false);
   const [parts, setParts] = useState(12);
+  const [firstNo, setFirstNo] = useState(1);
+  const [variable, setVariable] = useState(false);
   const [repeat, setRepeat] = useState(false);
   const [scope, setScope] = useState<"this" | "this_and_future" | "all">("this");
 
@@ -113,9 +115,10 @@ export function EntryForm({
 
   const showInstallments = !editing && canBeInstallments(kind);
   const onCard = canBeInstallments(kind) && accounts.find((a) => a.id === effectiveAccountId)?.type === "credit_card";
+  const remaining = parts - firstNo + 1;
   const preview =
     installments && amountCents
-      ? `${parts} × ${formatBRL(amountCents)}, ${formatPeriodShort(periodOf(date))} → ${formatPeriodShort(lastInstallmentPeriod(date, parts))}`
+      ? `${firstNo > 1 ? `${firstNo}/${parts} → ${parts}/${parts}` : `${parts} × ${formatBRL(amountCents)}`}, ${formatPeriodShort(periodOf(date))} → ${formatPeriodShort(lastInstallmentPeriod(date, parts, firstNo))} · ${formatBRL(amountCents * remaining)} ${firstNo > 1 ? "still to go" : "in total"}`
       : null;
 
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -169,7 +172,7 @@ export function EntryForm({
         ))}
       </div>
 
-      <Field label="Amount" htmlFor="amountCents" hint="Digits fill from the cents: 81233 → R$ 812,33. Type a comma for reais: 812,33.">
+      <Field label={installments ? "Amount of each part" : "Amount"} htmlFor="amountCents" hint="Digits fill from the cents: 81233 → R$ 812,33. Type a comma for reais: 812,33.">
         <CurrencyInput
           id="amountCents"
           name="amountCents"
@@ -272,19 +275,35 @@ export function EntryForm({
           </div>
           {installments && (
             <>
-              <Field label="Parts" htmlFor="installmentParts">
-                <Input
-                  id="installmentParts"
-                  name="installmentParts"
-                  type="number"
-                  inputMode="numeric"
-                  min={2}
-                  max={120}
-                  value={parts}
-                  onChange={(e) => setParts(Math.max(2, Math.min(120, Number(e.target.value) || 2)))}
-                  className="h-11"
-                />
-              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Parts" htmlFor="installmentParts">
+                  <Input
+                    id="installmentParts"
+                    name="installmentParts"
+                    type="number"
+                    inputMode="numeric"
+                    min={2}
+                    max={120}
+                    value={parts}
+                    onChange={(e) => setParts(Math.max(2, Math.min(120, Number(e.target.value) || 2)))}
+                    className="h-11"
+                  />
+                </Field>
+                <Field label="This is part" htmlFor="installmentFirstNo" hint="Already under way? Start from this part.">
+                  <Input
+                    id="installmentFirstNo"
+                    name="installmentFirstNo"
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    max={parts}
+                    value={firstNo}
+                    onChange={(e) => setFirstNo(Math.max(1, Math.min(parts, Number(e.target.value) || 1)))}
+                    className="h-11"
+                    aria-describedby="installmentFirstNo-hint"
+                  />
+                </Field>
+              </div>
               <p className="text-sm text-muted-foreground" aria-live="polite">
                 {preview ?? "Type the amount of each part to preview."}
               </p>
@@ -300,6 +319,15 @@ export function EntryForm({
             <p className="text-xs text-muted-foreground">Creates a recurrence on day {new Date(`${date}T00:00:00`).getDate() || "?"}.</p>
           </div>
           <Switch id="repeatMonthly" name="repeatMonthly" checked={repeat} onCheckedChange={(v) => { setRepeat(v); if (v) setInstallments(false); }} disabled={installments} />
+        </div>
+      )}
+      {!editing && repeat && (
+        <div className="-mt-2 flex min-h-11 items-center justify-between gap-3 rounded-xl bg-muted/40 px-4">
+          <div>
+            <Label htmlFor="variable">Amount varies each month</Label>
+            <p className="text-xs text-muted-foreground">Water, power: the amount typed now is only an estimate for later months.</p>
+          </div>
+          <Switch id="variable" name="variable" checked={variable} onCheckedChange={setVariable} />
         </div>
       )}
 

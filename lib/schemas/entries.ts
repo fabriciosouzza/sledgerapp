@@ -36,6 +36,10 @@ export const entryInputSchema = z
     settledOn: optionalIsoDate,
     installments: boolField.default(false),
     installmentParts: optionalInt(2, 120),
+    /** "This is part N": a plan already under way starts here. */
+    installmentFirstNo: optionalInt(1, 120),
+    /** With repeatMonthly: the amount changes every month (water, power). */
+    variable: boolField.default(false),
     repeatMonthly: boolField.default(false),
   })
   .superRefine((e, ctx) => {
@@ -55,6 +59,8 @@ export const entryInputSchema = z
       }
       if (e.installmentParts === null) {
         ctx.addIssue({ code: "custom", path: ["installmentParts"], message: "How many parts?" });
+      } else if (e.installmentFirstNo !== null && e.installmentFirstNo > e.installmentParts) {
+        ctx.addIssue({ code: "custom", path: ["installmentFirstNo"], message: "The part number cannot exceed the number of parts." });
       }
       if (e.repeatMonthly) {
         ctx.addIssue({ code: "custom", path: ["repeatMonthly"], message: "An installment plan cannot also repeat monthly." });

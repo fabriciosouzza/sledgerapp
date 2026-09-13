@@ -9,7 +9,6 @@ import { OverdueBlock } from "@/components/today/overdue-block";
 import { StatementsDue } from "@/components/today/statements-due";
 import { QuickActions } from "@/components/today/quick-actions";
 import { Ring } from "@/components/today/ring";
-import { isCashAccount } from "@/lib/domain/accounts";
 import { formatDate, today } from "@/lib/domain/dates";
 import { formatBRL } from "@/lib/domain/money";
 import { listAccounts } from "@/lib/services/accounts";
@@ -146,7 +145,11 @@ export default async function TodayPage() {
         </div>
 
         <div className="space-y-6 min-w-0">
-          <StatementsDue items={overview.statementsDue} cashAccounts={accounts.filter((a) => a.isActive && isCashAccount(a))} today={now} />
+          <StatementsDue
+            items={overview.statementsDue}
+            cashAccounts={overview.accounts.filter((b) => b.account.isActive).map((b) => ({ id: b.account.id, name: b.account.name, balanceCents: b.balanceCents }))}
+            today={now}
+          />
 
       <OverdueBlock hasEntries={overview.overdue.length > 0}>
             <EntryList

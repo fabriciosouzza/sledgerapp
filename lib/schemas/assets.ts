@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { isoDateField } from "./entries";
-import { boolField, optionalId, optionalText, requiredId, requiredText } from "./form";
+import { isoDateField, optionalIsoDate } from "./entries";
+import { boolField, optionalCents, optionalId, optionalText, requiredId, requiredText } from "./form";
 import { parseBRL } from "@/lib/domain/money";
 
 export const assetClassSchema = z.enum(["fixed_income", "crypto", "foreign_currency", "stocks", "reits", "other"]);
@@ -12,6 +12,14 @@ export const assetInputSchema = z.object({
   broker: optionalText(60),
   isActive: boolField.default(true),
 });
+
+/** A new asset can start from what is already invested: contributed so far and today's balance, no cash entry. */
+export const newAssetSchema = assetInputSchema.extend({
+  openingContributedCents: optionalCents,
+  openingBalanceCents: optionalCents,
+  openingOn: optionalIsoDate,
+});
+export type NewAssetInput = z.infer<typeof newAssetSchema>;
 
 export type AssetInput = z.infer<typeof assetInputSchema>;
 

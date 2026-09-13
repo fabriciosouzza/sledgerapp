@@ -6,7 +6,15 @@ import type { StatementDue } from "@/lib/services/cards";
 import { cn } from "@/lib/utils";
 
 /** Card statements that closed and were not paid: the bills a card actually produces. */
-export function StatementsDue({ items, cashAccounts, today }: { items: StatementDue[]; cashAccounts: Pick<Account, "id" | "name">[]; today: string }) {
+export function StatementsDue({
+  items,
+  cashAccounts,
+  today,
+}: {
+  items: StatementDue[];
+  cashAccounts: (Pick<Account, "id" | "name"> & { balanceCents?: number | null })[];
+  today: string;
+}) {
   if (items.length === 0) return null;
   const overdue = items.filter((s) => s.daysToDue < 0).length;
   return (

@@ -62,7 +62,8 @@ export function MovementForm({
   const [kindChoice, setKindChoice] = useState<MovementKind | null>(movement?.kind ?? null);
   const [negative, setNegative] = useState((movement?.amountCents ?? 0) < 0);
   const [byBalance, setByBalance] = useState(!editing);
-  const [pair, setPair] = useState(true);
+  // On by default once the asset has history; a first movement is usually the balance already held.
+  const [pairChoice, setPairChoice] = useState<boolean | null>(null);
   const [cents, setCents] = useState<number | null>(null);
   const [added, setAdded] = useState<SessionRow[]>([]);
 
@@ -72,7 +73,9 @@ export function MovementForm({
 
   const cash = accounts.filter((a) => a.type !== "brokerage" && a.type !== "credit_card");
   const brokerages = accounts.filter((a) => a.type === "brokerage");
-  const canPair = kind === "contribution" && cash.length > 0 && brokerages.length > 0;
+  const hasHistory = assetId in balances;
+  const canPair = (kind === "contribution" || kind === "withdrawal") && cash.length > 0 && brokerages.length > 0;
+  const pair = pairChoice ?? (hasHistory || kind === "withdrawal");
   const hint = MOVEMENT_KINDS.find((k) => k.value === kind)?.hint;
   const recorded = balances[assetId] ?? 0;
   const adjustment = kind === "market_adjustment" ? (byBalance ? (cents === null ? null : cents - recorded) : cents === null ? null : negative ? -cents : cents) : null;
@@ -198,18 +201,24 @@ export function MovementForm({
         </div>
       )}
 
-      {kind === "contribution" && !editing && (
+      {(kind === "contribution" || kind === "withdrawal") && !editing && (
         <div className="space-y-3 rounded-xl bg-muted/40 p-4">
           <div className="flex min-h-11 items-center justify-between gap-3">
             <div>
               <Label htmlFor="pair">Record the cash entry</Label>
-              <p className="text-xs text-muted-foreground">A contribution entry from your cash account to the brokerage.</p>
+              <p className="text-xs text-muted-foreground">
+                {kind === "contribution"
+                  ? hasHistory
+                    ? "A contribution entry from your cash account to the brokerage."
+                    : "First movement of this asset. Leave it off if this is a balance you already hold — that money left the bank long ago."
+                  : "A transfer from the brokerage back to your cash account."}
+              </p>
             </div>
-            <Switch id="pair" checked={canPair && pair} onCheckedChange={setPair} disabled={!canPair} />
+            <Switch id="pair" checked={canPair && pair} onCheckedChange={setPairChoice} disabled={!canPair} />
           </div>
           {canPair && pair && (
             <div className="grid grid-cols-2 gap-3">
-              <Field label="From" htmlFor="fromAccountId">
+              <Field label={kind === "contribution" ? "From" : "To"} htmlFor="fromAccountId">
                 <NativeSelect id="fromAccountId" name="fromAccountId" defaultValue={cash[0]?.id} className="w-full [&>select]:h-11">
                   {cash.map((a) => (
                     <NativeSelectOption key={a.id} value={a.id}>
@@ -218,7 +227,7 @@ export function MovementForm({
                   ))}
                 </NativeSelect>
               </Field>
-              <Field label="To brokerage" htmlFor="brokerageAccountId">
+              <Field label={kind === "contribution" ? "To brokerage" : "From brokerage"} htmlFor="brokerageAccountId">
                 <NativeSelect id="brokerageAccountId" name="brokerageAccountId" defaultValue={brokerages[0]?.id} className="w-full [&>select]:h-11">
                   {brokerages.map((a) => (
                     <NativeSelectOption key={a.id} value={a.id}>

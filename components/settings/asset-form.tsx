@@ -2,6 +2,8 @@
 
 import { useActionState } from "react";
 import type { AssetFormState } from "@/app/(app)/settings/assets/actions";
+import { CurrencyInput } from "@/components/forms/currency-input";
+import { DatePicker } from "@/components/forms/date-picker";
 import { Field } from "@/components/forms/field";
 import { FormError } from "@/components/forms/form-error";
 import { SubmitButton } from "@/components/forms/submit-button";
@@ -12,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { ASSET_CLASSES } from "@/lib/domain/assets";
 import type { Asset } from "@/lib/domain/types";
 
-export function AssetForm({ asset, action }: { asset?: Asset; action: (prev: AssetFormState, formData: FormData) => Promise<AssetFormState> }) {
+export function AssetForm({ asset, action, today }: { asset?: Asset; action: (prev: AssetFormState, formData: FormData) => Promise<AssetFormState>; today: string }) {
   const [state, dispatch] = useActionState(action, {});
   const v = state.values ?? {};
   const str = (key: string, fallback: string | null | undefined) => (typeof v[key] === "string" ? v[key] : (fallback ?? ""));
@@ -41,6 +43,23 @@ export function AssetForm({ asset, action }: { asset?: Asset; action: (prev: Ass
           <Input id="broker" name="broker" maxLength={60} defaultValue={str("broker", asset?.broker)} className="h-11" aria-describedby="broker-hint" />
         </Field>
       </div>
+      {!asset && (
+        <fieldset className="space-y-3 rounded-xl bg-muted/40 p-4">
+          <legend className="px-1 text-sm font-medium">Already invested?</legend>
+          <p className="text-xs text-muted-foreground">Start from where it stands. No cash entry is created — that money left your account long ago.</p>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Contributed so far" htmlFor="openingContributedCents">
+              <CurrencyInput id="openingContributedCents" name="openingContributedCents" className="h-11" />
+            </Field>
+            <Field label="Balance today" htmlFor="openingBalanceCents" hint="Blank = same as contributed.">
+              <CurrencyInput id="openingBalanceCents" name="openingBalanceCents" className="h-11" aria-describedby="openingBalanceCents-hint" />
+            </Field>
+          </div>
+          <Field label="On" htmlFor="openingOn">
+            <DatePicker id="openingOn" name="openingOn" defaultValue={today} />
+          </Field>
+        </fieldset>
+      )}
       <div className="flex min-h-11 items-center justify-between gap-3">
         <Label htmlFor="isActive">Active</Label>
         <Switch id="isActive" name="isActive" defaultChecked={asset ? asset.isActive : true} />

@@ -49,6 +49,7 @@ export function EntryList({
   title,
   summary = false,
   emptyMessage = "Nothing here.",
+  settleHint = true,
 }: {
   initial: Entry[];
   period: Period;
@@ -57,6 +58,8 @@ export function EntryList({
   today: string;
   /** Show "earlier month" loading and month headers. */
   infinite?: boolean;
+  /** Card statement rows are paid through the statement: no settle hint. */
+  settleHint?: boolean;
   /** Offer multi-select bulk settle. */
   selectable?: boolean;
   /** Oldest day first (for what is coming up) instead of newest first. */
@@ -215,7 +218,7 @@ export function EntryList({
         </div>
       )}
 
-      {plannedIds.length > 0 && !selecting && (
+      {settleHint && plannedIds.length > 0 && !selecting && (
         <p className="-mt-2 text-xs text-muted-foreground">
           <span className="md:hidden">Tap ○ to settle today · hold it to pick the day</span>
           <span className="hidden md:inline">○ settles today · the calendar picks the day</span>
