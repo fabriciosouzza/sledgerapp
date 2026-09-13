@@ -9,13 +9,16 @@ import { OverdueBlock } from "@/components/today/overdue-block";
 import { StatementsDue } from "@/components/today/statements-due";
 import { QuickActions } from "@/components/today/quick-actions";
 import { Ring } from "@/components/today/ring";
-import { formatDate, today } from "@/lib/domain/dates";
+import { addDays, formatDate, today } from "@/lib/domain/dates";
 import { formatBRL } from "@/lib/domain/money";
 import { listAccounts } from "@/lib/services/accounts";
 import { listCategories } from "@/lib/services/categories";
 import { getContext } from "@/lib/services/context";
 import { todayOverview } from "@/lib/services/today";
 import { cn } from "@/lib/utils";
+
+/** How far ahead the "to receive" list looks. */
+const UPCOMING_WINDOW = 7;
 
 /** First name — unless the name is short or shared ("Carla e Bruno"), which stays whole. */
 function greetingName(name: string): string {
@@ -137,7 +140,7 @@ export default async function TodayPage() {
                 cents={overview.toReceiveCents}
                 tone="positive"
                 hint={`${overview.toReceiveCount} ${overview.toReceiveCount === 1 ? "entry" : "entries"}`}
-                href="/entries?kind=income&status=planned"
+                href={`/entries?kind=income&status=planned&from=${overview.toReceiveFrom ?? now}&to=${addDays(now, UPCOMING_WINDOW)}`}
               />
             )}
             <Stat

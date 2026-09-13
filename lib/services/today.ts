@@ -31,6 +31,8 @@ export interface TodayOverview {
   /** Σ planned income, however old — what is still expected to come in. */
   toReceiveCents: number;
   toReceiveCount: number;
+  /** Date of the oldest planned income, so the list can reach back to it. */
+  toReceiveFrom: IsoDate | null;
   /** Part of the cash that sits in savings accounts. */
   savingsCents: number;
   /** Planned entries due today (for "settle all due today"). */
@@ -82,6 +84,7 @@ export async function todayOverview(repos: Repositories, userId: string, today: 
     statementsDue: cards.toPay,
     toReceiveCents: toSettle.filter((e) => e.kind === "income").reduce((sum, e) => sum + e.amountCents, 0),
     toReceiveCount: toSettle.filter((e) => e.kind === "income").length,
+    toReceiveFrom: toSettle.filter((e) => e.kind === "income").reduce<IsoDate | null>((min, e) => (min === null || e.date < min ? e.date : min), null),
     savingsCents: netWorth.balances.filter((b) => b.account.type === "savings").reduce((sum, b) => sum + (b.balanceCents ?? 0), 0),
     dueToday: upcoming
       .filter((e) => e.date === today && !(e.recurrenceId !== null && variable.has(e.recurrenceId)))
