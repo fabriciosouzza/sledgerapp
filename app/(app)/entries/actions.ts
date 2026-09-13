@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { today } from "@/lib/domain/dates";
+import { isIsoDate, today } from "@/lib/domain/dates";
 import type { Entry, Period } from "@/lib/domain/types";
 import type { EntryFilters } from "@/lib/repositories";
 import { entryUpdateSchema, installmentScopeSchema } from "@/lib/schemas/entries";
@@ -30,6 +30,7 @@ async function run(fn: () => Promise<unknown>): Promise<ActionResult> {
 
 export async function settleEntryAction(id: string, settledOn?: string): Promise<ActionResult> {
   const { userId, repos } = await getContext();
+  if (settledOn !== undefined && !isIsoDate(settledOn)) return { ok: false, error: "Pick a date." };
   return run(() => settleEntry(repos, userId, id, settledOn ?? today()));
 }
 
@@ -40,6 +41,7 @@ export async function unsettleEntryAction(id: string): Promise<ActionResult> {
 
 export async function settleManyAction(ids: string[], settledOn?: string): Promise<ActionResult> {
   const { userId, repos } = await getContext();
+  if (settledOn !== undefined && !isIsoDate(settledOn)) return { ok: false, error: "Pick a date." };
   return run(() => settleEntries(repos, userId, ids, settledOn ?? today()));
 }
 
