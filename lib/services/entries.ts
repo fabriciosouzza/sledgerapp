@@ -31,7 +31,12 @@ interface Refs {
 }
 
 /** Every referenced row must exist, belong to the user and fit the kind. */
-async function checkRefs(repos: Repositories, userId: string, refs: Refs): Promise<{ account: Account; counter: Account | null }> {
+async function checkRefs(
+  repos: Repositories,
+  userId: string,
+  refs: Refs,
+  options: { statementPayment?: boolean } = {},
+): Promise<{ account: Account; counter: Account | null }> {
   const account = await repos.accounts.getById(userId, refs.accountId);
   if (!account) throw new ServiceError("invalid", "Account not found.");
 
@@ -45,6 +50,10 @@ async function checkRefs(repos: Repositories, userId: string, refs: Refs): Promi
     }
     if (refs.kind === "transfer" && isCreditCard(account)) {
       throw new ServiceError("invalid", "A card statement is paid from a cash account into the card.");
+    }
+    // Paid by hand, the statement would still count as debt: the card screen's Pay is the only way in.
+    if (refs.kind === "transfer" && isCreditCard(counter) && !options.statementPayment) {
+      throw new ServiceError("invalid", "Pay a card from Cards → Pay, so the statement is marked as paid.");
     }
   }
 
@@ -188,7 +197,7 @@ export async function updateEntry(repos: Repositories, userId: string, input: En
   const kind = input.kind;
   const categoryId = needsCategory(kind) ? input.categoryId : null;
   const counterAccountId = needsCounterAccount(kind) ? input.counterAccountId : null;
-  const refs = await checkRefs(repos, userId, { kind, categoryId, accountId: input.accountId, counterAccountId });
+  const refs = await checkRefs(repos, userId, { kind, categoryId, accountId: input.accountId, counterAccountId }, { statementPayment: current.statementId !== null });
 
   const shared: Partial<NewEntry> = {
     kind,
