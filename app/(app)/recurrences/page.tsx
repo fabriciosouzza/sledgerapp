@@ -10,17 +10,23 @@ import { addMonths, formatDate, periodOf, today } from "@/lib/domain/dates";
 import { monthlyFixedCost } from "@/lib/domain/recurrences";
 import { formatBRL } from "@/lib/domain/money";
 import { getContext } from "@/lib/services/context";
-import { listRecurrences, previewGeneration } from "@/lib/services/recurrences";
+import { listRecurrences, pendingMonths, previewGeneration } from "@/lib/services/recurrences";
+
+/** How far back the "not applied" section looks. */
+const EARLIER_MONTHS = 6;
 
 export default async function RecurrencesPage() {
   const current = periodOf(today());
   const { userId, repos } = await getContext();
-  const [recurrences, ...previews] = await Promise.all([
+  const [recurrences, pending, ...previews] = await Promise.all([
     listRecurrences(repos, userId),
+    pendingMonths(repos, userId, today(), EARLIER_MONTHS),
     previewGeneration(repos, userId, current),
     previewGeneration(repos, userId, addMonths(current, 1)),
   ]);
   const months = previews.map((p) => ({ period: p.period, applied: p.existing.length, pending: p.toCreate.length }));
+  // Earlier months with something still to apply — a forgotten month, or a template recorded by hand.
+  const earlier = pending.filter((m) => m.period !== current).map((m) => ({ period: m.period, applied: m.applied, pending: m.count }));
   const fixed = monthlyFixedCost(recurrences);
   const active = recurrences.filter((r) => r.isActive);
   const inactive = recurrences.filter((r) => !r.isActive);
@@ -43,6 +49,16 @@ export default async function RecurrencesPage() {
           <h2 className="mb-2 text-sm font-semibold">This month and next</h2>
           <MonthsStatus months={months} />
         </section>
+
+        {earlier.length > 0 && (
+          <section>
+            <h2 className="mb-1 text-sm font-semibold">Earlier months not applied</h2>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Last {EARLIER_MONTHS} months. A month you skipped — or a template you recorded by hand that month; skip those lines in Review.
+            </p>
+            <MonthsStatus months={earlier} />
+          </section>
+        )}
 
         {recurrences.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border p-6 text-center">

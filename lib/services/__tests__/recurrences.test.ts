@@ -40,13 +40,13 @@ describe("generateMonth", () => {
     await createRecurrence(repos, U, input({ startsOn: "2026-05-01" }));
     await generateMonth(repos, U, "2026-07");
     expect(await pendingMonths(repos, U, "2026-09-12")).toEqual([
-      { period: "2026-06", count: 1 },
-      { period: "2026-08", count: 1 },
-      { period: "2026-09", count: 1 },
+      { period: "2026-06", count: 1, applied: 0 },
+      { period: "2026-08", count: 1, applied: 0 },
+      { period: "2026-09", count: 1, applied: 0 },
     ]);
     await generateMonth(repos, U, "2026-06");
     await generateMonth(repos, U, "2026-08");
-    expect(await pendingMonths(repos, U, "2026-09-12")).toEqual([{ period: "2026-09", count: 1 }]);
+    expect(await pendingMonths(repos, U, "2026-09-12")).toEqual([{ period: "2026-09", count: 1, applied: 0 }]);
   });
 
   // Acceptance 6: generating the same month twice creates nothing the second time.

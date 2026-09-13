@@ -106,7 +106,10 @@ function previewFrom(recurrences: Recurrence[], entries: Entry[], period: Period
 
 export interface PendingMonth {
   period: Period;
+  /** Still to apply. */
   count: number;
+  /** Already applied that month. */
+  applied: number;
 }
 
 /** Months from `lookback` ago up to the current one that still have recurring entries to apply, oldest first. Two queries, not two per month. */
@@ -121,7 +124,7 @@ export async function pendingMonths(repos: Repositories, userId: string, today: 
   for (let i = lookback; i >= 0; i--) {
     const period = addMonths(current, -i);
     const preview = previewFrom(recurrences, entries, period);
-    if (preview.toCreate.length > 0) out.push({ period, count: preview.toCreate.length });
+    if (preview.toCreate.length > 0) out.push({ period, count: preview.toCreate.length, applied: preview.existing.length });
   }
   return out;
 }
