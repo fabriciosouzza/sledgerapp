@@ -77,6 +77,10 @@ export async function setRecurrenceActive(repos: Repositories, userId: string, i
 /** Entries already generated keep their rows; `recurrence_id` becomes null (FK on delete set null). */
 export async function deleteRecurrence(repos: Repositories, userId: string, id: string): Promise<void> {
   await getRecurrence(repos, userId, id);
+  // Generated entries would lose their link and a re-created template could
+  // double a month: a template that already ran is deactivated, not deleted.
+  const generated = await repos.entries.list(userId, { recurrenceId: id });
+  if (generated.length > 0) throw new ServiceError("in_use", "This recurrence already generated entries. Deactivate it instead.");
   await repos.recurrences.delete(userId, id);
 }
 

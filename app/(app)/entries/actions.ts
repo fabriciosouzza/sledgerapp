@@ -13,7 +13,7 @@ import { ServiceError } from "@/lib/services/errors";
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
 function revalidate() {
-  for (const path of ["/", "/entries", "/review", "/cards"]) revalidatePath(path);
+  for (const path of ["/", "/entries", "/review", "/cards", "/net-worth", "/accounts/[id]"]) revalidatePath(path, "page");
 }
 
 async function run(fn: () => Promise<unknown>): Promise<ActionResult> {

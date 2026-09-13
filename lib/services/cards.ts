@@ -64,7 +64,11 @@ export interface CardsOptions {
 }
 
 async function buildCard(repos: Repositories, userId: string, card: Account, today: IsoDate, ensure: "open" | "all"): Promise<CardView> {
-  const from = `${addMonths(periodOf(today), -MONTHS_BACK)}-01`;
+  // A year back — or further, so an old unpaid statement never drops off the screen it is paid from.
+  const known = new Map((await repos.statements.listByAccount(userId, card.id)).map((s) => [s.cycleStart, s]));
+  const oldestUnpaid = [...known.values()].filter((s) => s.paidOn === null).reduce<IsoDate | null>((min, s) => (min === null || s.cycleStart < min ? s.cycleStart : min), null);
+  const yearBack = `${addMonths(periodOf(today), -MONTHS_BACK)}-01`;
+  const from = oldestUnpaid !== null && oldestUnpaid < yearBack ? oldestUnpaid : yearBack;
   const to = resolveCardCycle(card, today).cycleEnd;
   const [entries, future] = await Promise.all([
     repos.entries.list(userId, { accountId: card.id, from, to }),
@@ -79,7 +83,6 @@ async function buildCard(repos: Repositories, userId: string, card: Account, tod
 
   // Statement rows, created lazily, one per (card, cycle_start). Rows already
   // known are reused without a write; the open cycle is always materialised.
-  const known = new Map((await repos.statements.listByAccount(userId, card.id)).map((s) => [s.cycleStart, s]));
   const views: StatementView[] = [];
   for (const group of groups) {
     let statement = known.get(group.cycle.cycleStart);

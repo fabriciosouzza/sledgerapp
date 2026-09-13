@@ -63,7 +63,7 @@ sql.append(f"delete from statements where user_id = '{UID}';")
 sql.append(f"delete from recurrences where user_id = '{UID}';")
 sql.append(f"update accounts set opening_on = '{START}', opening_balance_cents = case name when 'Conta Corrente' then 620000 when 'Dinheiro' then 15000 when 'Reserva' then 1200000 else 0 end, target_cents = case name when 'Reserva' then 2000000 else null end where user_id = '{UID}';")
 # The sign-in seed only creates the basic set; the demo needs two cards and three more categories.
-sql.append(f"insert into accounts (user_id, name, type, institution, closing_day, due_day, credit_limit_cents, sort_order) values ('{UID}', 'Nubank', 'credit_card', 'Nubank', 20, 28, 400000, 10), ('{UID}', 'Inter', 'credit_card', 'Inter', 14, 21, 300000, 11) on conflict (user_id, name) do nothing;")
+sql.append(f"insert into accounts (user_id, name, type, institution, closing_day, due_day, credit_limit_cents, sort_order) values ('{UID}', 'Nubank', 'credit_card', 'Nubank', 20, 28, 750000, 10), ('{UID}', 'Inter', 'credit_card', 'Inter', 14, 21, 300000, 11) on conflict (user_id, name) do nothing;")
 sql.append(f"insert into categories (user_id, name, applies_to, is_benefit, sort_order) values ('{UID}', 'Salário', '{{income}}', false, 20), ('{UID}', 'Vale-refeição', '{{income}}', true, 21), ('{UID}', 'Restaurantes', '{{expense}}', false, 22) on conflict (user_id, parent_id, name) do nothing;")
 sql.append(f"update categories set monthly_cap_cents = case name when 'Alimentação' then 180000 when 'Transporte' then 60000 when 'Lazer' then 50000 when 'Assinaturas' then 30000 when 'Restaurantes' then 70000 else monthly_cap_cents end where user_id = '{UID}';")
 
@@ -211,7 +211,8 @@ for month in months():
     d = clamp(month.year, month.month, 6)
     if d > TODAY: break
     # paired contribution: cash leaves Conta Corrente into Corretora, movement records the asset
-    e = entry(date=d, kind="contribution", amount=100000, description="Aporte CDB 110% CDI", account="Conta Corrente", counter="Corretora")
+    e = entry(date=d, kind="contribution", amount=100000, description="Aporte CDB", account="Conta Corrente", counter="Corretora",
+              source="recurrence", recurrence_id=recs["cdb"]["id"], period=month)
     movement("CDB 110% CDI", d, "contribution", 100000, entry_id=e["id"]); cdb_balance += 100000
     if month.month % 3 == 0:
         e2 = entry(date=clamp(month.year, month.month, 7), kind="contribution", amount=150000, description="Aporte Tesouro Selic", account="Conta Corrente", counter="Corretora")

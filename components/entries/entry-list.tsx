@@ -221,7 +221,7 @@ export function EntryList({
       {settleHint && plannedIds.length > 0 && !selecting && (
         <p className="-mt-2 text-xs text-muted-foreground">
           <span className="md:hidden">Tap ○ to settle today · hold it to pick the day</span>
-          <span className="hidden md:inline">○ settles today · the calendar picks the day</span>
+          <span className="hidden md:inline">○ settles today · the calendar picks the day (or Shift+Enter on ○)</span>
         </p>
       )}
 

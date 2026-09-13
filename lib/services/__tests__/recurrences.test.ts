@@ -109,12 +109,12 @@ describe("recurrences", () => {
     expect(await fixedCost(repos, U)).toBe(150_000);
   });
 
-  it("deleting a template keeps generated entries, unlinked", async () => {
+  it("a template that already generated entries is deactivated, not deleted", async () => {
     const rent = await createRecurrence(repos, U, input());
+    const unused = await createRecurrence(repos, U, input({ description: "Internet", amountCents: "120,00", startsOn: "2026-06-01" }));
     await generateMonth(repos, U, "2026-02");
-    await deleteRecurrence(repos, U, rent.id);
-    const [row] = await repos.entries.list(U, { period: "2026-02" });
-    expect(row.recurrenceId).toBeNull();
-    await expect(deleteRecurrence(repos, U, rent.id)).rejects.toMatchObject({ code: "not_found" });
+    await expect(deleteRecurrence(repos, U, rent.id)).rejects.toMatchObject({ code: "in_use" });
+    await deleteRecurrence(repos, U, unused.id);
+    await expect(deleteRecurrence(repos, U, unused.id)).rejects.toMatchObject({ code: "not_found" });
   });
 });

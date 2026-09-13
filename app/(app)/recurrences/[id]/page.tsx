@@ -33,7 +33,7 @@ export default async function EditRecurrencePage(props: PageProps<"/recurrences/
               </Button>
             }
             title="Delete this recurrence?"
-            description="Entries already generated stay as they are; no new ones will be created."
+            description="Only a template that never ran can be deleted. One that already generated entries is deactivated instead (Active switch below): the entries stay, no new ones are created."
             confirmLabel="Delete"
             action={deleteRecurrenceAction}
             fields={{ id: recurrence.id }}
