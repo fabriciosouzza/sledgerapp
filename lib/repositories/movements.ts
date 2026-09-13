@@ -1,7 +1,7 @@
 import type { DbClient } from "@/lib/db/client";
 import type { Database } from "@/lib/db/database.types";
 import type { AssetMovement } from "@/lib/domain/types";
-import { fromPostgres, RepositoryError } from "./errors";
+import { fetchAll, fromPostgres, RepositoryError } from "./errors";
 
 type Row = Database["public"]["Tables"]["asset_movements"]["Row"];
 
@@ -16,6 +16,8 @@ export interface MovementsRepo {
   list(userId: string): Promise<AssetMovement[]>;
   listByAsset(userId: string, assetId: string): Promise<AssetMovement[]>;
   getById(userId: string, id: string): Promise<AssetMovement | null>;
+  /** The movement paired with a cash entry, if any. */
+  getByEntry(userId: string, entryId: string): Promise<AssetMovement | null>;
   insert(userId: string, data: NewMovement): Promise<AssetMovement>;
   update(userId: string, id: string, patch: Partial<NewMovement>): Promise<AssetMovement>;
   delete(userId: string, id: string): Promise<void>;
@@ -39,20 +41,23 @@ function toRow(data: Partial<NewMovement>) {
 export function supabaseMovementsRepo(db: DbClient): MovementsRepo {
   return {
     async list(userId) {
-      const { data, error } = await db.from("asset_movements").select("*").eq("user_id", userId).order("date", { ascending: false }).order("created_at", { ascending: false });
-      if (error) throw fromPostgres(error);
-      return data.map(toDomain);
+      const rows = await fetchAll(() =>
+        db.from("asset_movements").select("*").eq("user_id", userId).order("date", { ascending: false }).order("created_at", { ascending: false }).order("id"),
+      );
+      return rows.map(toDomain);
     },
     async listByAsset(userId, assetId) {
-      const { data, error } = await db
-        .from("asset_movements")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("asset_id", assetId)
-        .order("date", { ascending: false })
-        .order("created_at", { ascending: false });
-      if (error) throw fromPostgres(error);
-      return data.map(toDomain);
+      const rows = await fetchAll(() =>
+        db
+          .from("asset_movements")
+          .select("*")
+          .eq("user_id", userId)
+          .eq("asset_id", assetId)
+          .order("date", { ascending: false })
+          .order("created_at", { ascending: false })
+          .order("id"),
+      );
+      return rows.map(toDomain);
     },
     async getById(userId, id) {
       const { data, error } = await db.from("asset_movements").select("*").eq("user_id", userId).eq("id", id).maybeSingle();
@@ -73,6 +78,11 @@ export function supabaseMovementsRepo(db: DbClient): MovementsRepo {
       if (error) throw fromPostgres(error);
       if (!row) throw new RepositoryError("not_found", "movement not found");
       return toDomain(row);
+    },
+    async getByEntry(userId, entryId) {
+      const { data, error } = await db.from("asset_movements").select("*").eq("user_id", userId).eq("entry_id", entryId).maybeSingle();
+      if (error) throw fromPostgres(error);
+      return data ? toDomain(data) : null;
     },
     async delete(userId, id) {
       const { error } = await db.from("asset_movements").delete().eq("user_id", userId).eq("id", id);

@@ -38,9 +38,10 @@ export async function sendMagicLink(email: string, redirectTo: string): Promise<
   return { ok: true, userId: null };
 }
 
+/** This device only: signing out on the laptop must not log the phone out. */
 export async function signOut(): Promise<void> {
   const supabase = await createClient();
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: "local" });
 }
 
 /** Turns the `code` (PKCE) or `token_hash` from an email link into a session. */
@@ -108,6 +109,6 @@ export async function deleteUser(userId: string): Promise<AuthResult> {
   const admin = createAdmin(supabaseEnv().url, key, { auth: { persistSession: false, autoRefreshToken: false } });
   const { error } = await admin.auth.admin.deleteUser(userId);
   if (error) return { ok: false, error: error.message };
-  await signOut();
+  await (await createClient()).auth.signOut({ scope: "global" });
   return { ok: true, userId };
 }

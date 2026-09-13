@@ -2,7 +2,7 @@ import { z } from "zod";
 import { isIsoDate } from "@/lib/domain/dates";
 import { canBeInstallments, needsCategory, needsCounterAccount } from "@/lib/domain/entries";
 import { parseBRL } from "@/lib/domain/money";
-import { boolField, optionalInt, optionalText, requiredText } from "./form";
+import { boolField, optionalId, optionalInt, optionalText, requiredId, requiredText } from "./form";
 
 export const entryKindSchema = z.enum(["income", "expense", "contribution", "transfer"]);
 
@@ -28,9 +28,9 @@ export const entryInputSchema = z
     amountCents: requiredCents,
     date: isoDateField,
     description: requiredText("Description", 120),
-    categoryId: optionalText(36),
-    accountId: requiredText("Account", 36),
-    counterAccountId: optionalText(36),
+    categoryId: optionalId(),
+    accountId: requiredId("an account"),
+    counterAccountId: optionalId(),
     notes: optionalText(500),
     settled: boolField.default(false),
     settledOn: optionalIsoDate,
@@ -67,14 +67,14 @@ export type EntryInput = z.infer<typeof entryInputSchema>;
 /** What an edit may change; installment and recurrence flags are not editable. */
 export const entryUpdateSchema = z
   .object({
-    id: requiredText("Entry", 36),
+    id: requiredId("an entry"),
     kind: entryKindSchema,
     amountCents: requiredCents,
     date: isoDateField,
     description: requiredText("Description", 120),
-    categoryId: optionalText(36),
-    accountId: requiredText("Account", 36),
-    counterAccountId: optionalText(36),
+    categoryId: optionalId(),
+    accountId: requiredId("an account"),
+    counterAccountId: optionalId(),
     notes: optionalText(500),
     settled: boolField.default(false),
     settledOn: optionalIsoDate,

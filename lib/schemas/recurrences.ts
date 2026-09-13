@@ -1,15 +1,15 @@
 import { z } from "zod";
 import { needsCategory, needsCounterAccount } from "@/lib/domain/entries";
 import { isoDateField, optionalIsoDate, requiredCents } from "./entries";
-import { boolField, optionalInt, optionalText, requiredText } from "./form";
+import { boolField, optionalId, optionalInt, requiredId, requiredText } from "./form";
 
 export const recurrenceInputSchema = z
   .object({
     description: requiredText("Description", 120),
     kind: z.enum(["income", "expense", "contribution", "transfer"]),
-    categoryId: optionalText(36),
-    accountId: requiredText("Account", 36),
-    counterAccountId: optionalText(36),
+    categoryId: optionalId(),
+    accountId: requiredId("an account"),
+    counterAccountId: optionalId(),
     amountCents: requiredCents,
     dueDay: optionalInt(1, 31),
     startsOn: isoDateField,

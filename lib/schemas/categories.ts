@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { boolField, multiField, optionalCents, optionalText, requiredText } from "./form";
+import { boolField, multiField, optionalCents, optionalId, optionalText, requiredText } from "./form";
 
 export const entryKindSchema = z.enum(["income", "expense", "contribution", "transfer"]);
 
 export const categoryInputSchema = z.object({
   name: requiredText("Name", 60),
-  parentId: optionalText(36),
+  parentId: optionalId(),
   appliesTo: multiField(["income", "expense"]),
   monthlyCapCents: optionalCents,
   isBenefit: boolField.default(false),

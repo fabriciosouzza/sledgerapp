@@ -2,7 +2,7 @@ import type { DbClient } from "@/lib/db/client";
 import type { Database } from "@/lib/db/database.types";
 import { periodEnd, periodStart } from "@/lib/domain/dates";
 import type { Entry, EntryKind, EntryStatus, IsoDate, NewEntry, Period } from "@/lib/domain/types";
-import { fromPostgres, RepositoryError } from "./errors";
+import { fetchAll, fromPostgres, RepositoryError } from "./errors";
 
 type Row = Database["public"]["Tables"]["entries"]["Row"];
 type Insert = Database["public"]["Tables"]["entries"]["Insert"];
@@ -23,7 +23,9 @@ export interface EntryFilters {
   /** Entries where the account is either side (source or counter). */
   touchingAccountIds?: string[];
   categoryId?: string;
-  /** Case-insensitive substring of the description. */
+  /** Any of these categories (a parent with its children). */
+  categoryIds?: string[];
+  /** Case-insensitive substring of the description or the notes. */
   search?: string;
   statementId?: string;
   installmentGroupId?: string;
@@ -101,32 +103,38 @@ function toInsert(userId: string, data: NewEntry): Insert {
 export function supabaseEntriesRepo(db: DbClient): EntriesRepo {
   return {
     async list(userId, filters) {
-      let q = db.from("entries").select("*").eq("user_id", userId);
       const from = filters.from ?? (filters.period ? periodStart(filters.period) : undefined);
       const to = filters.to ?? (filters.period ? periodEnd(filters.period) : undefined);
-      if (from) q = q.gte("date", from);
-      if (to) q = q.lte("date", to);
-      if (filters.settledFrom) q = q.gte("settled_on", filters.settledFrom);
-      if (filters.settledTo) q = q.lte("settled_on", filters.settledTo);
-      if (filters.kind) q = q.eq("kind", filters.kind);
-      if (filters.kinds && filters.kinds.length > 0) q = q.in("kind", filters.kinds);
-      if (filters.status) q = q.eq("status", filters.status);
-      if (filters.accountId) q = q.eq("account_id", filters.accountId);
-      if (filters.touchingAccountIds && filters.touchingAccountIds.length > 0) {
-        const ids = filters.touchingAccountIds.join(",");
-        q = q.or(`account_id.in.(${ids}),counter_account_id.in.(${ids})`);
-      }
-      if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
-      if (filters.statementId) q = q.eq("statement_id", filters.statementId);
-      if (filters.installmentGroupId) q = q.eq("installment_group_id", filters.installmentGroupId);
-      if (filters.recurrenceId) q = q.eq("recurrence_id", filters.recurrenceId);
-      if (filters.search) q = q.ilike("description", `%${filters.search.replace(/[%_]/g, "\\$&")}%`);
       if (!from && !to && !filters.settledFrom && !filters.settledTo && !filters.statementId && !filters.installmentGroupId && !filters.recurrenceId) {
         throw new RepositoryError("invalid", "entries.list needs a period, a date range or a group");
       }
-      const { data, error } = await q.order("date", { ascending: false }).order("created_at", { ascending: false });
-      if (error) throw fromPostgres(error);
-      return data.map(toDomainEntry);
+      const build = () => {
+        let q = db.from("entries").select("*").eq("user_id", userId);
+        if (from) q = q.gte("date", from);
+        if (to) q = q.lte("date", to);
+        if (filters.settledFrom) q = q.gte("settled_on", filters.settledFrom);
+        if (filters.settledTo) q = q.lte("settled_on", filters.settledTo);
+        if (filters.kind) q = q.eq("kind", filters.kind);
+        if (filters.kinds && filters.kinds.length > 0) q = q.in("kind", filters.kinds);
+        if (filters.status) q = q.eq("status", filters.status);
+        if (filters.accountId) q = q.eq("account_id", filters.accountId);
+        if (filters.touchingAccountIds && filters.touchingAccountIds.length > 0) {
+          const ids = filters.touchingAccountIds.join(",");
+          q = q.or(`account_id.in.(${ids}),counter_account_id.in.(${ids})`);
+        }
+        if (filters.categoryId) q = q.eq("category_id", filters.categoryId);
+        if (filters.categoryIds && filters.categoryIds.length > 0) q = q.in("category_id", filters.categoryIds);
+        if (filters.statementId) q = q.eq("statement_id", filters.statementId);
+        if (filters.installmentGroupId) q = q.eq("installment_group_id", filters.installmentGroupId);
+        if (filters.recurrenceId) q = q.eq("recurrence_id", filters.recurrenceId);
+        if (filters.search) {
+          const term = `%${filters.search.replace(/[%_]/g, "\\$&")}%`;
+          q = q.or(`description.ilike.${term},notes.ilike.${term}`);
+        }
+        // Stable order so pages never overlap.
+        return q.order("date", { ascending: false }).order("created_at", { ascending: false }).order("id");
+      };
+      return (await fetchAll(build)).map(toDomainEntry);
     },
 
     async getById(userId, id) {

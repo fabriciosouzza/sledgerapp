@@ -87,7 +87,7 @@ export function supabaseCategoriesRepo(db: DbClient): CategoriesRepo {
       if (data.length === 0) return [];
       const { data: rows, error } = await db
         .from("categories")
-        .insert(data.map((d) => toInsert(userId, d)))
+        .upsert(data.map((d) => toInsert(userId, d)), { onConflict: "user_id,parent_id,name", ignoreDuplicates: true })
         .select("*");
       if (error) throw fromPostgres(error);
       return rows.map(toDomain);

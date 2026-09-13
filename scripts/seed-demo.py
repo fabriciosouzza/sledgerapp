@@ -12,7 +12,7 @@ import random
 import uuid
 from datetime import date, timedelta
 
-UID = "45a5ad96-b115-4504-9516-de06a0bf8577"
+UID = "81b1fb80-460a-4bfb-a4db-5509edb4ed91"
 TODAY = date(2026, 9, 12)
 START = date(2024, 9, 1)
 rng = random.Random(42)
@@ -62,6 +62,9 @@ sql.append(f"delete from entries where user_id = '{UID}';")
 sql.append(f"delete from statements where user_id = '{UID}';")
 sql.append(f"delete from recurrences where user_id = '{UID}';")
 sql.append(f"update accounts set opening_on = '{START}', opening_balance_cents = case name when 'Conta Corrente' then 620000 when 'Dinheiro' then 15000 when 'Reserva' then 1200000 else 0 end where user_id = '{UID}';")
+# The sign-in seed only creates the basic set; the demo needs two cards and three more categories.
+sql.append(f"insert into accounts (user_id, name, type, institution, closing_day, due_day, credit_limit_cents, sort_order) values ('{UID}', 'Nubank', 'credit_card', 'Nubank', 20, 28, 400000, 10), ('{UID}', 'Inter', 'credit_card', 'Inter', 14, 21, 300000, 11) on conflict (user_id, name) do nothing;")
+sql.append(f"insert into categories (user_id, name, applies_to, is_benefit, sort_order) values ('{UID}', 'Salário', '{{income}}', false, 20), ('{UID}', 'Vale-refeição', '{{income}}', true, 21), ('{UID}', 'Restaurantes', '{{expense}}', false, 22) on conflict (user_id, parent_id, name) do nothing;")
 sql.append(f"update categories set monthly_cap_cents = case name when 'Alimentação' then 180000 when 'Transporte' then 60000 when 'Lazer' then 50000 when 'Assinaturas' then 30000 when 'Restaurantes' then 70000 else monthly_cap_cents end where user_id = '{UID}';")
 
 # ---- recurrences -----------------------------------------------------------

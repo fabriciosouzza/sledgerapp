@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { isoDateField } from "./entries";
-import { boolField, optionalText, requiredText } from "./form";
+import { boolField, optionalId, optionalText, requiredId, requiredText } from "./form";
 import { parseBRL } from "@/lib/domain/money";
 
 export const assetClassSchema = z.enum(["fixed_income", "crypto", "foreign_currency", "stocks", "reits", "other"]);
@@ -25,15 +25,15 @@ const signedCents = z.preprocess(
 
 export const movementInputSchema = z
   .object({
-    assetId: requiredText("Asset", 36),
+    assetId: requiredId("an asset"),
     kind: movementKindSchema,
     date: isoDateField,
     amountCents: signedCents,
     notes: optionalText(500),
     /** For contributions: the cash account the money leaves; pairs with an entry (§5.7). */
-    fromAccountId: optionalText(36),
+    fromAccountId: optionalId(),
     /** The brokerage account that receives it. */
-    brokerageAccountId: optionalText(36),
+    brokerageAccountId: optionalId(),
   })
   .superRefine((m, ctx) => {
     if (m.kind !== "market_adjustment" && m.amountCents < 0) {
@@ -57,7 +57,7 @@ export type BatchFields = z.infer<typeof batchInputSchema>;
 /** An edit keeps the asset and the pairing; only what happened may change. */
 export const movementUpdateSchema = z
   .object({
-    id: requiredText("Movement", 36),
+    id: requiredId("a movement"),
     kind: movementKindSchema,
     date: isoDateField,
     amountCents: signedCents,

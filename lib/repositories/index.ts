@@ -21,10 +21,36 @@ export interface Repositories {
   movements: MovementsRepo;
 }
 
+/**
+ * Accounts and categories are read by nearly every service a screen composes
+ * (Today asks for them five times). Repositories live for one request, so the
+ * first `list` is kept until something on that repo writes.
+ */
+function memoList<R extends { list(userId: string): Promise<unknown[]> }>(repo: R): R {
+  let cached: { userId: string; rows: Promise<unknown[]> } | null = null;
+  return new Proxy(repo, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver);
+      if (typeof value !== "function") return value;
+      if (prop === "list") {
+        return (userId: string) => {
+          if (cached === null || cached.userId !== userId) cached = { userId, rows: value.call(target, userId) };
+          return cached.rows;
+        };
+      }
+      if (prop === "getById" || prop === "count") return value.bind(target);
+      return (...args: unknown[]) => {
+        cached = null;
+        return value.apply(target, args);
+      };
+    },
+  });
+}
+
 export function createRepositories(db: DbClient): Repositories {
   return {
-    accounts: supabaseAccountsRepo(db),
-    categories: supabaseCategoriesRepo(db),
+    accounts: memoList(supabaseAccountsRepo(db)),
+    categories: memoList(supabaseCategoriesRepo(db)),
     entries: supabaseEntriesRepo(db),
     recurrences: supabaseRecurrencesRepo(db),
     statements: supabaseStatementsRepo(db),

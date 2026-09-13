@@ -12,6 +12,10 @@ export const optionalText = (max = 120) =>
 export const requiredText = (label: string, max = 120) =>
   z.string({ error: `${label} is required.` }).trim().min(1, { error: `${label} is required.` }).max(max);
 
+/** A row id from a select or hidden field: a UUID, so a bad value fails here and not in Postgres. */
+export const requiredId = (label: string) => z.uuid({ error: `Pick ${label}.` });
+export const optionalId = () => z.preprocess(blankToNull, z.uuid({ error: "Invalid selection." }).nullable()).default(null);
+
 export const optionalInt = (min: number, max: number) =>
   z.preprocess(blankToNull, z.coerce.number().int().min(min).max(max).nullable()).default(null);
 

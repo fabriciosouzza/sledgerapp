@@ -207,11 +207,21 @@ export async function updateEntry(repos: Repositories, userId: string, input: En
   const others = targets.filter((e) => e.id !== current.id).map((e) => e.id);
   const updated = await repos.entries.update(userId, current.id, own);
   const rest = await repos.entries.updateMany(userId, others, shared);
+  // A contribution paired with a portfolio movement (§5.7): the two must agree.
+  const paired = await repos.movements.getByEntry(userId, current.id);
+  if (paired) {
+    if (kind !== "contribution") throw new ServiceError("invalid", "This entry is paired with a portfolio movement; change it from the portfolio.");
+    await repos.movements.update(userId, paired.id, { amountCents: input.amountCents, date: input.date, notes: input.notes });
+  }
   return [updated, ...rest];
 }
 
 export async function deleteEntry(repos: Repositories, userId: string, id: string, scope: InstallmentScope = "this"): Promise<number> {
   const entry = await getEntry(repos, userId, id);
   const targets = await scopeOf(repos, userId, entry, scope);
+  for (const target of targets) {
+    const paired = await repos.movements.getByEntry(userId, target.id);
+    if (paired) await repos.movements.delete(userId, paired.id);
+  }
   return repos.entries.deleteMany(userId, targets.map((e) => e.id));
 }

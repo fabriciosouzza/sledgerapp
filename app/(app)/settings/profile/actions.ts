@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
+import { siteUrl } from "@/lib/auth/site-url";
 import { redirect } from "next/navigation";
 import { deleteUser, updateEmail, updateName, updatePassword } from "@/lib/auth/adapter";
 import { getUser } from "@/lib/auth/session";
@@ -41,10 +41,7 @@ export async function deleteAccountAction(formData: FormData): Promise<{ error?:
 export async function updateEmailAction(_prev: ProfileState, formData: FormData): Promise<ProfileState> {
   const parsed = emailSchema.safeParse(formData.get("email"));
   if (!parsed.success) return { error: parsed.error.issues[0].message };
-  const h = await headers();
-  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https");
-  const result = await updateEmail(parsed.data, `${proto}://${host}/auth/callback?next=/settings/profile`);
+  const result = await updateEmail(parsed.data, `${await siteUrl()}/auth/callback?next=/settings/profile`);
   if (!result.ok) return { error: result.error };
   return { message: `Check ${parsed.data} (and the current address) for the confirmation links.` };
 }

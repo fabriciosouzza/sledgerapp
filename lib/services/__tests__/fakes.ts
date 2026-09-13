@@ -20,8 +20,7 @@ import type {
 } from "@/lib/repositories";
 import { RepositoryError } from "@/lib/repositories";
 
-let seq = 0;
-const nextId = () => `id-${++seq}`;
+const nextId = () => crypto.randomUUID();
 
 type Owned<T> = T & { userId: string };
 
@@ -142,10 +141,11 @@ export function fakeRepositories(): FakeRepositories {
         .filter((e) => (f.accountId ? e.accountId === f.accountId : true))
         .filter((e) => (f.touchingAccountIds ? f.touchingAccountIds.includes(e.accountId) || (e.counterAccountId !== null && f.touchingAccountIds.includes(e.counterAccountId)) : true))
         .filter((e) => (f.categoryId ? e.categoryId === f.categoryId : true))
+        .filter((e) => (f.categoryIds && f.categoryIds.length > 0 ? e.categoryId !== null && f.categoryIds.includes(e.categoryId) : true))
         .filter((e) => (f.installmentGroupId ? e.installmentGroupId === f.installmentGroupId : true))
         .filter((e) => (f.recurrenceId ? e.recurrenceId === f.recurrenceId : true))
         .filter((e) => (f.statementId ? e.statementId === f.statementId : true))
-        .filter((e) => (f.search ? e.description.toLowerCase().includes(f.search.toLowerCase()) : true))
+        .filter((e) => (f.search ? `${e.description} ${e.notes ?? ""}`.toLowerCase().includes(f.search.toLowerCase()) : true))
         .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
         .map(strip);
     },
@@ -285,6 +285,10 @@ export function fakeRepositories(): FakeRepositories {
     },
     async getById(userId, id) {
       const row = movements.find((m) => m.userId === userId && m.id === id);
+      return row ? strip(row) : null;
+    },
+    async getByEntry(userId, entryId) {
+      const row = movements.find((m) => m.userId === userId && m.entryId === entryId);
       return row ? strip(row) : null;
     },
     async insert(userId, data: NewMovement) {

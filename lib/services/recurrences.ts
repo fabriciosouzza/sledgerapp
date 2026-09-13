@@ -5,7 +5,7 @@ import { isCreditCard } from "@/lib/domain/accounts";
 import { appliesToKind } from "@/lib/domain/categories";
 import { needsCategory, needsCounterAccount } from "@/lib/domain/entries";
 import { expandRecurrences, monthlyFixedCost } from "@/lib/domain/recurrences";
-import { addMonths, periodOf } from "@/lib/domain/dates";
+import { addMonths, periodEnd, periodOf, periodStart } from "@/lib/domain/dates";
 import type { Entry, IsoDate, NewEntry, Period, Recurrence } from "@/lib/domain/types";
 import type { Repositories } from "@/lib/repositories";
 import type { RecurrenceInput } from "@/lib/schemas/recurrences";
@@ -90,7 +90,12 @@ export interface GenerationPreview {
 
 export async function previewGeneration(repos: Repositories, userId: string, period: Period): Promise<GenerationPreview> {
   const [recurrences, entries] = await Promise.all([repos.recurrences.list(userId), repos.entries.list(userId, { period })]);
-  const existing = entries.filter((e) => e.recurrenceId !== null);
+  return previewFrom(recurrences, entries, period);
+}
+
+/** Pure: `entries` are the period's rows (extra rows from other periods are ignored). */
+function previewFrom(recurrences: Recurrence[], entries: Entry[], period: Period): GenerationPreview {
+  const existing = entries.filter((e) => e.recurrenceId !== null && periodOf(e.date) === period);
   const done = new Set(existing.map((e) => e.recurrenceId));
   const byId = new Map(recurrences.map((r) => [r.id, r]));
   const toCreate = expandRecurrences(recurrences, period)
@@ -104,13 +109,18 @@ export interface PendingMonth {
   count: number;
 }
 
-/** Months from `lookback` ago up to the current one that still have recurring entries to apply, oldest first. */
+/** Months from `lookback` ago up to the current one that still have recurring entries to apply, oldest first. Two queries, not two per month. */
 export async function pendingMonths(repos: Repositories, userId: string, today: IsoDate, lookback = 3): Promise<PendingMonth[]> {
   const current = periodOf(today);
+  const first = addMonths(current, -lookback);
+  const [recurrences, entries] = await Promise.all([
+    repos.recurrences.list(userId),
+    repos.entries.list(userId, { from: periodStart(first), to: periodEnd(current) }),
+  ]);
   const out: PendingMonth[] = [];
   for (let i = lookback; i >= 0; i--) {
     const period = addMonths(current, -i);
-    const preview = await previewGeneration(repos, userId, period);
+    const preview = previewFrom(recurrences, entries, period);
     if (preview.toCreate.length > 0) out.push({ period, count: preview.toCreate.length });
   }
   return out;

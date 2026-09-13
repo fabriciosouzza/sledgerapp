@@ -1,7 +1,7 @@
 import type { DbClient } from "@/lib/db/client";
 import type { Database } from "@/lib/db/database.types";
 import type { IsoDate, Statement } from "@/lib/domain/types";
-import { fromPostgres, RepositoryError } from "./errors";
+import { fetchAll, fromPostgres, RepositoryError } from "./errors";
 
 type Row = Database["public"]["Tables"]["statements"]["Row"];
 
@@ -30,20 +30,15 @@ function toDomain(row: Row): Statement {
 export function supabaseStatementsRepo(db: DbClient): StatementsRepo {
   return {
     async listByUser(userId) {
-      const { data, error } = await db.from("statements").select("*").eq("user_id", userId).order("cycle_start", { ascending: false });
-      if (error) throw fromPostgres(error);
-      return data.map(toDomain);
+      const rows = await fetchAll(() => db.from("statements").select("*").eq("user_id", userId).order("cycle_start", { ascending: false }).order("id"));
+      return rows.map(toDomain);
     },
 
     async listByAccount(userId, accountId) {
-      const { data, error } = await db
-        .from("statements")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("account_id", accountId)
-        .order("cycle_start", { ascending: false });
-      if (error) throw fromPostgres(error);
-      return data.map(toDomain);
+      const rows = await fetchAll(() =>
+        db.from("statements").select("*").eq("user_id", userId).eq("account_id", accountId).order("cycle_start", { ascending: false }).order("id"),
+      );
+      return rows.map(toDomain);
     },
 
     async getById(userId, id) {

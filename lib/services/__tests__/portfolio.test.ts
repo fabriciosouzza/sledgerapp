@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { computeMetrics } from "@/lib/domain/metrics";
 import { assetInputSchema, movementInputSchema, movementUpdateSchema } from "@/lib/schemas/assets";
 import { addMovement, assetBalances, createAsset, deleteAsset, deleteMovement, portfolioOverview, recordBatch, updateMovement } from "../portfolio";
+import { entryUpdateSchema } from "@/lib/schemas/entries";
+import { deleteEntry, updateEntry } from "../entries";
 import { seedUserIfEmpty } from "../seed";
 import { fakeRepositories, type FakeRepositories } from "./fakes";
 
@@ -86,6 +88,18 @@ describe("updateMovement", () => {
     expect(updated).toMatchObject({ amountCents: 125_000, date: "2026-11-20" });
     expect(await repos.entries.getById(U, movement.entryId!)).toMatchObject({ amountCents: 125_000, date: "2026-11-20", settledOn: "2026-11-20" });
     await expect(updateMovement(repos, U, movementUpdateSchema.parse({ id: movement.id, kind: "yield", date: "2026-11-20", amountCents: "1,00" }))).rejects.toMatchObject({ code: "invalid" });
+  });
+});
+
+describe("the entry side of a pair", () => {
+  it("edits and deletes reach the movement", async () => {
+    const movement = await addMovement(repos, U, move({ kind: "contribution", amountCents: "1.000,00", fromAccountId: checking, brokerageAccountId: broker }));
+    const base = { id: movement.entryId!, kind: "contribution", description: "Aporte", accountId: checking, counterAccountId: broker, settled: "on", scope: "this" };
+    await updateEntry(repos, U, entryUpdateSchema.parse({ ...base, amountCents: "900,00", date: "2026-11-07" }));
+    expect(await repos.movements.getById(U, movement.id)).toMatchObject({ amountCents: 90_000, date: "2026-11-07" });
+    await expect(updateEntry(repos, U, entryUpdateSchema.parse({ ...base, kind: "transfer", amountCents: "900,00", date: "2026-11-07" }))).rejects.toMatchObject({ code: "invalid" });
+    await deleteEntry(repos, U, movement.entryId!);
+    expect(await repos.movements.getById(U, movement.id)).toBeNull();
   });
 });
 

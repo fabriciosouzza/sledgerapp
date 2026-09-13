@@ -89,7 +89,7 @@ export function supabaseAccountsRepo(db: DbClient): AccountsRepo {
       if (data.length === 0) return [];
       const { data: rows, error } = await db
         .from("accounts")
-        .insert(data.map((d) => toInsert(userId, d)))
+        .upsert(data.map((d) => toInsert(userId, d)), { onConflict: "user_id,name", ignoreDuplicates: true })
         .select("*");
       if (error) throw fromPostgres(error);
       return rows.map(toDomain);

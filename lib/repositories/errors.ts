@@ -38,3 +38,27 @@ export function fromPostgres(error: DriverError, http?: { status: number; status
       return new RepositoryError("unknown", message);
   }
 }
+
+/** One page of rows from a PostgREST query builder (anything with `.range()` that resolves to `{ data, error }`). */
+interface PageQuery<Row> {
+  range(from: number, to: number): PromiseLike<{ data: Row[] | null; error: DriverError | null }>;
+}
+
+/**
+ * PostgREST caps every response at `max_rows` (1000 by default) and says
+ * nothing when it does. Unbounded lists — every settled entry of an account,
+ * every movement — must page until a short page comes back. `query` builds a
+ * fresh builder each time: `.range()` mutates the one it is called on.
+ */
+export const PAGE_SIZE = 1000;
+
+export async function fetchAll<Row>(query: () => PageQuery<Row>): Promise<Row[]> {
+  const rows: Row[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await query().range(from, from + PAGE_SIZE - 1);
+    if (error) throw fromPostgres(error);
+    const page = data ?? [];
+    rows.push(...page);
+    if (page.length < PAGE_SIZE) return rows;
+  }
+}
