@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { UserRound } from "lucide-react";
+import { LogOut, UserRound } from "lucide-react";
 import { MORE_ITEMS, NAV_ITEMS } from "./nav-items";
+import { signOutAction } from "@/app/(auth)/actions";
 import { ThemeToggle } from "./theme-toggle";
 
 const linkClass = (active: boolean) =>
   cn(
     "flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
-    active ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+    active ? "bg-muted font-semibold text-foreground shadow-[inset_2px_0_0_0_var(--primary)]" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
   );
 
 /** Desktop: the primary screens, then everything "More" holds on mobile, then theme and profile. */
@@ -46,11 +47,20 @@ export function Sidebar({ email }: { email: string | null }) {
         </ul>
       </nav>
       <div className="space-y-2">
-        <ThemeToggle compact />
-        <Link href="/settings/profile" className={cn(linkClass(exact("/settings/profile")), "h-11")}>
+        <ThemeToggle />
+        <Link href="/settings/profile" className={cn(linkClass(exact("/settings/profile")), "h-12")}>
           <UserRound className="size-4 shrink-0" aria-hidden />
-          <span className="truncate">{email ?? "Profile"}</span>
+          <span className="min-w-0">
+            <span className="block">Profile</span>
+            {email && <span className="block truncate text-xs font-normal text-muted-foreground">{email}</span>}
+          </span>
         </Link>
+        <form action={signOutAction}>
+          <button type="submit" className={cn(linkClass(false), "w-full")}>
+            <LogOut className="size-4 shrink-0" aria-hidden />
+            Sign out
+          </button>
+        </form>
       </div>
     </aside>
   );

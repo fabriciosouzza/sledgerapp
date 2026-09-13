@@ -14,7 +14,10 @@ const base =
   "flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3.5 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring";
 
 /** One row of the things a weekly visit usually needs (DESIGN.md §2). */
-export function QuickActions({ dueTodayIds, pending: pendingMonths }: { dueTodayIds: string[]; pending: PendingMonth[] }) {
+export function QuickActions({ dueToday, pending: pendingMonths }: { dueToday: { id: string; description: string; kind: string }[]; pending: PendingMonth[] }) {
+  const dueTodayIds = dueToday.map((e) => e.id);
+  const names = dueToday.map((e) => e.description);
+  const dueLabel = names.length <= 2 ? names.join(" + ") : `${names.length} due today`;
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const current = periodOf(today());
@@ -29,7 +32,7 @@ export function QuickActions({ dueTodayIds, pending: pendingMonths }: { dueToday
         toast.error(result.error);
         return;
       }
-      toast.success(`Settled ${dueTodayIds.length} due today`);
+      toast.success(`Settled ${names.join(", ")}`);
       router.refresh();
     });
   }
@@ -49,9 +52,9 @@ export function QuickActions({ dueTodayIds, pending: pendingMonths }: { dueToday
         Transfer
       </Link>
       {dueTodayIds.length > 0 && (
-        <button type="button" onClick={settleDueToday} disabled={pending} className={cn(base, "border-primary/40")}>
+        <button type="button" onClick={settleDueToday} disabled={pending} title={names.join(", ")} className={cn(base, "border-primary/40")}>
           <CheckCheck className="size-4" aria-hidden />
-          Settle {dueTodayIds.length} due today
+          Settle {dueLabel}
         </button>
       )}
       {/* Earlier months are previewed on Review before anything is created: a template may have been recorded by hand already. */}

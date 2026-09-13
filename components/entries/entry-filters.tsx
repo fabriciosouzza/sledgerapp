@@ -160,10 +160,10 @@ export function EntryFilters({
               </Field>
             </SheetBody>
             <SheetFooter>
-              <Button type="button" className="h-11 md:h-8" onClick={apply}>
+              <Button type="button" className="h-11" onClick={apply}>
                 Apply
               </Button>
-              <Button type="button" variant="outline" className="h-11 md:h-8" onClick={clear}>
+              <Button type="button" variant="outline" className="h-11" onClick={clear}>
                 Clear
               </Button>
             </SheetFooter>

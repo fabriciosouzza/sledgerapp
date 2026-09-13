@@ -97,13 +97,13 @@ export function PayStatementDialog({
             {error && <p className="text-sm text-destructive">{error}</p>}
           </SheetBody>
           <SheetFooter>
-            <Button type="submit" className="h-11 md:h-8" disabled={pending}>
+            <Button type="submit" className="h-11" disabled={pending}>
               {pending ? "Paying…" : `Pay ${formatBRL(totalCents)}`}
             </Button>
             <Button
               type="button"
               variant="outline"
-              className="h-11 md:h-8"
+              className="h-11"
               onClick={() => setOpen(false)}
               disabled={pending}
             >

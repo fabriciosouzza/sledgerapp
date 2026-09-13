@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { isIsoDate, today } from "@/lib/domain/dates";
 import type { Entry, Period } from "@/lib/domain/types";
 import type { EntryFilters } from "@/lib/repositories";
@@ -45,18 +44,19 @@ export async function settleManyAction(ids: string[], settledOn?: string): Promi
   return run(() => settleEntries(repos, userId, ids, settledOn ?? today()));
 }
 
-export async function deleteEntryAction(formData: FormData): Promise<{ error?: string }> {
+export async function deleteEntryAction(formData: FormData): Promise<{ error?: string; deleted?: number }> {
   const { userId, repos } = await getContext();
   const id = String(formData.get("id") ?? "");
   const scope = installmentScopeSchema.catch("this").parse(formData.get("scope"));
+  let deleted: number;
   try {
-    await deleteEntry(repos, userId, id, scope);
+    deleted = await deleteEntry(repos, userId, id, scope);
   } catch (error) {
     if (error instanceof ServiceError) return { error: error.message };
     throw error;
   }
   revalidate();
-  redirect("/entries");
+  return { deleted };
 }
 
 export type UpdateEntryActionResult = { ok: true; count: number } | { ok: false; error: string };

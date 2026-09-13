@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useOptimistic, useRef, useState, useTransition } from "react";
-import { Check, CheckCheck, ChevronDown, Circle, Pencil } from "lucide-react";
+import { CalendarDays, Check, CheckCheck, ChevronDown, Circle, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { loadMonthAction, settleEntryAction, settleManyAction, unsettleEntryAction } from "@/app/(app)/entries/actions";
 import { CategoryIcon } from "@/components/categories/category-icon";
@@ -25,6 +25,16 @@ type Patch = { id: string; status: Entry["status"]; settledOn: string | null };
 
 function applyPatch(list: Entry[], patch: Patch): Entry[] {
   return list.map((e) => (e.id === patch.id ? { ...e, status: patch.status, settledOn: patch.settledOn } : e));
+}
+
+/** "3 to pay · R$ 400,00 · 1 to receive" — income is not something you settle. */
+function summaryText(planned: Entry[], plannedExpense: number): string {
+  const toReceive = planned.filter((e) => e.kind === "income").length;
+  const toPay = planned.length - toReceive;
+  const parts: string[] = [];
+  if (toPay > 0) parts.push(`${toPay} to pay${plannedExpense > 0 ? ` · ${formatBRL(plannedExpense)}` : ""}`);
+  if (toReceive > 0) parts.push(`${toReceive} to receive`);
+  return parts.join(" · ");
 }
 
 export function EntryList({
@@ -96,6 +106,8 @@ export function EntryList({
   }
 
   function unsettle(id: string) {
+    const previous = entries.find((e) => e.id === id);
+    const wasSettledOn = previous?.settledOn ?? today;
     startTransition(async () => {
       patchOptimistic({ id, status: "planned", settledOn: null });
       const result = await unsettleEntryAction(id);
@@ -108,6 +120,11 @@ export function EntryList({
         const next = new Set(prev);
         next.delete(id);
         return next;
+      });
+      // The ✓ looks like "confirm"; say what it did and offer the way back.
+      toast(`${previous?.description ?? "Entry"} is planned again`, {
+        description: `It was ${previous?.kind === "income" ? "received" : "paid"} on ${formatDate(wasSettledOn)}.`,
+        action: { label: "Undo", onClick: () => settle(id, wasSettledOn) },
       });
     });
   }
@@ -171,12 +188,12 @@ export function EntryList({
       {(title || canSelect) && (
         <div className="flex min-h-9 items-center justify-between gap-2">
           {title ? (
-            <h2 className="text-sm font-semibold">
+            <h2 className="text-sm font-semibold" aria-live="polite">
               {title}
               {summary && (
                 <span className="font-normal text-muted-foreground">
                   {" "}
-                  · {plannedIds.length === 0 ? "all settled" : `${plannedIds.length} to settle${plannedExpense > 0 ? ` · ${formatBRL(plannedExpense)}` : ""}`}
+                  · {plannedIds.length === 0 ? "all settled" : summaryText(plannedRows, plannedExpense)}
                 </span>
               )}
             </h2>
@@ -198,8 +215,11 @@ export function EntryList({
         </div>
       )}
 
-      {selectable && plannedIds.length > 0 && !selecting && (
-        <p className="-mt-2 text-xs text-muted-foreground">Tap ○ to settle today · hold it to pick the day</p>
+      {plannedIds.length > 0 && !selecting && (
+        <p className="-mt-2 text-xs text-muted-foreground">
+          <span className="md:hidden">Tap ○ to settle today · hold it to pick the day</span>
+          <span className="hidden md:inline">○ settles today · the calendar picks the day</span>
+        </p>
       )}
 
       {selecting && (
@@ -308,6 +328,8 @@ function EntryRow({
   onUnsettle: () => void;
 }) {
   const timing = entryTiming(entry, today);
+  // Income is received, everything else is paid.
+  const settleVerb = (e: Entry) => (e.kind === "income" ? "Receive" : "Settle");
   const categoryRow = entry.categoryId ? lookups.categories[entry.categoryId] : undefined;
   const category = categoryRow?.name ?? null;
   const account = lookups.accounts[entry.accountId]?.name ?? "?";
@@ -321,8 +343,10 @@ function EntryRow({
   // Long press on the settle circle opens the date sheet; a normal tap settles today.
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressed = useRef(false);
-  function pressStart() {
+  // Touch only: a slow mouse click must not turn into "pick the date" (desktop has its own button).
+  function pressStart(e: React.PointerEvent) {
     longPressed.current = false;
+    if (e.pointerType !== "touch") return;
     pressTimer.current = setTimeout(() => {
       longPressed.current = true;
       onSettleOn();
@@ -397,43 +421,63 @@ function EntryRow({
           <span className="flex items-center gap-2">
             <span className="truncate text-sm font-medium">{entry.description}</span>
             {timing === "overdue" && (
-              <span className="shrink-0 rounded-full bg-red-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-red-600 uppercase dark:text-red-400">
-                overdue
+              <span className="shrink-0 rounded-full bg-red-500/10 px-1.5 py-0.5 text-xs font-semibold text-red-700 uppercase dark:text-red-400">
+                {entry.kind === "income" ? "late" : "overdue"}
               </span>
             )}
             {timing === "settled" && justSettled && (
-              <span className="shrink-0 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 uppercase dark:text-emerald-400">
-                settled
+              <span className="shrink-0 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-xs font-semibold text-emerald-700 uppercase dark:text-emerald-400">
+                {entry.kind === "income" ? "received" : "paid"}
               </span>
             )}
           </span>
-          <span className="truncate text-xs text-muted-foreground">{meta}</span>
+          <span className="truncate text-xs text-muted-foreground md:text-sm">{meta}</span>
         </Link>
         <Amount kind={entry.kind} cents={entry.amountCents} className="shrink-0 text-sm font-semibold" />
         {!selecting &&
           (entry.status === "planned" ? (
-            <button
-              type="button"
-              onClick={() => {
-                if (longPressed.current) return;
-                onSettle();
-              }}
-              onPointerDown={pressStart}
-              onPointerUp={pressEnd}
-              onPointerLeave={pressEnd}
-              onPointerCancel={pressEnd}
-              onContextMenu={(e) => e.preventDefault()}
-              aria-label={`Settle ${entry.description} (hold to pick the date)`}
-              className="flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
-            >
-              <Circle className="size-5" aria-hidden />
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  if (longPressed.current) return;
+                  onSettle();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && e.shiftKey) {
+                    e.preventDefault();
+                    onSettleOn();
+                  }
+                }}
+                onPointerDown={pressStart}
+                onPointerUp={pressEnd}
+                onPointerLeave={pressEnd}
+                onPointerCancel={pressEnd}
+                onContextMenu={(e) => e.preventDefault()}
+                aria-label={`${settleVerb(entry)} ${entry.description} today`}
+                title={`${settleVerb(entry)} today · Shift+Enter for another day`}
+                className="flex h-11 shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring md:px-3"
+              >
+                <Circle className="size-5" aria-hidden />
+                <span className="hidden text-sm font-medium md:inline">{settleVerb(entry)}</span>
+              </button>
+              <button
+                type="button"
+                onClick={onSettleOn}
+                aria-label={`${settleVerb(entry)} ${entry.description} on another day`}
+                title="Pick the day"
+                className="hidden size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring md:flex"
+              >
+                <CalendarDays className="size-4" aria-hidden />
+              </button>
+            </>
           ) : (
             <button
               type="button"
               onClick={onUnsettle}
-              aria-label={`Undo settle ${entry.description}`}
-              className="flex size-11 shrink-0 items-center justify-center rounded-full text-emerald-600 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring dark:text-emerald-400"
+              aria-label={`Mark ${entry.description} as not ${entry.kind === "income" ? "received" : "paid"}`}
+              title={`${entry.kind === "income" ? "Received" : "Paid"} · click to undo`}
+              className="flex size-11 shrink-0 items-center justify-center rounded-full text-emerald-700 transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring dark:text-emerald-400"
             >
               <Check className="size-5" aria-hidden />
             </button>

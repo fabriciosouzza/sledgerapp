@@ -34,7 +34,7 @@ export function SettleOnSheet({
         </SheetBody>
         <SheetFooter>
           <Button
-            className="h-11 md:h-8"
+            className="h-11"
             onClick={() => {
               if (entry) onSettle(entry.id, date);
               onClose();
@@ -42,7 +42,7 @@ export function SettleOnSheet({
           >
             Settle
           </Button>
-          <Button variant="outline" className="h-11 md:h-8" onClick={onClose}>
+          <Button variant="outline" className="h-11" onClick={onClose}>
             Cancel
           </Button>
         </SheetFooter>

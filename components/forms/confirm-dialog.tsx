@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/responsive-sheet";
 
@@ -29,6 +29,7 @@ export function ConfirmDialog({
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [pending, setPending] = useState(false);
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
   async function submit(formData: FormData) {
     setPending(true);
@@ -46,7 +47,7 @@ export function ConfirmDialog({
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger render={trigger} />
-      <SheetContent>
+      <SheetContent initialFocus={cancelRef}>
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
           <SheetDescription>{description}</SheetDescription>
@@ -57,11 +58,11 @@ export function ConfirmDialog({
             {Object.entries(fields).map(([k, v]) => (
               <input key={k} type="hidden" name={k} value={v} />
             ))}
-            <Button type="submit" variant="destructive" className="h-11 w-full md:h-8 md:w-auto" disabled={pending}>
+            <Button type="submit" variant="destructive" className="h-11 w-full md:w-auto" disabled={pending}>
               {pending ? "Working…" : confirmLabel}
             </Button>
           </form>
-          <Button type="button" variant="outline" className="h-11 md:h-8" onClick={() => setOpen(false)} disabled={pending}>
+          <Button ref={cancelRef} type="button" variant="outline" className="h-11" onClick={() => setOpen(false)} disabled={pending}>
             Cancel
           </Button>
         </SheetFooter>

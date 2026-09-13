@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import { deleteEntryAction } from "@/app/(app)/entries/actions";
 import { Button } from "@/components/ui/button";
@@ -9,8 +11,10 @@ import type { Entry } from "@/lib/domain/types";
 
 /** Confirmation, and scope when the entry is one part of an installment plan (§8). */
 export function DeleteEntryDialog({ entry }: { entry: Entry }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
+  const cancelRef = useRef<HTMLButtonElement>(null);
   const [error, setError] = useState<string>();
   const [scope, setScope] = useState<"this" | "this_and_future" | "all">("this");
   const installment = entry.installmentGroupId !== null;
@@ -20,7 +24,9 @@ export function DeleteEntryDialog({ entry }: { entry: Entry }) {
     setError(undefined);
     const result = await deleteEntryAction(formData);
     setPending(false);
-    if (result?.error) setError(result.error);
+    if (result.error) return setError(result.error);
+    toast.success(result.deleted && result.deleted > 1 ? `Deleted ${result.deleted} parts` : `Deleted "${entry.description}"`);
+    router.push("/entries");
   }
 
   return (
@@ -28,7 +34,7 @@ export function DeleteEntryDialog({ entry }: { entry: Entry }) {
       <SheetTrigger render={<Button variant="ghost" size="icon-lg" aria-label="Delete entry" className="size-11" />}>
         <Trash2 aria-hidden />
       </SheetTrigger>
-      <SheetContent>
+      <SheetContent initialFocus={cancelRef}>
         <SheetHeader>
           <SheetTitle>Delete {installment ? "installments?" : "this entry?"}</SheetTitle>
           <SheetDescription>
@@ -48,7 +54,7 @@ export function DeleteEntryDialog({ entry }: { entry: Entry }) {
                   ] as const
                 ).map(([value, label]) => (
                   <label key={value} className="flex min-h-11 items-center gap-3 text-sm">
-                    <input type="radio" name="scope" value={value} checked={scope === value} onChange={() => setScope(value)} className="size-4 accent-primary" />
+                    <input type="radio" name="scope" value={value} checked={scope === value} onChange={() => setScope(value)} className="size-5 accent-primary" />
                     {label}
                   </label>
                 ))}
@@ -58,10 +64,10 @@ export function DeleteEntryDialog({ entry }: { entry: Entry }) {
           )}
           {!installment && error && <p className="px-4 text-sm text-destructive md:px-0">{error}</p>}
           <SheetFooter>
-            <Button type="submit" variant="destructive" className="h-11 md:h-8" disabled={pending}>
+            <Button type="submit" variant="destructive" className="h-11" disabled={pending}>
               {pending ? "Deleting…" : "Delete"}
             </Button>
-            <Button type="button" variant="outline" className="h-11 md:h-8" onClick={() => setOpen(false)} disabled={pending}>
+            <Button ref={cancelRef} type="button" variant="outline" className="h-11" onClick={() => setOpen(false)} disabled={pending}>
               Cancel
             </Button>
           </SheetFooter>

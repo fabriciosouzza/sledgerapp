@@ -127,7 +127,9 @@ export function EntryForm({
         const result = await updateEntryAction(formData);
         if (!result.ok) return setError(result.error);
         toast.success(result.count > 1 ? `Updated ${result.count} entries` : "Updated");
-        router.push("/entries");
+        // Back to wherever the row was tapped (Today, an account, a card), not always /entries.
+        if (window.history.length > 1) router.back();
+        else router.push("/entries");
         return;
       }
       const result = await createEntryAction(formData);
@@ -167,7 +169,7 @@ export function EntryForm({
         ))}
       </div>
 
-      <Field label="Amount" htmlFor="amountCents">
+      <Field label="Amount" htmlFor="amountCents" hint="Digits fill from the cents: 81233 → R$ 812,33. Type a comma for reais: 812,33.">
         <CurrencyInput
           id="amountCents"
           name="amountCents"
@@ -176,6 +178,7 @@ export function EntryForm({
           required
           autoFocus
           className="h-14 text-2xl font-semibold"
+          aria-describedby="amountCents-hint"
         />
       </Field>
 
@@ -257,7 +260,7 @@ export function EntryForm({
       )}
       {settled && !(onCard && !editing) && (
         <Field label={kind === "income" ? "Received on" : "Paid on"} htmlFor="settledOn">
-          <DatePicker id="settledOn" name="settledOn" defaultValue={entry?.settledOn ?? (date <= today ? date : today)} />
+          <DatePicker id="settledOn" name="settledOn" defaultValue={entry?.settledOn ?? (editing ? today : date <= today ? date : today)} />
         </Field>
       )}
 
@@ -315,7 +318,7 @@ export function EntryForm({
             ] as const
           ).map(([value, label]) => (
             <label key={value} className="flex min-h-11 items-center gap-3 text-sm">
-              <input type="radio" name="scope" value={value} checked={scope === value} onChange={() => setScope(value)} className="size-4 accent-primary" />
+              <input type="radio" name="scope" value={value} checked={scope === value} onChange={() => setScope(value)} className="size-5 accent-primary" />
               {label}
             </label>
           ))}

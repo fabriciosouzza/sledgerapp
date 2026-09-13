@@ -38,10 +38,10 @@ export function DeleteAccountSection({ email }: { email: string }) {
               {error && <p className="text-sm text-destructive">{error}</p>}
             </SheetBody>
             <SheetFooter>
-              <Button type="submit" variant="destructive" className="h-11 md:h-8" disabled={pending}>
+              <Button type="submit" variant="destructive" className="h-11" disabled={pending}>
                 {pending ? "Deleting…" : "Delete my account"}
               </Button>
-              <Button type="button" variant="outline" className="h-11 md:h-8" onClick={() => setOpen(false)} disabled={pending}>
+              <Button type="button" variant="outline" className="h-11" onClick={() => setOpen(false)} disabled={pending}>
                 Cancel
               </Button>
             </SheetFooter>

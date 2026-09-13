@@ -140,7 +140,7 @@ export default async function TodayPage() {
           />
 
           <QuickActions
-            dueTodayIds={overview.dueTodayIds}
+            dueToday={overview.dueToday}
             pending={overview.pendingGeneration}
           />
         </div>

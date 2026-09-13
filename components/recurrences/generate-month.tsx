@@ -121,7 +121,7 @@ export function GenerateMonth({
                   aria-label={`Include ${row.description}`}
                   checked={!skipped.has(row.recurrenceId)}
                   onChange={() => toggle(row.recurrenceId)}
-                  className="size-4 shrink-0 accent-primary"
+                  className="size-5 shrink-0 accent-primary"
                 />
                 {skipped.has(row.recurrenceId) && <input type="hidden" name={`skip:${row.recurrenceId}`} value="1" />}
                 <label htmlFor={`amount-${row.recurrenceId}`} className="min-w-0 flex-1">

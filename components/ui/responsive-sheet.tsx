@@ -41,9 +41,23 @@ export function SheetClose({ render, children }: { render: Renderable; children?
   return desktop ? <DialogClose render={render}>{children}</DialogClose> : <DrawerClose render={render}>{children}</DrawerClose>;
 }
 
-export function SheetContent({ className, children }: { className?: string; children: React.ReactNode }) {
+export function SheetContent({
+  className,
+  children,
+  initialFocus,
+}: {
+  className?: string;
+  children: React.ReactNode;
+  /** Desktop dialog: what gets focus on open (a destructive dialog focuses Cancel, never Delete). */
+  initialFocus?: React.RefObject<HTMLElement | null>;
+}) {
   const desktop = useContext(DesktopContext);
-  if (desktop) return <DialogContent className={className}>{children}</DialogContent>;
+  if (desktop)
+    return (
+      <DialogContent className={className} initialFocus={initialFocus}>
+        {children}
+      </DialogContent>
+    );
   return <DrawerContent className={cn("pb-[env(safe-area-inset-bottom)]", className)}>{children}</DrawerContent>;
 }
 

@@ -29,7 +29,8 @@ export interface TodayOverview {
   /** Card statements closed and unpaid, oldest first. */
   statementsDue: StatementDue[];
   /** Planned entries due today (for "settle all due today"). */
-  dueTodayIds: string[];
+  /** Planned rows dated today that are safe to settle blind: variable bills (an estimate) are left out. */
+  dueToday: Pick<Entry, "id" | "description" | "kind">[];
   metrics: PeriodMetrics;
   insight: Insight | null;
   accounts: AccountTile[];
@@ -47,13 +48,15 @@ const UPCOMING_DAYS = 7;
 export async function todayOverview(repos: Repositories, userId: string, today: IsoDate): Promise<TodayOverview> {
   const period = periodOf(today);
   const netWorth = await netWorthOverview(repos, userId, today);
-  const [summary, planned, cards, generation] = await Promise.all([
+  const [summary, planned, cards, generation, recurrences] = await Promise.all([
     monthSummary(repos, userId, period, { today, cashCents: netWorth.cashCents }),
     // Planned rows only: whatever is still due, however old, plus the next days.
     repos.entries.list(userId, { status: "planned", to: addDays(today, UPCOMING_DAYS) }),
     cardsOverview(repos, userId, today, { ensure: "open" }),
     pendingMonths(repos, userId, today),
+    repos.recurrences.list(userId),
   ]);
+  const variable = new Set(recurrences.filter((r) => r.isVariable).map((r) => r.id));
   // Card purchases are paid through their statement, never one by one (§5.6).
   const cardIds = new Set(netWorth.accounts.filter(isCreditCard).map((a) => a.id));
   const toSettle = planned.filter((e) => !cardIds.has(e.accountId));
@@ -68,7 +71,9 @@ export async function todayOverview(repos: Repositories, userId: string, today: 
       upcoming.filter((e) => e.kind !== "income").reduce((sum, e) => sum + e.amountCents, 0) +
       cards.toPay.filter((s) => s.daysToDue <= UPCOMING_DAYS).reduce((sum, s) => sum + s.view.totalCents, 0),
     statementsDue: cards.toPay,
-    dueTodayIds: upcoming.filter((e) => e.date === today).map((e) => e.id),
+    dueToday: upcoming
+      .filter((e) => e.date === today && !(e.recurrenceId !== null && variable.has(e.recurrenceId)))
+      .map(({ id, description, kind }) => ({ id, description, kind })),
     metrics: summary.metrics,
     insight: monthInsight(summary.metrics, summary.previous, { throughDay: summary.delta.throughDay }),
     accounts: netWorth.balances

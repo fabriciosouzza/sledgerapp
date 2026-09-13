@@ -148,7 +148,7 @@ function PastStatement({
       </span>
       <span className="shrink-0 text-sm font-semibold tabular-nums">{formatBRL(view.totalCents)}</span>
       {statement.paidOn ? (
-        <UnpayButton statementId={statement.id} />
+        <UnpayButton statementId={statement.id} label={`${cardName} ${label}`} />
       ) : (
         view.totalCents > 0 && (
           <PayStatementDialog statementId={statement.id} label={`${cardName} ${label}`} totalCents={view.totalCents} cashAccounts={cashAccounts} today={today} small />
