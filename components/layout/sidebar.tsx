@@ -11,7 +11,7 @@ import { ThemeToggle } from "./theme-toggle";
 const linkClass = (active: boolean) =>
   cn(
     "flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
-    active ? "bg-muted font-semibold text-foreground shadow-[inset_2px_0_0_0_var(--primary)]" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+    active ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
   );
 
 /** Desktop: the primary screens, then everything "More" holds on mobile, then theme and profile. */
@@ -47,13 +47,10 @@ export function Sidebar({ email }: { email: string | null }) {
         </ul>
       </nav>
       <div className="space-y-2">
-        <ThemeToggle />
-        <Link href="/settings/profile" className={cn(linkClass(exact("/settings/profile")), "h-12")}>
+        <ThemeToggle compact />
+        <Link href="/settings/profile" className={cn(linkClass(exact("/settings/profile")), "h-11")} title={email ?? undefined}>
           <UserRound className="size-4 shrink-0" aria-hidden />
-          <span className="min-w-0">
-            <span className="block">Profile</span>
-            {email && <span className="block truncate text-xs font-normal text-muted-foreground">{email}</span>}
-          </span>
+          <span className="truncate">Profile</span>
         </Link>
         <form action={signOutAction}>
           <button type="submit" className={cn(linkClass(false), "w-full")}>

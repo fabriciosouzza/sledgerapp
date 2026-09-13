@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { SeedButton } from "@/components/settings/seed-button";
 import { Button } from "@/components/ui/button";
 import { accountTypeLabel, isCreditCard } from "@/lib/domain/accounts";
+import { formatDate } from "@/lib/domain/dates";
 import { formatBRL } from "@/lib/domain/money";
 import type { Account } from "@/lib/domain/types";
 import { listAccounts } from "@/lib/services/accounts";
@@ -63,7 +64,7 @@ function AccountList({ accounts }: { accounts: Account[] }) {
               <span className="block truncate text-xs text-muted-foreground">
                 {isCreditCard(a)
                   ? `Closes day ${a.closingDay} · due day ${a.dueDay}${a.creditLimitCents ? ` · limit ${formatBRL(a.creditLimitCents)}` : ""}`
-                  : (a.institution ?? "—")}
+                  : [a.institution, `${formatBRL(a.openingBalanceCents)} on ${formatDate(a.openingOn)}`].filter(Boolean).join(" · ")}
               </span>
             </span>
             <ChevronRight className="size-4 text-muted-foreground" aria-hidden />

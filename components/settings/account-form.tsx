@@ -75,7 +75,7 @@ export function AccountForm({
       {isCash && (
         <fieldset className="space-y-4 rounded-xl bg-muted/40 p-4">
           <legend className="px-1 text-sm font-medium">Starting point</legend>
-          <p className="text-xs text-muted-foreground">The balance on the day you start tracking this account. Every settled entry from then on moves it.</p>
+          <p className="text-xs text-muted-foreground">The balance at the start of that day, before anything you record for it. Every settled entry from then on moves it.</p>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Balance" htmlFor="openingBalanceCents">
               <CurrencyInput id="openingBalanceCents" name="openingBalanceCents" defaultCents={account?.openingBalanceCents ?? 0} className="h-11" />

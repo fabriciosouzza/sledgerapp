@@ -64,10 +64,10 @@ export function DeleteEntryDialog({ entry }: { entry: Entry }) {
           )}
           {!installment && error && <p className="px-4 text-sm text-destructive md:px-0">{error}</p>}
           <SheetFooter>
-            <Button type="submit" variant="destructive" className="h-11" disabled={pending}>
+            <Button type="submit" variant="destructive" className="h-11 md:h-8" disabled={pending}>
               {pending ? "Deleting…" : "Delete"}
             </Button>
-            <Button ref={cancelRef} type="button" variant="outline" className="h-11" onClick={() => setOpen(false)} disabled={pending}>
+            <Button ref={cancelRef} type="button" variant="outline" className="h-11 md:h-8" onClick={() => setOpen(false)} disabled={pending}>
               Cancel
             </Button>
           </SheetFooter>

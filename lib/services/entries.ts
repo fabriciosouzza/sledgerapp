@@ -73,7 +73,8 @@ export async function createEntry(
   const kind = input.kind;
   const categoryId = needsCategory(kind) ? input.categoryId : null;
   const counterAccountId = needsCounterAccount(kind) ? input.counterAccountId : null;
-  const { account } = await checkRefs(repos, userId, { kind, categoryId, accountId: input.accountId, counterAccountId });
+  const { account, counter } = await checkRefs(repos, userId, { kind, categoryId, accountId: input.accountId, counterAccountId });
+  const description = input.description ?? (counter ? `${account.name} → ${counter.name}` : account.name);
 
   // A card purchase happened when it was made: it is settled at once, and the
   // statement is what gets paid (§5.6). Its installments wait for their
@@ -86,7 +87,7 @@ export async function createEntry(
   // just typed shows up. Later months come from "generate month" (§5.5).
   if (input.repeatMonthly) {
     const recurrence = await repos.recurrences.insert(userId, {
-      description: input.description,
+      description,
       kind,
       categoryId,
       accountId: input.accountId,
@@ -113,7 +114,7 @@ export async function createEntry(
     if (input.installmentParts === null || categoryId === null) throw new ServiceError("invalid", "How many parts?");
     const rows = expandInstallments(
       {
-        description: input.description,
+        description,
         kind,
         amountCents: input.amountCents,
         parts: input.installmentParts,
@@ -133,7 +134,7 @@ export async function createEntry(
     date: input.date,
     kind,
     amountCents: input.amountCents,
-    description: input.description,
+    description,
     categoryId,
     accountId: input.accountId,
     counterAccountId,
@@ -187,12 +188,12 @@ export async function updateEntry(repos: Repositories, userId: string, input: En
   const kind = input.kind;
   const categoryId = needsCategory(kind) ? input.categoryId : null;
   const counterAccountId = needsCounterAccount(kind) ? input.counterAccountId : null;
-  await checkRefs(repos, userId, { kind, categoryId, accountId: input.accountId, counterAccountId });
+  const refs = await checkRefs(repos, userId, { kind, categoryId, accountId: input.accountId, counterAccountId });
 
   const shared: Partial<NewEntry> = {
     kind,
     amountCents: input.amountCents,
-    description: input.description,
+    description: input.description ?? (refs.counter ? `${refs.account.name} → ${refs.counter.name}` : refs.account.name),
     categoryId,
     accountId: input.accountId,
     counterAccountId,

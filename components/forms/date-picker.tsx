@@ -60,7 +60,7 @@ export function DatePicker({
       type="button"
       id={id}
       className={cn(
-        "flex h-11 w-full items-center gap-2 rounded-lg border border-input bg-transparent px-2.5 text-left text-base transition-colors hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring dark:bg-input/30",
+        "flex h-11 w-full items-center gap-2 rounded-lg border border-input bg-transparent px-2.5 text-left text-base transition-colors hover:bg-muted focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring md:text-sm dark:bg-input/30",
         !iso && "text-muted-foreground",
         className,
       )}
@@ -81,7 +81,7 @@ export function DatePicker({
             defaultMonth={iso ? toDate(iso) : undefined}
             onSelect={(date) => date && set(fromDate(date))}
             captionLayout="dropdown"
-            className="[--cell-size:--spacing(10)]"
+            className="[--cell-size:--spacing(10)] md:[--cell-size:--spacing(8)]"
           />
           <div className="flex gap-1">
             <Button variant="ghost" className="h-11 flex-1 md:h-8" onClick={() => set(today())}>

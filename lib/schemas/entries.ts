@@ -27,7 +27,8 @@ export const entryInputSchema = z
     kind: entryKindSchema,
     amountCents: requiredCents,
     date: isoDateField,
-    description: requiredText("Description", 120),
+    /** Optional for transfers and contributions: "From → To" is description enough. */
+    description: optionalText(120),
     categoryId: optionalId(),
     accountId: requiredId("an account"),
     counterAccountId: optionalId(),
@@ -45,6 +46,9 @@ export const entryInputSchema = z
   .superRefine((e, ctx) => {
     if (needsCategory(e.kind) && e.categoryId === null) {
       ctx.addIssue({ code: "custom", path: ["categoryId"], message: "Pick a category." });
+    }
+    if (!needsCounterAccount(e.kind) && e.description === null) {
+      ctx.addIssue({ code: "custom", path: ["description"], message: "Description is required." });
     }
     if (needsCounterAccount(e.kind)) {
       if (e.counterAccountId === null) {
@@ -89,6 +93,9 @@ export const entryUpdateSchema = z
   .superRefine((e, ctx) => {
     if (needsCategory(e.kind) && e.categoryId === null) {
       ctx.addIssue({ code: "custom", path: ["categoryId"], message: "Pick a category." });
+    }
+    if (!needsCounterAccount(e.kind) && e.description === null) {
+      ctx.addIssue({ code: "custom", path: ["description"], message: "Description is required." });
     }
     if (needsCounterAccount(e.kind)) {
       if (e.counterAccountId === null) {

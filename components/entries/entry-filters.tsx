@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState } from "react";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal, X } from "lucide-react";
 import { Field } from "@/components/forms/field";
+import { formatDate, formatDayMonth } from "@/lib/domain/dates";
 import { MonthPicker } from "@/components/month/month-picker";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,8 +34,11 @@ export function EntryFilters({
   values,
   accounts,
   categories,
+  range = null,
 }: {
   values: EntryFilterValues;
+  /** When set, the list covers this range instead of `values.month`. */
+  range?: { from: string; to: string } | null;
   accounts: Pick<Account, "id" | "name">[];
   categories: Pick<Category, "id" | "name" | "parentId">[];
 }) {
@@ -80,14 +85,24 @@ export function EntryFilters({
       <input type="hidden" name="category" value={category} />
 
       <div className="grid grid-cols-[10.5rem_1fr] gap-2">
-        <MonthPicker
-          period={month}
-          compact
-          onChange={(p) => {
-            setMonth(p);
-            submitSoon();
-          }}
-        />
+        {range ? (
+          <Link href={`/entries?month=${month}${kind ? `&kind=${kind}` : ""}${category ? `&category=${category}` : ""}`} className="flex h-11 items-center justify-between gap-2 rounded-lg border border-input px-2.5 text-xs tabular-nums hover:bg-muted" title={`${formatDate(range.from)} → ${formatDate(range.to)} · back to one month`}>
+            <span className="truncate">
+              {formatDayMonth(range.from)} → {formatDayMonth(range.to)}
+              <span className="text-muted-foreground"> · {range.to.slice(0, 4)}</span>
+            </span>
+            <X className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+          </Link>
+        ) : (
+          <MonthPicker
+            period={month}
+            compact
+            onChange={(p) => {
+              setMonth(p);
+              submitSoon();
+            }}
+          />
+        )}
         <div className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input type="search" name="q" defaultValue={values.q} placeholder="Search" aria-label="Search descriptions" className="h-11 pl-8" />
@@ -160,10 +175,10 @@ export function EntryFilters({
               </Field>
             </SheetBody>
             <SheetFooter>
-              <Button type="button" className="h-11" onClick={apply}>
+              <Button type="button" className="h-11 md:h-8" onClick={apply}>
                 Apply
               </Button>
-              <Button type="button" variant="outline" className="h-11" onClick={clear}>
+              <Button type="button" variant="outline" className="h-11 md:h-8" onClick={clear}>
                 Clear
               </Button>
             </SheetFooter>

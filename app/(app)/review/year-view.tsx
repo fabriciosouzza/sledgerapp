@@ -5,11 +5,12 @@ import { YearBars } from "@/components/charts/year-bars";
 import { CategoryTable } from "@/components/month/category-table";
 import { Stat } from "@/components/month/stat";
 import { Button } from "@/components/ui/button";
-import { formatPeriodShort } from "@/lib/domain/dates";
+import { formatPeriodShort, periodEnd, periodStart } from "@/lib/domain/dates";
 import type { YearSummary } from "@/lib/services/summary";
 
 export function YearView({ summary, title, prevHref, nextHref }: { summary: YearSummary; title: string; prevHref?: string; nextHref?: string }) {
   const t = summary.totals;
+  const rangeHref = `/entries?from=${periodStart(summary.from)}&to=${periodEnd(summary.to)}`;
   return (
     <div className="space-y-6">
       <div className={prevHref || nextHref ? "flex items-center justify-between gap-2" : "text-center"}>
@@ -36,10 +37,10 @@ export function YearView({ summary, title, prevHref, nextHref }: { summary: Year
       </div>
 
       <section aria-label="Totals" className="grid grid-cols-2 gap-2 md:grid-cols-3">
-        <Stat label="Income" cents={t.incomeCents} tone="positive" />
-        <Stat label="Expense" cents={t.expenseCents} tone="negative" />
-        <Stat label="Contributions" cents={t.contributionsCents} />
-        <Stat label="Leftover" cents={t.leftoverCents} tone="signed" />
+        <Stat label="Income" cents={t.incomeCents} tone="positive" href={`${rangeHref}&kind=income`} />
+        <Stat label="Expense" cents={t.expenseCents} tone="negative" href={`${rangeHref}&kind=expense`} />
+        <Stat label="Contributions" cents={t.contributionsCents} href={`${rangeHref}&kind=moves`} />
+        <Stat label="Leftover" cents={t.leftoverCents} tone="signed" href={rangeHref} />
         <Stat label="Savings rate" rate={t.savingsRate} tone="signed" />
         <Stat label="Savings rate ex-benefits" rate={t.savingsRateExBenefits} tone="signed" />
       </section>
@@ -55,7 +56,7 @@ export function YearView({ summary, title, prevHref, nextHref }: { summary: Year
           <div className="mb-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
             <Donut slices={summary.categories.map((c) => ({ name: c.name, cents: c.settledCents, color: c.color ?? undefined }))} label="Expense by category" centerLabel="settled" />
           </div>
-          <CategoryTable lines={summary.categories} />
+          <CategoryTable lines={summary.categories} href={(id) => `${rangeHref}&kind=expense&category=${id}`} />
         </section>
       )}
     </div>

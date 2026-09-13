@@ -22,8 +22,15 @@ const MIN_COMPARABLE_DAY = 7;
  * `previous` must cover the same span as `current`: the whole month, or up to
  * `throughDay` when the month is in progress (the caller cuts it).
  */
-export function monthInsight(current: PeriodMetrics, previous: PeriodMetrics | null, options: { throughDay?: number | null } = {}): Insight | null {
+export function monthInsight(
+  current: PeriodMetrics,
+  previous: PeriodMetrics | null,
+  options: { throughDay?: number | null; rollingRate?: number | null } = {},
+): Insight | null {
   const throughDay = options.throughDay ?? null;
+  // Irregular income makes the month's rate swing; the 12-month one is the honest number.
+  const rolling = options.rollingRate ?? null;
+  const rollingDetail = rolling === null ? null : `12-month rate ${rolling < 0 ? "−" : ""}${pct(rolling)}`;
   const comparable = throughDay === null || throughDay >= MIN_COMPARABLE_DAY;
   const change =
     comparable && previous && previous.expenseCents > 0 && current.expenseCents > 0 ? ratio(current.expenseCents - previous.expenseCents, previous.expenseCents) : null;
@@ -46,7 +53,12 @@ export function monthInsight(current: PeriodMetrics, previous: PeriodMetrics | n
   if (rate !== null) {
     return {
       headline: rate >= 0 ? `You kept ${pct(rate)} of what came in` : `Spending exceeds income by ${pct(-rate)}`,
-      detail: current.benefitsCents > 0 && current.savingsRateExBenefits !== null ? `${pct(current.savingsRateExBenefits)} without benefits` : `${formatBRL(current.incomeCents - current.expenseCents)} left after expenses`,
+      detail:
+        rate < 0 && rollingDetail
+          ? `${rollingDetail} · this month is not over`
+          : current.benefitsCents > 0 && current.savingsRateExBenefits !== null
+            ? `${pct(current.savingsRateExBenefits)} without benefits`
+            : `${formatBRL(current.incomeCents - current.expenseCents)} left after expenses`,
       ring: rate,
       tone: rate >= 0.2 ? "good" : rate >= 0 ? "neutral" : "bad",
     };
@@ -55,7 +67,7 @@ export function monthInsight(current: PeriodMetrics, previous: PeriodMetrics | n
   if (current.plannedExpenseCents > 0) {
     return {
       headline: `${formatBRL(current.plannedExpenseCents)} still to settle this month`,
-      detail: current.expenseCents > 0 ? `${formatBRL(current.expenseCents)} settled so far` : null,
+      detail: [current.expenseCents > 0 ? `${formatBRL(current.expenseCents)} settled so far` : null, rollingDetail].filter(Boolean).join(" · ") || null,
       ring: null,
       tone: "neutral",
     };

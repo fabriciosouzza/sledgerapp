@@ -17,6 +17,11 @@ import { getContext } from "@/lib/services/context";
 import { todayOverview } from "@/lib/services/today";
 import { cn } from "@/lib/utils";
 
+/** First name — unless the name is short or shared ("Carla e Bruno"), which stays whole. */
+function greetingName(name: string): string {
+  return name.length <= 20 ? name : name.split(" ")[0];
+}
+
 export default async function TodayPage() {
   const now = today();
   const { user, userId, repos } = await getContext();
@@ -36,7 +41,7 @@ export default async function TodayPage() {
         <div>
           <p className="text-xs text-muted-foreground">{formatDate(now)}</p>
           <h1 className="text-xl font-semibold tracking-tight">
-            {user.name ? `Hi, ${user.name.split(" ")[0]}` : "Today"}
+            {user.name ? `Hi, ${greetingName(user.name)}` : "Today"}
           </h1>
         </div>
         <Link
@@ -59,6 +64,7 @@ export default async function TodayPage() {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   across your cash accounts, from what you recorded
+                  {overview.savingsCents > 0 ? ` · ${formatBRL(overview.savingsCents)} of it in savings` : ""}
                 </p>
               </>
             ) : (
@@ -118,13 +124,22 @@ export default async function TodayPage() {
             </section>
           )}
 
-          <section className="grid grid-cols-2 gap-2" aria-label="This week">
+          <section className={cn("grid gap-2", overview.toReceiveCount > 0 ? "grid-cols-3" : "grid-cols-2")} aria-label="This week">
             <Stat
               label="Due in 7 days"
               cents={overview.dueSoonCents}
               tone={overview.dueSoonCents > 0 ? "negative" : "neutral"}
               href="#upcoming"
             />
+            {overview.toReceiveCount > 0 && (
+              <Stat
+                label="To receive"
+                cents={overview.toReceiveCents}
+                tone="positive"
+                hint={`${overview.toReceiveCount} ${overview.toReceiveCount === 1 ? "entry" : "entries"}`}
+                href="/entries?kind=income&status=planned"
+              />
+            )}
             <Stat
               label="Leftover this month"
               cents={m.leftoverCents}

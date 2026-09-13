@@ -24,7 +24,7 @@ export function YearBars({ months }: { months: YearMonth[] }) {
           <ComposedChart data={rows} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} barGap={2}>
             <XAxis dataKey="period" tick={{ fontSize: 10, fill: "var(--muted-foreground)" }} axisLine={false} tickLine={false} interval={1} tickFormatter={(v: string) => v.slice(0, 3)} />
             <YAxis yAxisId="money" hide domain={[0, "auto"]} />
-            <YAxis yAxisId="rate" hide domain={[-100, 100]} />
+            <YAxis yAxisId="rate" hide domain={[(min: number) => Math.min(-100, Math.floor(min / 50) * 50), 100]} />
             <Tooltip
               formatter={(v, name) =>
                 name === "rate" ? [v === null ? "—" : `${v}%`, "Savings rate"] : [formatBRL(Math.round(Number(v) * 100)), String(name)[0].toUpperCase() + String(name).slice(1)]

@@ -58,11 +58,11 @@ export function ConfirmDialog({
             {Object.entries(fields).map(([k, v]) => (
               <input key={k} type="hidden" name={k} value={v} />
             ))}
-            <Button type="submit" variant="destructive" className="h-11 w-full md:w-auto" disabled={pending}>
+            <Button type="submit" variant="destructive" className="h-11 w-full md:h-8 md:w-auto" disabled={pending}>
               {pending ? "Working…" : confirmLabel}
             </Button>
           </form>
-          <Button ref={cancelRef} type="button" variant="outline" className="h-11" onClick={() => setOpen(false)} disabled={pending}>
+          <Button ref={cancelRef} type="button" variant="outline" className="h-11 md:h-8" onClick={() => setOpen(false)} disabled={pending}>
             Cancel
           </Button>
         </SheetFooter>

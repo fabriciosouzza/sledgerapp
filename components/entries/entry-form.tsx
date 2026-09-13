@@ -247,8 +247,17 @@ export function EntryForm({
         )}
       </div>
 
-      <Field label="Description" htmlFor="description">
-        <Input id="description" name="description" required maxLength={120} defaultValue={entry?.description} className="h-11" autoComplete="off" />
+      <Field label="Description" htmlFor="description" hint={needsCounterAccount(kind) ? "Optional: blank means “From → To”." : undefined}>
+        <Input
+          id="description"
+          name="description"
+          required={!needsCounterAccount(kind)}
+          maxLength={120}
+          defaultValue={entry?.description}
+          className="h-11"
+          autoComplete="off"
+          aria-describedby={needsCounterAccount(kind) ? "description-hint" : undefined}
+        />
       </Field>
 
       {onCard && !editing ? (

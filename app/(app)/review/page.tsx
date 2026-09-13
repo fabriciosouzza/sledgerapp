@@ -95,7 +95,7 @@ export default async function MonthPage(props: PageProps<"/review">) {
         />
 
         <section aria-label="Summary" className="grid grid-cols-2 gap-2 md:grid-cols-3">
-          <Stat label="Income" cents={m.incomeCents} tone="positive" hint={deltaHint(summary.delta.income, m.plannedIncomeCents, summary.delta.throughDay)} href={`/entries?month=${month}&kind=income`} />
+          <Stat label="Income" cents={m.incomeCents} tone="positive" hint={deltaHint(summary.delta.throughDay === null ? summary.delta.income : null, m.plannedIncomeCents, summary.delta.throughDay)} href={`/entries?month=${month}&kind=income`} />
           <Stat label="Expense" cents={m.expenseCents} tone="negative" hint={deltaHint(summary.delta.expense, m.plannedExpenseCents, summary.delta.throughDay)} href={`/entries?month=${month}&kind=expense`} />
           <Stat label="Contributions" cents={m.contributionsCents} href={`/entries?month=${month}&kind=moves`} />
           <Stat label="Leftover" cents={m.leftoverCents} tone="signed" hint="income − expense − contributions · all entries" href={`/entries?month=${month}`} />
@@ -143,7 +143,7 @@ export default async function MonthPage(props: PageProps<"/review">) {
               <Donut slices={summary.categories.map((c) => ({ name: c.name, cents: c.settledCents, color: c.color ?? undefined }))} label="Expense by category" centerLabel="settled" />
             </div>
           )}
-          <CategoryTable lines={summary.categories} />
+          <CategoryTable lines={summary.categories} href={(id) => `/entries?month=${month}&kind=expense&category=${id}`} />
         </section>
 
         <section className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
