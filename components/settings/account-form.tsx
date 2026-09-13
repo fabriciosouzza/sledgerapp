@@ -87,6 +87,12 @@ export function AccountForm({
         </fieldset>
       )}
 
+      {type === "savings" && (
+        <Field label="Goal" htmlFor="targetCents" hint="Optional. What this account is meant to reach — the tile shows how far along it is.">
+          <CurrencyInput id="targetCents" name="targetCents" defaultCents={account?.targetCents ?? null} className="h-11" aria-describedby="targetCents-hint" />
+        </Field>
+      )}
+
       <div className="flex min-h-11 items-center justify-between gap-3">
         <Label htmlFor="isActive">Active</Label>
         <Switch id="isActive" name="isActive" defaultChecked={account ? account.isActive : true} />

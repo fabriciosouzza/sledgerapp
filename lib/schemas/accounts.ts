@@ -21,6 +21,8 @@ export const accountInputSchema = z
     /** Where the balance starts (cash accounts). */
     openingBalanceCents: openingCents,
     openingOn: openingDate,
+    /** Savings accounts only: the goal. */
+    targetCents: optionalCents,
     isActive: boolField.default(true),
   })
   .superRefine((a, ctx) => {

@@ -47,6 +47,7 @@ export type Database = {
           opening_balance_cents: number
           opening_on: string
           sort_order: number
+          target_cents: number | null
           type: Database["public"]["Enums"]["account_type"]
           updated_at: string
           user_id: string
@@ -63,6 +64,7 @@ export type Database = {
           opening_balance_cents?: number
           opening_on?: string
           sort_order?: number
+          target_cents?: number | null
           type: Database["public"]["Enums"]["account_type"]
           updated_at?: string
           user_id: string
@@ -79,6 +81,7 @@ export type Database = {
           opening_balance_cents?: number
           opening_on?: string
           sort_order?: number
+          target_cents?: number | null
           type?: Database["public"]["Enums"]["account_type"]
           updated_at?: string
           user_id?: string

@@ -42,6 +42,8 @@ export interface Account {
   /** Where a cash account's balance starts (DESIGN.md: balances are derived). */
   openingBalanceCents: number;
   openingOn: IsoDate;
+  /** A savings account can be a goal: how much it is meant to reach. */
+  targetCents: number | null;
   isActive: boolean;
   sortOrder: number;
 }

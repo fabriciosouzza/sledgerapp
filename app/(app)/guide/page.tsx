@@ -1,7 +1,38 @@
 import { PageHeader } from "@/components/layout/page-header";
 
-type Term = { term: string; meaning: string };
+type Term = { term: string; meaning: string; pt?: string };
 type Section = { title: string; intro?: string; terms: Term[]; example?: string[] };
+
+const slug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+/** The screens are in English (spec §2); the words are not always obvious. Portuguese for the ones that matter. */
+const GLOSSARY: [string, string][] = [
+  ["Settle / Receive", "dar baixa: marcar como pago (ou recebido)"],
+  ["Planned", "previsto, ainda não aconteceu"],
+  ["Overdue", "atrasado: previsto para uma data que já passou"],
+  ["Cash on hand", "dinheiro em caixa: a soma das contas de dinheiro"],
+  ["Due in 7 days", "vence em 7 dias"],
+  ["To receive", "a receber"],
+  ["Leftover", "sobra do mês: receita − despesa − aportes"],
+  ["Savings rate", "taxa de poupança: quanto do que entrou você não gastou"],
+  ["Ex-benefits", "sem benefícios (vale-refeição, por exemplo)"],
+  ["Fixed cost", "custo fixo: as despesas recorrentes ativas"],
+  ["Recurring / Recurrence", "recorrente: um modelo que vira um lançamento por mês"],
+  ["Generate / Apply", "aplicar as recorrências do mês"],
+  ["Statement", "fatura do cartão"],
+  ["Closes / Due", "fecha / vence"],
+  ["Installments / Parts", "parcelas"],
+  ["Transfer", "transferência entre suas contas"],
+  ["Contribution", "aporte: dinheiro que vira investimento"],
+  ["Withdrawal", "resgate"],
+  ["Yield", "rendimento (juros, dividendos)"],
+  ["Market adjustment", "ajuste de mercado: o que mudou de preço"],
+  ["Contributed / Earned", "aportado / ganho"],
+  ["Net worth", "patrimônio: caixa + investimentos − cartões"],
+  ["Starting point", "saldo inicial de uma conta, na data em que você começou"],
+  ["Cap", "teto mensal de uma categoria"],
+  ["Runway", "quantos meses o caixa cobre o custo fixo"],
+];
 
 const SECTIONS: Section[] = [
   {
@@ -79,10 +110,10 @@ const SECTIONS: Section[] = [
     terms: [
       { term: "Income · Expense · Contributions", meaning: "Sums of settled entries of each kind. Transfers are never in any of them. Planned entries show separately (\"+ R$ 120,00 planned\") and only count once settled. Example: income R$ 5.800, expense R$ 3.200, contributions R$ 1.000." },
       { term: "Leftover", meaning: "income − expense − contributions: what stayed in cash after everything, investing included. Example: 5.800 − 3.200 − 1.000 = R$ 1.600. Negative means the month ate into what you had." },
-      { term: "Savings rate", meaning: "(income − expense) ÷ income: the share of what came in that you did not consume. Contributions are not subtracted — they are saving, not spending. Example: (5.800 − 3.200) ÷ 5.800 = 44,8%." },
+      { term: "Savings rate", meaning: "(income − expense) ÷ income: the share of what came in that you did not consume. Contributions are not subtracted — they are saving, not spending. Example: (5.800 − 3.200) ÷ 5.800 = 44,8%. Irregular income? The month's rate swings with who paid; read the 12-month one in Review." },
       { term: "Savings rate ex-benefits", meaning: "The same, but benefits (meal voucher, allowances — categories marked as benefit) are removed from income, because they enter and leave in the same month and inflate both sides. Example: (5.800 − 3.200) ÷ (5.800 − 800) = 52%. This is the honest one." },
       { term: "Budget", meaning: "The sum of the caps you set on categories; a category without a cap adds nothing. \"Spent R$ 3.200 of R$ 3.500 · 91%\" — within under 80%, at risk between 80% and 100%, over beyond. Sub-categories keep their own caps and roll up into their parent." },
-      { term: "Fixed cost", meaning: "Σ active expense recurrences, whatever was applied this month. Example: R$ 2.500." },
+      { term: "Fixed cost", meaning: "Σ active expense recurrences, whatever was applied this month. Example: R$ 2.500. Installment parts are shown next to it: committed too, but they end." },
       { term: "Months of runway", meaning: "cash on hand ÷ fixed cost: how long the cash would last with no income at all. Example: 10.000 ÷ 2.500 = 4,0 months." },
       { term: "vs last month", meaning: "The change in income or expense against the previous month: (this − last) ÷ last. It compares the month so far with a whole month, so early in the month it exaggerates; read it after the 20th." },
       { term: "The sentence on Today", meaning: "Picks the most useful true statement: spending up or down vs last month when both months have expenses; otherwise the savings rate; otherwise what is still planned. The ring is the savings rate." },
@@ -96,9 +127,32 @@ export default function GuidePage() {
     <>
       <PageHeader title="How sledger works" description="The terms you will see, in one place." />
       <div className="space-y-8">
+        <nav aria-label="Sections" className="flex flex-wrap gap-1.5 text-xs">
+          {[...SECTIONS.map((s) => s.title), "Em português", "Starting from a spreadsheet", "Two people, one ledger"].map((title) => (
+            <a key={title} href={`#${slug(title)}`} className="rounded-full border border-border px-2.5 py-1 text-muted-foreground hover:text-foreground">
+              {title}
+            </a>
+          ))}
+        </nav>
+
+        <section aria-labelledby={slug("Em português")}>
+          <h2 id={slug("Em português")} className="mb-1 text-base font-semibold">
+            Em português
+          </h2>
+          <p className="mb-3 text-sm text-muted-foreground">As telas estão em inglês. As palavras que mais aparecem, traduzidas.</p>
+          <dl className="grid grid-cols-1 divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 sm:grid-cols-2 sm:divide-y-0">
+            {GLOSSARY.map(([en, pt]) => (
+              <div key={en} className="flex gap-3 px-4 py-2 text-sm">
+                <dt className="w-36 shrink-0 font-medium">{en}</dt>
+                <dd className="text-muted-foreground">{pt}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+
         {SECTIONS.map((section) => (
-          <section key={section.title} aria-labelledby={section.title}>
-            <h2 id={section.title} className="mb-1 text-base font-semibold">
+          <section key={section.title} aria-labelledby={slug(section.title)}>
+            <h2 id={slug(section.title)} className="mb-1 text-base font-semibold">
               {section.title}
             </h2>
             {section.intro && <p className="mb-3 text-sm text-muted-foreground">{section.intro}</p>}
@@ -112,6 +166,54 @@ export default function GuidePage() {
             </dl>
           </section>
         ))}
+
+        <section aria-labelledby={slug("Starting from a spreadsheet")}>
+          <h2 id={slug("Starting from a spreadsheet")} className="mb-1 text-base font-semibold">
+            Starting from a spreadsheet
+          </h2>
+          <p className="mb-3 text-sm text-muted-foreground">Your history stays where it is; sledger starts on the day you pick. Five things to set on that day, all in Settings:</p>
+          <ol className="list-decimal space-y-2 rounded-xl bg-card px-4 py-3 pl-8 text-sm ring-1 ring-foreground/10">
+            <li>
+              <strong>Cash accounts</strong>: the balance each one had at the start of that day (“Starting point”). Entries settled before it are ignored.
+            </li>
+            <li>
+              <strong>Cards</strong>: closing and due days. For a statement already running, add one expense on the card dated inside the cycle, category Outros, description “Fatura anterior” — it becomes the statement to pay. It does count as spending of that month; if that bothers you, date it in the previous month instead.
+            </li>
+            <li>
+              <strong>Installments under way</strong>: add the purchase with “Parts” = the total and “This is part” = the next one to pay. Earlier parts are not created.
+            </li>
+            <li>
+              <strong>Investments</strong>: when adding the asset, fill “Already invested?” with what you put in and what it is worth today. No cash entry is created.
+            </li>
+            <li>
+              <strong>Recurrences</strong>: salary, rent, the fixed bills, the monthly transfer to savings. Apply them from Review each month.
+            </li>
+          </ol>
+        </section>
+
+        <section aria-labelledby={slug("Two people, one ledger")}>
+          <h2 id={slug("Two people, one ledger")} className="mb-1 text-base font-semibold">
+            Two people, one ledger
+          </h2>
+          <dl className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
+            <div className="px-4 py-3">
+              <dt className="text-sm font-medium">Who paid</dt>
+              <dd className="text-sm text-muted-foreground">The account says it: one checking account each, plus the joint one. When that is not enough, write it in the notes (“#carla”) — search finds notes too.</dd>
+            </div>
+            <div className="px-4 py-3">
+              <dt className="text-sm font-medium">Sessions</dt>
+              <dd className="text-sm text-muted-foreground">Sign in on each phone with the same account. Signing out on one device does not sign out the other. A tab left open refreshes itself when you come back to it.</dd>
+            </div>
+            <div className="px-4 py-3">
+              <dt className="text-sm font-medium">A goal</dt>
+              <dd className="text-sm text-muted-foreground">One savings account per goal, with a target (Settings → Accounts): the tile shows how far along it is.</dd>
+            </div>
+            <div className="px-4 py-3">
+              <dt className="text-sm font-medium">Sub-categories</dt>
+              <dd className="text-sm text-muted-foreground">One level only, and a sub-category rolls up into one parent. “Pediatra” is either Saúde or Filho — pick the question you ask most often.</dd>
+            </div>
+          </dl>
+        </section>
       </div>
     </>
   );

@@ -291,3 +291,18 @@ Left as they are, by decision: overdue below the fold, the "cash on hand"
 wording, checking what was typed in Entries, and the number of charts on
 Review. Paying a statement that has no recorded purchases is still not
 possible — the statement is the purchases.
+
+Review of 2026-09-13 (`docs/review-2026-09-13.md`), shipped the same day:
+every unbounded list pages past PostgREST's 1000-row cap; owner-carrying
+foreign keys and a `settled_on` index; sign-out is per device; error and
+not-found screens; the two sides of a paired contribution stay in step;
+settling has undo, a labelled button on desktop and no long press for the
+mouse; installments can start at part N of M and count against the card
+limit; a new asset starts from what is already invested; withdrawals pair
+with a transfer back; "To receive" on Today; entries by date range with a
+parent category including its children; CSV export; a goal on a savings
+account (`accounts.target_cents`); the guide gained a Portuguese glossary
+and a migration recipe. Decided and left as is: no transactions across
+writes (Postgres stays storage, §4.1 — `payStatement` and `addMovement` do
+two writes and a failure between them is visible, not silent); statements
+are paid whole, from one account (split it with a transfer first).

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CardTile } from "@/components/cards/card-tile";
-import { formatBRL } from "@/lib/domain/money";
+import { formatBRL, formatBRLWhole } from "@/lib/domain/money";
+import { cn } from "@/lib/utils";
 import type { CardView } from "@/lib/services/cards";
 import type { AccountTile } from "@/lib/services/today";
 
@@ -32,14 +33,23 @@ export function AccountStrip({ accounts, cards }: { accounts: AccountTile[]; car
 }
 
 function CashTile({ account: { account, balanceCents } }: { account: AccountTile }) {
+  // A savings account with a target is a goal: the tile shows the way there.
+  const goal = account.targetCents !== null && balanceCents !== null ? Math.min(1, Math.max(0, balanceCents / account.targetCents)) : null;
   return (
     <Link
       href={`/accounts/${account.id}`}
-      className="block h-24 w-36 rounded-xl bg-card p-3 ring-1 ring-foreground/10 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring"
+      className="flex h-24 w-36 flex-col rounded-xl bg-card p-3 ring-1 ring-foreground/10 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring"
     >
       <p className="truncate text-xs text-muted-foreground">{account.name}</p>
       <p className="mt-0.5 text-lg font-semibold tabular-nums">{balanceCents === null ? "—" : formatBRL(balanceCents)}</p>
-      <p className="text-[11px] text-muted-foreground">{balanceCents === null ? "not yet open" : "balance"}</p>
+      <p className="truncate text-[11px] text-muted-foreground">
+        {balanceCents === null ? "not yet open" : goal !== null ? `${Math.round(goal * 100)}% of ${formatBRLWhole(account.targetCents!)}` : "balance"}
+      </p>
+      {goal !== null && (
+        <div className="mt-auto h-1 overflow-hidden rounded-full bg-muted" role="img" aria-label={`${Math.round(goal * 100)}% of the goal`}>
+          <div className={cn("h-full rounded-full", goal >= 1 ? "bg-emerald-500" : "bg-primary")} style={{ width: `${goal * 100}%` }} />
+        </div>
+      )}
     </Link>
   );
 }

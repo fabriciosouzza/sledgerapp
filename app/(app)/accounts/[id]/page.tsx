@@ -8,6 +8,7 @@ import { MonthPicker } from "@/components/month/month-picker";
 import { Stat } from "@/components/month/stat";
 import { Button } from "@/components/ui/button";
 import { accountTypeLabel, isCashAccount, isCreditCard } from "@/lib/domain/accounts";
+import { formatBRL } from "@/lib/domain/money";
 import { formatDate, isPeriod, periodOf, today } from "@/lib/domain/dates";
 import { getAccount, listAccounts } from "@/lib/services/accounts";
 import { listCategories } from "@/lib/services/categories";
@@ -65,6 +66,14 @@ export default async function AccountPage(props: PageProps<"/accounts/[id]">) {
             <Stat label="Balance today" cents={balance} className="col-span-2" />
             <Stat label="Started at" cents={account.openingBalanceCents} hint={`on ${formatDate(account.openingOn)}`} />
             <Stat label="Since then" cents={balance === null ? null : balance - account.openingBalanceCents} tone="signed" hint="settled entries" />
+            {account.targetCents !== null && balance !== null && (
+              <Stat
+                label="Goal"
+                cents={Math.max(0, account.targetCents - balance)}
+                hint={balance >= account.targetCents ? `reached · target ${formatBRL(account.targetCents)}` : `to go · ${Math.round((balance / account.targetCents) * 100)}% of ${formatBRL(account.targetCents)}`}
+                className="col-span-2"
+              />
+            )}
           </section>
         )}
         {!isCashAccount(account) && (

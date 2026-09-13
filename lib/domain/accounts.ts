@@ -29,6 +29,7 @@ export type AccountFields = Omit<Account, "id">;
 
 /** Nulls the card-only fields on non-card accounts so a type change cannot leave stale days behind. */
 export function normalizeAccountFields(fields: AccountFields): AccountFields {
-  if (isCreditCard(fields)) return fields;
-  return { ...fields, closingDay: null, dueDay: null, creditLimitCents: null };
+  const target = fields.type === "savings" ? fields.targetCents : null;
+  if (isCreditCard(fields)) return { ...fields, targetCents: null };
+  return { ...fields, closingDay: null, dueDay: null, creditLimitCents: null, targetCents: target };
 }

@@ -61,7 +61,7 @@ sql.append(f"delete from assets where user_id = '{UID}';")
 sql.append(f"delete from entries where user_id = '{UID}';")
 sql.append(f"delete from statements where user_id = '{UID}';")
 sql.append(f"delete from recurrences where user_id = '{UID}';")
-sql.append(f"update accounts set opening_on = '{START}', opening_balance_cents = case name when 'Conta Corrente' then 620000 when 'Dinheiro' then 15000 when 'Reserva' then 1200000 else 0 end where user_id = '{UID}';")
+sql.append(f"update accounts set opening_on = '{START}', opening_balance_cents = case name when 'Conta Corrente' then 620000 when 'Dinheiro' then 15000 when 'Reserva' then 1200000 else 0 end, target_cents = case name when 'Reserva' then 2000000 else null end where user_id = '{UID}';")
 # The sign-in seed only creates the basic set; the demo needs two cards and three more categories.
 sql.append(f"insert into accounts (user_id, name, type, institution, closing_day, due_day, credit_limit_cents, sort_order) values ('{UID}', 'Nubank', 'credit_card', 'Nubank', 20, 28, 400000, 10), ('{UID}', 'Inter', 'credit_card', 'Inter', 14, 21, 300000, 11) on conflict (user_id, name) do nothing;")
 sql.append(f"insert into categories (user_id, name, applies_to, is_benefit, sort_order) values ('{UID}', 'Salário', '{{income}}', false, 20), ('{UID}', 'Vale-refeição', '{{income}}', true, 21), ('{UID}', 'Restaurantes', '{{expense}}', false, 22) on conflict (user_id, parent_id, name) do nothing;")

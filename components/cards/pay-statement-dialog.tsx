@@ -98,6 +98,7 @@ export function PayStatementDialog({
                 ))}
               </NativeSelect>
             </Field>
+            <p className="text-xs text-muted-foreground">A statement is paid whole, from one account. To split it, transfer between your accounts first.</p>
             {short !== null && short > 0 && (
               <p className="text-sm text-amber-700 dark:text-amber-400" role="status">
                 {formatBRL(short)} short on {from?.name}: pay from another account, or transfer first.

@@ -118,6 +118,8 @@ The app is a stock Next.js build with Supabase behind it; nothing else runs.
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — the anon / publishable key
    - `SUPABASE_SERVICE_ROLE_KEY` — optional, server-only; enables "Delete my
      account" on the profile page. Leave it unset and the button explains.
+   - `NEXT_PUBLIC_SITE_URL` — optional, `https://<your-app>`; where magic
+     links and password resets come back to. Unset, the request's host is used.
 
    `next build` needs nothing else; the `Dockerfile` is for local work only.
 4. **Time.** Sessions are validated against the server clock; the "JWT issued

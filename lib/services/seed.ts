@@ -19,6 +19,7 @@ export const SEED_ACCOUNTS: NewAccount[] = ACCOUNTS.map((a, i) => ({
   closingDay: null,
   dueDay: null,
   creditLimitCents: null,
+  targetCents: null,
   // Starts empty today; the user sets the real opening balance in settings.
   openingBalanceCents: 0,
   openingOn: today(),
