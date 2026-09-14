@@ -73,7 +73,7 @@ export function PortfolioArea({ data }: { data: PortfolioPoint[] }) {
           </AreaChart>
         </ResponsiveContainer>
       </div>
-      <ul className="flex gap-4 text-[11px] text-muted-foreground">
+      <ul className="flex gap-4 text-xs text-muted-foreground">
         <li className="flex items-center gap-1">
           <span
             className="size-2 rounded-full"

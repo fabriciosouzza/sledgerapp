@@ -6,7 +6,7 @@ import { buildLookups } from "@/components/entries/lookups";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { addDays, formatDate, isIsoDate, isPeriod, periodOf, today } from "@/lib/domain/dates";
-import type { EntryKind, EntryStatus } from "@/lib/domain/types";
+import type { Entry, EntryKind, EntryStatus } from "@/lib/domain/types";
 import { listAccounts } from "@/lib/services/accounts";
 import { listCategories } from "@/lib/services/categories";
 import { formatBRL } from "@/lib/domain/money";
@@ -45,11 +45,16 @@ export default async function EntriesPage(props: PageProps<"/entries">) {
     search: values.q || undefined,
   };
   const entries = await listEntries(repos, userId, range ? { ...filters, ...range } : { ...filters, period: month });
+  // Settled and planned apart, the way Review shows them, so one month never shows two different "out".
+  const sumOf = (match: (e: Entry) => boolean): [number, number] => [
+    entries.filter((e) => match(e) && e.status === "settled").reduce((s, e) => s + e.amountCents, 0),
+    entries.filter((e) => match(e) && e.status === "planned").reduce((s, e) => s + e.amountCents, 0),
+  ];
   const totals = {
     count: entries.length,
-    inCents: entries.filter((e) => e.kind === "income").reduce((s, e) => s + e.amountCents, 0),
-    outCents: entries.filter((e) => e.kind === "expense").reduce((s, e) => s + e.amountCents, 0),
-    movesCents: entries.filter((e) => e.kind === "transfer" || e.kind === "contribution").reduce((s, e) => s + e.amountCents, 0),
+    in: sumOf((e) => e.kind === "income"),
+    out: sumOf((e) => e.kind === "expense"),
+    moved: sumOf((e) => e.kind === "transfer" || e.kind === "contribution"),
   };
 
   return (
@@ -57,7 +62,7 @@ export default async function EntriesPage(props: PageProps<"/entries">) {
       <PageHeader
         title="Entries"
         action={
-          <Button render={<Link href="/add" />} nativeButton={false} size="lg" className="h-11">
+          <Button render={<Link href="/add" />} nativeButton={false} size="lg" className="hidden h-11 md:inline-flex">
             <Plus data-icon="inline-start" aria-hidden />
             Add
           </Button>
@@ -66,24 +71,50 @@ export default async function EntriesPage(props: PageProps<"/entries">) {
       <div className="mb-4">
         <EntryFilters values={values} accounts={accounts} categories={categories} range={range} />
       </div>
+      {/* In, out and moved side by side, each settled with what is still planned under it, as on Review. */}
       {totals.count > 0 && (
-        <p className="mb-3 text-xs text-muted-foreground tabular-nums" aria-live="polite">
-          {totals.count} {totals.count === 1 ? "entry" : "entries"}
-          {totals.inCents > 0 ? ` · in ${formatBRL(totals.inCents)}` : ""}
-          {totals.outCents > 0 ? ` · out ${formatBRL(totals.outCents)}` : ""}
-          {totals.movesCents > 0 ? ` · moved ${formatBRL(totals.movesCents)}` : ""}
-          {range ? ` · ${formatDate(range.from)} → ${formatDate(range.to)}` : ""}
-        </p>
+        <div className="@container mb-4">
+          <dl className="grid grid-cols-1 gap-2 text-xs tabular-nums @min-[20rem]:grid-cols-3">
+            {(
+              [
+                ["In", totals.in],
+                ["Out", totals.out],
+                ["Moved", totals.moved],
+              ] as const
+            ).map(([label, [settled, planned]]) => (
+              <div key={label} className="min-w-0">
+                <dt className="text-muted-foreground">{label}</dt>
+                <dd className="font-semibold">{formatBRL(settled)}</dd>
+                {planned > 0 && <dd className="text-muted-foreground">+ {formatBRL(planned)} planned</dd>}
+              </div>
+            ))}
+          </dl>
+        </div>
       )}
       <EntryList
         key={JSON.stringify({ ...values, range })}
+        meta={
+          totals.count > 0 ? (
+            <p className="min-w-0 text-xs text-muted-foreground tabular-nums" aria-live="polite">
+              {totals.count} {totals.count === 1 ? "entry" : "entries"}
+              {range ? ` · ${formatDate(range.from)} → ${formatDate(range.to)}` : ""}
+            </p>
+          ) : undefined
+        }
         initial={entries}
         period={month}
         filters={filters}
         lookups={buildLookups(accounts, categories)}
         today={now}
         infinite={range === null}
+        collapseFuture={range === null && month === periodOf(now)}
         emptyMessage="No entries match. Add one or load an earlier month."
+        emptyAction={
+          <Button render={<Link href="/add" />} nativeButton={false} variant="outline" className="h-11">
+            <Plus data-icon="inline-start" aria-hidden />
+            Add entry
+          </Button>
+        }
       />
     </>
   );

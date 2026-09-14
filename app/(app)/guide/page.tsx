@@ -56,8 +56,8 @@ const SECTIONS: Section[] = [
       { term: "Transfer", meaning: "Money moving between two of your accounts. Neither income nor expense — paying a card statement is a transfer, because the purchases were already expenses when they happened." },
       { term: "Contribution", meaning: "Cash that leaves an account to become an investment. Not an expense: investing should never lower your savings rate. Record it from the Portfolio so the asset moves too." },
       { term: "Planned", meaning: "It will happen: a bill to pay, income to receive, a future installment, a recurring entry you applied to the month." },
-      { term: "Settled", meaning: "It happened. Tap the circle on any entry to settle it today; hold the circle to pick another day; tap the check to undo." },
-      { term: "Overdue", meaning: "Planned, and its date has passed. Shown in red on Today until you settle it, however old it is." },
+      { term: "Settled", meaning: "It happened. Tap the circle to settle it today; for another day, tap Other day in the confirmation or hold the circle; tap the check to undo. A card purchase is settled by paying its statement." },
+      { term: "Overdue", meaning: "Planned, and its date has passed (for a card purchase, its statement's due date). Shown in red on Today until you settle it, however old it is." },
       { term: "Date vs. settled on", meaning: "Date is when it falls due; settled on is when the money moved. A bill due on the 5th paid on the 7th keeps its date and gets settled on the 7th — and that is the day it leaves your balance." },
       { term: "Installments", meaning: "One purchase in N parts creates N planned entries at once, one per month, numbered 1/N … N/N. Editing or deleting asks whether it applies to this part, this and future ones, or all." },
       { term: "On a card", meaning: "A purchase on a credit card counts the day it is made — you never settle it one by one; you pay the statement. Card installments wait for their statement: they settle when it is paid." },
@@ -128,8 +128,8 @@ export default function GuidePage() {
       <PageHeader title="How sledger works" description="The terms you will see, in one place." />
       <div className="space-y-8">
         <nav aria-label="Sections" className="flex flex-wrap gap-1.5 text-xs">
-          {[...SECTIONS.map((s) => s.title), "Em português", "Starting from a spreadsheet", "Two people, one ledger"].map((title) => (
-            <a key={title} href={`#${slug(title)}`} className="rounded-full border border-border px-2.5 py-1 text-muted-foreground hover:text-foreground">
+          {["Em português", ...SECTIONS.map((s) => s.title), "Starting from a spreadsheet", "Two people, one ledger"].map((title) => (
+            <a key={title} href={`#${slug(title)}`} className="inline-flex min-h-11 items-center rounded-full border border-border px-3 text-muted-foreground hover:text-foreground">
               {title}
             </a>
           ))}

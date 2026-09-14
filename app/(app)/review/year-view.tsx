@@ -15,11 +15,11 @@ export function YearView({ summary, title, prevHref, nextHref }: { summary: Year
     <div className="space-y-6">
       <div className={prevHref || nextHref ? "flex items-center justify-between gap-2" : "text-center"}>
         {prevHref ? (
-          <Button variant="outline" size="icon-lg" className="size-11" aria-label="Previous year" render={<Link href={prevHref} />} nativeButton={false}>
+          <Button variant="outline" size="icon-lg" className="size-[44px] shrink-0" aria-label="Previous year" render={<Link href={prevHref} />} nativeButton={false}>
             <ChevronLeft aria-hidden />
           </Button>
         ) : prevHref === undefined && nextHref === undefined ? null : (
-          <span className="size-11" />
+          <span className="size-[44px] shrink-0" />
         )}
         <div className="text-center">
           <p className="text-base font-semibold">{title}</p>
@@ -28,17 +28,17 @@ export function YearView({ summary, title, prevHref, nextHref }: { summary: Year
           </p>
         </div>
         {nextHref ? (
-          <Button variant="outline" size="icon-lg" className="size-11" aria-label="Next year" render={<Link href={nextHref} />} nativeButton={false}>
+          <Button variant="outline" size="icon-lg" className="size-[44px] shrink-0" aria-label="Next year" render={<Link href={nextHref} />} nativeButton={false}>
             <ChevronRight aria-hidden />
           </Button>
         ) : prevHref === undefined && nextHref === undefined ? null : (
-          <span className="size-11" />
+          <span className="size-[44px] shrink-0" />
         )}
       </div>
 
-      <section aria-label="Totals" className="grid grid-cols-2 gap-2 md:grid-cols-3">
-        <Stat label="Income" cents={t.incomeCents} tone="positive" href={`${rangeHref}&kind=income`} />
-        <Stat label="Expense" cents={t.expenseCents} tone="negative" href={`${rangeHref}&kind=expense`} />
+      <section aria-label="Totals" className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,8.5rem),1fr))] gap-2 md:grid-cols-3">
+        <Stat label="Income" cents={t.incomeCents} href={`${rangeHref}&kind=income`} />
+        <Stat label="Expense" cents={t.expenseCents} href={`${rangeHref}&kind=expense`} />
         <Stat label="Contributions" cents={t.contributionsCents} href={`${rangeHref}&kind=moves`} />
         <Stat label="Leftover" cents={t.leftoverCents} tone="signed" href={rangeHref} />
         <Stat label="Savings rate" rate={t.savingsRate} tone="signed" />

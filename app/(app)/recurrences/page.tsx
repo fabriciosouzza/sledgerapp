@@ -38,12 +38,12 @@ export default async function RecurrencesPage() {
         action={
           <Button render={<Link href="/recurrences/new" />} nativeButton={false} size="lg" className="h-11">
             <Plus data-icon="inline-start" aria-hidden />
-            Add
+            New recurrence
           </Button>
         }
       />
       <div className="space-y-6">
-        <Stat label="Monthly fixed cost" cents={fixed} hint="Σ active expense recurrences — what sizes the emergency fund" />
+        <Stat label="Monthly fixed cost" cents={fixed} hint="All active expense recurrences — what sizes the emergency fund" />
 
         <section>
           <h2 className="mb-2 text-sm font-semibold">This month and next</h2>

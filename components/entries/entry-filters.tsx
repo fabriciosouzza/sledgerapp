@@ -77,14 +77,15 @@ export function EntryFilters({
   }
 
   return (
-    <form ref={form} method="get" className="space-y-3">
+    <form ref={form} method="get" className="@container space-y-3">
       <input type="hidden" name="month" value={month} />
       <input type="hidden" name="kind" value={kind} />
       <input type="hidden" name="status" value={status} />
       <input type="hidden" name="account" value={account} />
       <input type="hidden" name="category" value={category} />
 
-      <div className="grid grid-cols-[10.5rem_1fr] gap-2">
+      {/* Side by side while the form is wide in rem; stacked under large text. */}
+      <div className="grid grid-cols-1 gap-2 @min-[20rem]:grid-cols-[10.5rem_1fr]">
         {range ? (
           <Link href={`/entries?month=${month}${kind ? `&kind=${kind}` : ""}${category ? `&category=${category}` : ""}`} className="flex h-11 items-center justify-between gap-2 rounded-lg border border-input px-2.5 text-xs tabular-nums hover:bg-muted" title={`${formatDate(range.from)} → ${formatDate(range.to)} · back to one month`}>
             <span className="truncate">
@@ -109,8 +110,8 @@ export function EntryFilters({
         </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <div role="tablist" aria-label="Kind" className="flex flex-1 gap-1 rounded-lg bg-muted p-1">
+      <div className="flex flex-wrap items-center gap-2">
+        <div role="tablist" aria-label="Kind" className="flex flex-1 gap-1 rounded-lg bg-muted p-1 @max-[20rem]:basis-full @max-[20rem]:flex-wrap">
           {TABS.map((tab) => (
             <button
               key={tab.value}
@@ -122,7 +123,7 @@ export function EntryFilters({
                 submitSoon();
               }}
               className={cn(
-                "h-9 flex-1 rounded-md px-1 text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring sm:text-sm",
+                "h-11 flex-1 rounded-md px-1 text-xs @max-[20rem]:flex-auto @max-[20rem]:px-2 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring sm:text-sm",
                 kind === tab.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
               )}
             >
@@ -137,7 +138,7 @@ export function EntryFilters({
             if (o) setDraft({ status, account, category });
           }}
         >
-          <SheetTrigger render={<Button type="button" variant={extraCount > 0 ? "secondary" : "outline"} className="h-11 shrink-0" aria-label="More filters" />}>
+          <SheetTrigger render={<Button type="button" variant={extraCount > 0 ? "secondary" : "outline"} className="h-13 shrink-0" aria-label="More filters" />}>
             <SlidersHorizontal data-icon="inline-start" aria-hidden />
             {extraCount > 0 ? extraCount : "Filters"}
           </SheetTrigger>

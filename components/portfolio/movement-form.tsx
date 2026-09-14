@@ -264,7 +264,7 @@ export function MovementForm({
                   <span className="truncate">
                     {row.assetName} <span className="text-muted-foreground">· {movementKindLabel(row.kind)}</span>
                   </span>
-                  <span className={cn("shrink-0 tabular-nums", row.amountCents < 0 && "text-red-600 dark:text-red-400")}>{formatBRL(row.amountCents)}</span>
+                  <span className={cn("shrink-0 tabular-nums", row.amountCents < 0 && "text-negative")}>{formatBRL(row.amountCents)}</span>
                 </Link>
               </li>
             ))}

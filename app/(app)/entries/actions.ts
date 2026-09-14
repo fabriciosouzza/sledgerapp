@@ -7,7 +7,7 @@ import type { EntryFilters } from "@/lib/repositories";
 import { entryUpdateSchema, installmentScopeSchema } from "@/lib/schemas/entries";
 import { firstIssue, formToObject } from "@/lib/schemas/form";
 import { getContext } from "@/lib/services/context";
-import { deleteEntry, listEntries, settleEntries, settleEntry, unsettleEntry, updateEntry } from "@/lib/services/entries";
+import { deleteEntry, listEntries, settleEntries, settleEntry, unsettleEntries, unsettleEntry, updateEntry } from "@/lib/services/entries";
 import { ServiceError } from "@/lib/services/errors";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
@@ -42,6 +42,11 @@ export async function settleManyAction(ids: string[], settledOn?: string): Promi
   const { userId, repos } = await getContext();
   if (settledOn !== undefined && !isIsoDate(settledOn)) return { ok: false, error: "Pick a date." };
   return run(() => settleEntries(repos, userId, ids, settledOn ?? today()));
+}
+
+export async function unsettleManyAction(ids: string[]): Promise<ActionResult> {
+  const { userId, repos } = await getContext();
+  return run(() => unsettleEntries(repos, userId, ids));
 }
 
 export async function deleteEntryAction(formData: FormData): Promise<{ error?: string; deleted?: number }> {

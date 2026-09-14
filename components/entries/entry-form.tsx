@@ -1,14 +1,16 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useSyncExternalStore, useTransition } from "react";
+import { useRef, useState, useSyncExternalStore, useTransition } from "react";
+import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { createEntryAction } from "@/app/(app)/add/actions";
-import { updateEntryAction } from "@/app/(app)/entries/actions";
+import { deleteEntryAction, updateEntryAction } from "@/app/(app)/entries/actions";
 import { CurrencyInput } from "@/components/forms/currency-input";
 import { Field } from "@/components/forms/field";
 import { DatePicker } from "@/components/forms/date-picker";
 import { FormError } from "@/components/forms/form-error";
+import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -85,6 +87,9 @@ export function EntryForm({
   const [formKey, setFormKey] = useState(0);
 
   const [kind, setKind] = useState<EntryKind>(entry?.kind ?? defaultKind ?? "expense");
+  // Chosen in the add sheet already: the title confirms it and Change brings the control back (DESIGN.md, 2026-09-14).
+  const [kindLocked, setKindLocked] = useState(!editing && defaultKind !== undefined);
+  const kindGroupRef = useRef<HTMLDivElement>(null);
   const [categoryId, setCategoryId] = useState(entry?.categoryId ?? "");
   const [accountId, setAccountId] = useState(entry?.accountId ?? accounts[0]?.id ?? "");
   const [counterAccountId, setCounterAccountId] = useState(entry?.counterAccountId ?? "");
@@ -98,6 +103,8 @@ export function EntryForm({
   const [variable, setVariable] = useState(false);
   const [repeat, setRepeat] = useState(false);
   const [scope, setScope] = useState<"this" | "this_and_future" | "all">("this");
+  const [hasNotes, setHasNotes] = useState(Boolean(entry?.notes));
+  const [moreOpen, setMoreOpen] = useState(Boolean(entry?.notes));
 
   // Remember the last category and account per kind (§7 /add). localStorage
   // is an external store; the server snapshot is empty so hydration matches.
@@ -108,7 +115,12 @@ export function EntryForm({
   const settled = settledChoice ?? (date <= today && (remembered?.settled ?? true));
 
   const kindCategories = categories.filter((c) => appliesToKind(c, kind));
-  const effectiveCategoryId = pick(categoryId, remembered?.categoryId, kindCategories);
+  // Nothing remembered: start blank and required, so a quick Enter never files a receipt under whatever came first.
+  const effectiveCategoryId = kindCategories.some((c) => c.id === categoryId)
+    ? categoryId
+    : remembered?.categoryId && kindCategories.some((c) => c.id === remembered.categoryId)
+      ? remembered.categoryId
+      : "";
   const effectiveAccountId = pick(accountId, remembered?.accountId, accounts);
   const counterOptions = accounts.filter((a) => a.id !== effectiveAccountId && (kind !== "contribution" || a.type === "brokerage"));
   const effectiveCounterId = pick(counterAccountId, remembered?.counterAccountId, counterOptions);
@@ -121,10 +133,31 @@ export function EntryForm({
       ? `${firstNo > 1 ? `${firstNo}/${parts} → ${parts}/${parts}` : `${parts} × ${formatBRL(amountCents)}`}, ${formatPeriodShort(periodOf(date))} → ${formatPeriodShort(lastInstallmentPeriod(date, parts, firstNo))} · ${formatBRL(amountCents * remaining)} ${firstNo > 1 ? "still to go" : "in total"}`
       : null;
 
+  const kindLabel = ENTRY_KINDS.find((k) => k.value === kind)?.label ?? "Entry";
+  const moreLabel = editing ? "Notes" : showInstallments ? "Installments, repeat, notes" : "Repeat monthly, notes";
+  // What is switched on stays visible while the section is closed.
+  const moreSummary = [
+    installments ? `${parts} installments` : null,
+    repeat ? `repeats monthly${variable ? ", amount varies" : ""}` : null,
+    hasNotes && !editing ? "has a note" : null,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  function changeKind() {
+    setKindLocked(false);
+    // The control replaces the title's button: keep keyboard focus on the chosen kind, not the page.
+    requestAnimationFrame(() => kindGroupRef.current?.querySelector<HTMLButtonElement>('[aria-checked="true"]')?.focus());
+  }
+
   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     setError(undefined);
+    const categoryName = kindCategories.find((c) => c.id === effectiveCategoryId)?.name;
+    const accountName = accounts.find((a) => a.id === effectiveAccountId)?.name;
+    const counterName = needsCounterAccount(kind) ? accounts.find((a) => a.id === effectiveCounterId)?.name : undefined;
+    const where = [needsCategory(kind) ? categoryName : null, counterName ? `${accountName} → ${counterName}` : accountName].filter(Boolean).join(" · ");
     startTransition(async () => {
       if (editing) {
         const result = await updateEntryAction(formData);
@@ -138,232 +171,333 @@ export function EntryForm({
       const result = await createEntryAction(formData);
       if (!result.ok) return setError(result.error);
       writeMemory(kind, { categoryId: effectiveCategoryId, accountId: effectiveAccountId, counterAccountId: effectiveCounterId, settled });
-      toast.success(
-        result.recurrence ? "Recurrence created" : result.count > 1 ? `${result.count} installments created` : "Saved",
-      );
+      // Say what was saved, so a batch of receipts leaves a trace; Undo and Edit fix a slip without leaving the form.
+      const what = `${result.description} · ${formatBRL(result.amountCents)}${where ? ` · ${where}` : ""}`;
+      const firstId = result.firstId;
+      const parts = result.count;
+      toast.success(result.recurrence ? `Recurrence created: ${what}` : parts > 1 ? `${parts} installments: ${what} each` : `Saved ${what}`, {
+        action:
+          firstId && !result.recurrence
+            ? {
+                label: "Undo",
+                onClick: async () => {
+                  const data = new FormData();
+                  data.set("id", firstId);
+                  data.set("scope", parts > 1 ? "all" : "this");
+                  const undone = await deleteEntryAction(data);
+                  if (undone.error) toast.error(undone.error);
+                  else toast(`Removed ${what}`);
+                },
+              }
+            : undefined,
+        cancel: firstId ? { label: "Edit", onClick: () => router.push(`/entries/${firstId}`) } : undefined,
+      });
       setAmountCents(null);
       setInstallments(false);
       setRepeat(false);
+      setHasNotes(false);
+      setMoreOpen(false);
       setFormKey((k) => k + 1);
     });
   }
 
-  return (
-    <form key={formKey} onSubmit={onSubmit} className="space-y-5">
-      {entry && <input type="hidden" name="id" value={entry.id} />}
-      <input type="hidden" name="kind" value={kind} />
-      <FormError message={error} />
-
-      <div role="radiogroup" aria-label="Kind" className="grid grid-cols-4 gap-1 rounded-lg bg-muted p-1">
-        {ENTRY_KINDS.map((k) => (
-          <button
-            key={k.value}
-            type="button"
-            role="radio"
-            aria-checked={kind === k.value}
-            onClick={() => setKind(k.value)}
-            className={cn(
-              "h-10 rounded-md text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring sm:text-sm",
-              kind === k.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {k.label}
-          </button>
+  const accountField = (
+    <Field label={needsCounterAccount(kind) ? "From" : "Account"} htmlFor="accountId">
+      <NativeSelect id="accountId" name="accountId" value={effectiveAccountId} onChange={(e) => setAccountId(e.target.value)} required className="w-full [&>select]:h-11">
+        {accounts.map((a) => (
+          <NativeSelectOption key={a.id} value={a.id}>
+            {a.name}
+          </NativeSelectOption>
         ))}
-      </div>
+      </NativeSelect>
+    </Field>
+  );
 
-      <Field label={installments ? "Amount of each part" : "Amount"} htmlFor="amountCents">
-        <CurrencyInput
-          id="amountCents"
-          name="amountCents"
-          defaultCents={amountCents}
-          onCentsChange={setAmountCents}
-          required
-          autoFocus
-          className="h-14 text-2xl font-semibold"
-        />
-      </Field>
+  const dateField = (
+    <Field label="Date" htmlFor="date">
+      <DatePicker id="date" name="date" required value={date} onChange={(v) => v && setDate(v)} />
+    </Field>
+  );
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Date" htmlFor="date">
-          <DatePicker id="date" name="date" required value={date} onChange={(v) => v && setDate(v)} />
-        </Field>
-        {needsCategory(kind) ? (
-          <Field label="Category" htmlFor="categoryId">
-            <NativeSelect
-              id="categoryId"
-              name="categoryId"
-              value={effectiveCategoryId}
-              onChange={(e) => setCategoryId(e.target.value)}
-              required
-              className="w-full [&>select]:h-11"
-            >
-              {kindCategories.length === 0 && <NativeSelectOption value="">No category applies</NativeSelectOption>}
-              {kindCategories.map((c) => (
-                <NativeSelectOption key={c.id} value={c.id}>
-                  {c.parentId ? `· ${c.name}` : c.name}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </Field>
-        ) : (
-          <div />
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <Field label={needsCounterAccount(kind) ? "From" : "Account"} htmlFor="accountId">
-          <NativeSelect id="accountId" name="accountId" value={effectiveAccountId} onChange={(e) => setAccountId(e.target.value)} required className="w-full [&>select]:h-11">
-            {accounts.map((a) => (
-              <NativeSelectOption key={a.id} value={a.id}>
-                {a.name}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-        </Field>
-        {needsCounterAccount(kind) ? (
-          <Field label="To" htmlFor="counterAccountId">
-            <NativeSelect
-              id="counterAccountId"
-              name="counterAccountId"
-              value={effectiveCounterId}
-              onChange={(e) => setCounterAccountId(e.target.value)}
-              required
-              className="w-full [&>select]:h-11"
-            >
-              {counterOptions.length === 0 && (
-                <NativeSelectOption value="">{kind === "contribution" ? "Add a brokerage account" : "No other account"}</NativeSelectOption>
-              )}
-              {counterOptions.map((a) => (
-                <NativeSelectOption key={a.id} value={a.id}>
-                  {a.name}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </Field>
-        ) : (
-          <div />
-        )}
-      </div>
-
-      <Field label="Description" htmlFor="description" hint={needsCounterAccount(kind) ? "Optional: blank means “From → To”." : undefined}>
-        <Input
-          id="description"
-          name="description"
-          required={!needsCounterAccount(kind)}
-          maxLength={120}
-          defaultValue={entry?.description}
-          className="h-11"
-          autoComplete="off"
-          aria-describedby={needsCounterAccount(kind) ? "description-hint" : undefined}
-        />
-      </Field>
-
-      {onCard && !editing ? (
-        <p className="rounded-xl bg-muted/40 p-3 text-xs text-muted-foreground">
-          On a card, the purchase counts the day it is made; you pay the statement later. Installments count when their statement is paid.
-        </p>
-      ) : (
-        <div className="flex min-h-11 items-center justify-between gap-3">
-          <Label htmlFor="settled">{kind === "income" ? "Already received?" : "Already paid?"}</Label>
-          <Switch id="settled" name="settled" checked={settled} onCheckedChange={setSettledChoice} />
-        </div>
-      )}
-      {settled && !(onCard && !editing) && (
-        <Field label={kind === "income" ? "Received on" : "Paid on"} htmlFor="settledOn">
-          <DatePicker id="settledOn" name="settledOn" defaultValue={entry?.settledOn ?? (editing ? today : date <= today ? date : today)} />
-        </Field>
-      )}
-
-      {showInstallments && (
-        <div className="space-y-3 rounded-xl bg-muted/40 p-4">
-          <div className="flex min-h-11 items-center justify-between gap-3">
-            <Label htmlFor="installments">Installments</Label>
-            <Switch id="installments" name="installments" checked={installments} onCheckedChange={(v) => { setInstallments(v); if (v) setRepeat(false); }} />
-          </div>
-          {installments && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Parts" htmlFor="installmentParts">
-                  <Input
-                    id="installmentParts"
-                    name="installmentParts"
-                    type="number"
-                    inputMode="numeric"
-                    min={2}
-                    max={120}
-                    value={parts}
-                    onChange={(e) => setParts(Math.max(2, Math.min(120, Number(e.target.value) || 2)))}
-                    className="h-11"
-                  />
-                </Field>
-                <Field label="This is part" htmlFor="installmentFirstNo" hint="Already under way? Start from this part.">
-                  <Input
-                    id="installmentFirstNo"
-                    name="installmentFirstNo"
-                    type="number"
-                    inputMode="numeric"
-                    min={1}
-                    max={parts}
-                    value={firstNo}
-                    onChange={(e) => setFirstNo(Math.max(1, Math.min(parts, Number(e.target.value) || 1)))}
-                    className="h-11"
-                    aria-describedby="installmentFirstNo-hint"
-                  />
-                </Field>
-              </div>
-              <p className="text-sm text-muted-foreground" aria-live="polite">
-                {preview ?? "Type the amount of each part to preview."}
-              </p>
-            </>
-          )}
-        </div>
-      )}
-
+  return (
+    <>
       {!editing && (
-        <div className="flex min-h-11 items-center justify-between gap-3">
-          <div>
-            <Label htmlFor="repeatMonthly">Repeat monthly</Label>
-            <p className="text-xs text-muted-foreground">Creates a recurrence on day {new Date(`${date}T00:00:00`).getDate() || "?"}.</p>
+        <PageHeader
+          title={kindLocked ? `New ${kindLabel.toLowerCase()}` : "Add"}
+          action={
+            kindLocked ? (
+              <Button type="button" variant="ghost" className="h-11" onClick={changeKind}>
+                Change
+              </Button>
+            ) : undefined
+          }
+        />
+      )}
+
+      <form key={formKey} onSubmit={onSubmit} className="space-y-5 md:max-w-2xl">
+        {entry && <input type="hidden" name="id" value={entry.id} />}
+        <input type="hidden" name="kind" value={kind} />
+
+        {!kindLocked && !(editing && entry?.installmentGroupId) && (
+          <div
+            ref={kindGroupRef}
+            role="radiogroup"
+            aria-label="Kind"
+            onKeyDown={(e) => {
+              // A radio group takes one Tab stop and moves with the arrow keys.
+              const step = e.key === "ArrowRight" || e.key === "ArrowDown" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowUp" ? -1 : 0;
+              if (step === 0) return;
+              e.preventDefault();
+              const index = ENTRY_KINDS.findIndex((k) => k.value === kind);
+              setKind(ENTRY_KINDS[(index + step + ENTRY_KINDS.length) % ENTRY_KINDS.length].value);
+              requestAnimationFrame(() => kindGroupRef.current?.querySelector<HTMLButtonElement>('[aria-checked="true"]')?.focus());
+            }}
+            className="grid grid-cols-4 gap-1 rounded-lg bg-muted p-1"
+          >
+            {ENTRY_KINDS.map((k) => (
+              <button
+                key={k.value}
+                type="button"
+                role="radio"
+                aria-checked={kind === k.value}
+                tabIndex={kind === k.value ? 0 : -1}
+                onClick={() => setKind(k.value)}
+                className={cn(
+                  "h-11 rounded-md text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring sm:text-sm",
+                  kind === k.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {k.label}
+              </button>
+            ))}
           </div>
-          <Switch id="repeatMonthly" name="repeatMonthly" checked={repeat} onCheckedChange={(v) => { setRepeat(v); if (v) setInstallments(false); }} disabled={installments} />
-        </div>
-      )}
-      {!editing && repeat && (
-        <div className="-mt-2 flex min-h-11 items-center justify-between gap-3 rounded-xl bg-muted/40 px-4">
-          <div>
-            <Label htmlFor="variable">Amount varies each month</Label>
-            <p className="text-xs text-muted-foreground">Water, power: the amount typed now is only an estimate for later months.</p>
+        )}
+
+        <Field label={installments ? "Amount of each part" : "Amount"} htmlFor="amountCents">
+          <CurrencyInput
+            id="amountCents"
+            name="amountCents"
+            defaultCents={amountCents}
+            onCentsChange={setAmountCents}
+            required
+            autoFocus
+            className="h-14 text-2xl font-semibold"
+          />
+        </Field>
+
+        {needsCounterAccount(kind) && (
+          <div className="grid grid-cols-2 gap-3">
+            {accountField}
+            <Field label="To" htmlFor="counterAccountId">
+              <NativeSelect
+                id="counterAccountId"
+                name="counterAccountId"
+                value={effectiveCounterId}
+                onChange={(e) => setCounterAccountId(e.target.value)}
+                required
+                className="w-full [&>select]:h-11"
+              >
+                {counterOptions.length === 0 && (
+                  <NativeSelectOption value="">{kind === "contribution" ? "Add a brokerage account" : "No other account"}</NativeSelectOption>
+                )}
+                {counterOptions.map((a) => (
+                  <NativeSelectOption key={a.id} value={a.id}>
+                    {a.name}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </Field>
           </div>
-          <Switch id="variable" name="variable" checked={variable} onCheckedChange={setVariable} />
+        )}
+
+        {/* Straight after the amount: one typing path with the keyboard up, and Enter saves. */}
+        <Field label="Description" htmlFor="description" hint={needsCounterAccount(kind) ? "Optional: blank means “From → To”." : undefined}>
+          <Input
+            id="description"
+            name="description"
+            required={!needsCounterAccount(kind)}
+            maxLength={120}
+            defaultValue={entry?.description}
+            className="h-11"
+            autoComplete="off"
+            aria-describedby={needsCounterAccount(kind) ? "description-hint" : undefined}
+          />
+        </Field>
+
+        {needsCategory(kind) && (
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Category" htmlFor="categoryId">
+              <NativeSelect
+                id="categoryId"
+                name="categoryId"
+                value={effectiveCategoryId}
+                onChange={(e) => setCategoryId(e.target.value)}
+                required
+                className="w-full [&>select]:h-11"
+              >
+                {kindCategories.length === 0 && <NativeSelectOption value="">No category applies</NativeSelectOption>}
+                {kindCategories.length > 0 && effectiveCategoryId === "" && (
+                  <NativeSelectOption value="" disabled>
+                    Pick a category
+                  </NativeSelectOption>
+                )}
+                {kindCategories.map((c) => (
+                  <NativeSelectOption key={c.id} value={c.id}>
+                    {c.parentId ? `· ${c.name}` : c.name}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </Field>
+            {accountField}
+          </div>
+        )}
+        {!needsCategory(kind) && !needsCounterAccount(kind) && accountField}
+
+        {onCard && !editing ? (
+          <div className="space-y-3">
+            {dateField}
+            <p className="rounded-xl bg-muted/40 p-3 text-xs text-muted-foreground">
+              On a card, the purchase counts the day it is made; you pay the statement later. Installments count when their statement is paid.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex min-h-11 items-center justify-between gap-3">
+              <Label htmlFor="settled">{kind === "income" ? "Already received?" : "Already paid?"}</Label>
+              <Switch id="settled" name="settled" checked={settled} onCheckedChange={setSettledChoice} />
+            </div>
+            <div className={cn("grid gap-3", settled && "grid-cols-2")}>
+              {dateField}
+              {settled && (
+                <Field label={kind === "income" ? "Received on" : "Paid on"} htmlFor="settledOn">
+                  <DatePicker id="settledOn" name="settledOn" defaultValue={entry?.settledOn ?? (editing ? today : date <= today ? date : today)} />
+                </Field>
+              )}
+            </div>
+          </div>
+        )}
+
+        {editing && entry?.installmentGroupId && (
+          <fieldset className="space-y-2 rounded-xl bg-muted/40 p-4">
+            <legend className="px-1 text-sm font-medium">Apply to</legend>
+            {(
+              [
+                ["this", `Only part ${entry.installmentNo}/${entry.installmentTotal}`],
+                ["this_and_future", "This and future parts"],
+                ["all", "All parts"],
+              ] as const
+            ).map(([value, label]) => (
+              <label key={value} className="flex min-h-11 items-center gap-3 text-sm">
+                <input type="radio" name="scope" value={value} checked={scope === value} onChange={() => setScope(value)} className="size-5 accent-primary" />
+                {label}
+              </label>
+            ))}
+          </fieldset>
+        )}
+
+        {/* Collapsed, the fields stay in the form (hidden, not removed), so nothing typed is lost on submit. */}
+        <div className="border-t border-border pt-1">
+          <button
+            type="button"
+            aria-expanded={moreOpen}
+            aria-controls="entry-more"
+            onClick={() => setMoreOpen((open) => !open)}
+            className="flex min-h-12 w-full items-center justify-between gap-3 rounded-lg text-left focus-visible:outline-2 focus-visible:outline-ring"
+          >
+            <span className="min-w-0">
+              <span className="block text-sm font-medium">{moreLabel}</span>
+              {moreSummary && <span className="block truncate text-xs text-muted-foreground">{moreSummary}</span>}
+            </span>
+            <ChevronDown className={cn("size-4 shrink-0 text-muted-foreground transition-transform", moreOpen && "rotate-180")} aria-hidden />
+          </button>
+
+          <div id="entry-more" hidden={!moreOpen} className="space-y-5 pt-3">
+            {showInstallments && (
+              <div className="space-y-3 rounded-xl bg-muted/40 p-4">
+                <div className="flex min-h-11 items-center justify-between gap-3">
+                  <Label htmlFor="installments">Installments</Label>
+                  <Switch id="installments" name="installments" checked={installments} onCheckedChange={(v) => { setInstallments(v); if (v) setRepeat(false); }} />
+                </div>
+                {installments && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <Field label="Parts" htmlFor="installmentParts">
+                        <Input
+                          id="installmentParts"
+                          name="installmentParts"
+                          type="number"
+                          inputMode="numeric"
+                          min={2}
+                          max={120}
+                          value={parts}
+                          onChange={(e) => setParts(Math.max(2, Math.min(120, Number(e.target.value) || 2)))}
+                          className="h-11"
+                        />
+                      </Field>
+                      <Field label="This is part" htmlFor="installmentFirstNo" hint="Already under way? Start from this part.">
+                        <Input
+                          id="installmentFirstNo"
+                          name="installmentFirstNo"
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          max={parts}
+                          value={firstNo}
+                          onChange={(e) => setFirstNo(Math.max(1, Math.min(parts, Number(e.target.value) || 1)))}
+                          className="h-11"
+                          aria-describedby="installmentFirstNo-hint"
+                        />
+                      </Field>
+                    </div>
+                    <p className="text-sm text-muted-foreground" aria-live="polite">
+                      {preview ?? "Type the amount of each part to preview."}
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
+
+            {!editing && (
+              <div className="flex min-h-11 items-center justify-between gap-3">
+                <div>
+                  <Label htmlFor="repeatMonthly">Repeat monthly</Label>
+                  <p className="text-xs text-muted-foreground">Creates a recurrence on day {new Date(`${date}T00:00:00`).getDate() || "?"}.</p>
+                </div>
+                <Switch id="repeatMonthly" name="repeatMonthly" checked={repeat} onCheckedChange={(v) => { setRepeat(v); if (v) setInstallments(false); }} disabled={installments} />
+              </div>
+            )}
+            {!editing && repeat && (
+              <div className="-mt-2 flex min-h-11 items-center justify-between gap-3 rounded-xl bg-muted/40 px-4">
+                <div>
+                  <Label htmlFor="variable">Amount varies each month</Label>
+                  <p className="text-xs text-muted-foreground">Water, power: the amount typed now is only an estimate for later months.</p>
+                </div>
+                <Switch id="variable" name="variable" checked={variable} onCheckedChange={setVariable} />
+              </div>
+            )}
+
+            <Field label="Notes" htmlFor="notes" hint="Optional.">
+              <Textarea
+                id="notes"
+                name="notes"
+                rows={2}
+                maxLength={500}
+                defaultValue={entry?.notes ?? ""}
+                onChange={(e) => setHasNotes(e.target.value.trim() !== "")}
+                aria-describedby="notes-hint"
+              />
+            </Field>
+          </div>
         </div>
-      )}
 
-      <Field label="Notes" htmlFor="notes" hint="Optional.">
-        <Textarea id="notes" name="notes" rows={2} maxLength={500} defaultValue={entry?.notes ?? ""} aria-describedby="notes-hint" />
-      </Field>
-
-      {editing && entry?.installmentGroupId && (
-        <fieldset className="space-y-2 rounded-xl bg-muted/40 p-4">
-          <legend className="px-1 text-sm font-medium">Apply to</legend>
-          {(
-            [
-              ["this", `Only part ${entry.installmentNo}/${entry.installmentTotal}`],
-              ["this_and_future", "This and future parts"],
-              ["all", "All parts"],
-            ] as const
-          ).map(([value, label]) => (
-            <label key={value} className="flex min-h-11 items-center gap-3 text-sm">
-              <input type="radio" name="scope" value={value} checked={scope === value} onChange={() => setScope(value)} className="size-5 accent-primary" />
-              {label}
-            </label>
-          ))}
-        </fieldset>
-      )}
-
-      <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={pending}>
-        {pending ? "Saving…" : editing ? "Save changes" : "Save"}
-      </Button>
-    </form>
+        {/* Save stays within reach above the bottom nav; a failed save says why right where it was tapped. */}
+        <div data-pinned-actions className="sticky bottom-[calc(3.5rem+env(safe-area-inset-bottom))] z-30 -mx-4 space-y-2 border-t border-border bg-background/95 px-4 py-3 backdrop-blur md:bottom-0 md:-mx-8 md:px-8">
+          <FormError message={error} />
+          <Button type="submit" size="lg" className="h-12 w-full text-base" disabled={pending}>
+            {pending ? "Saving…" : editing ? "Save changes" : "Save"}
+          </Button>
+        </div>
+      </form>
+    </>
   );
 }

@@ -83,7 +83,7 @@ export default async function PortfolioPage() {
                     </span>
                     <span className="block truncate text-xs text-muted-foreground">
                       {summary.earnedCents !== 0 && (
-                        <span className={summary.earnedCents < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400"}>
+                        <span className={summary.earnedCents < 0 ? "text-negative" : "text-positive"}>
                           {summary.earnedCents > 0 ? "+" : ""}
                           {formatBRL(summary.earnedCents)} earned
                         </span>

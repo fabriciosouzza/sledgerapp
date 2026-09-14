@@ -2,7 +2,7 @@
 // useful true statement from this month's metrics and last month's; says
 // nothing rather than guessing.
 
-import { formatBRL, ratio } from "./money";
+import { formatBRL, formatPercent, ratio } from "./money";
 import type { PeriodMetrics } from "./metrics";
 
 export interface Insight {
@@ -14,6 +14,8 @@ export interface Insight {
 }
 
 const pct = (r: number) => `${Math.abs(Math.round(r * 100))}%`;
+/** Rates read as on Review: one decimal below 100%, no trailing ".0". */
+const share = (r: number) => formatPercent(Math.abs(r));
 
 /** Fewer days than this and a comparison with last month says more about timing than about spending. */
 const MIN_COMPARABLE_DAY = 7;
@@ -25,12 +27,12 @@ const MIN_COMPARABLE_DAY = 7;
 export function monthInsight(
   current: PeriodMetrics,
   previous: PeriodMetrics | null,
-  options: { throughDay?: number | null; rollingRate?: number | null } = {},
+  options: { throughDay?: number | null; rollingRate?: number | null; capsOver?: { name: string; overCents: number }[] } = {},
 ): Insight | null {
   const throughDay = options.throughDay ?? null;
   // Irregular income makes the month's rate swing; the 12-month one is the honest number.
   const rolling = options.rollingRate ?? null;
-  const rollingDetail = rolling === null ? null : `12-month rate ${rolling < 0 ? "−" : ""}${pct(rolling)}`;
+  const rollingDetail = rolling === null ? null : `12-month rate ${rolling < 0 ? "−" : ""}${share(rolling)}`;
   const comparable = throughDay === null || throughDay >= MIN_COMPARABLE_DAY;
   const change =
     comparable && previous && previous.expenseCents > 0 && current.expenseCents > 0 ? ratio(current.expenseCents - previous.expenseCents, previous.expenseCents) : null;
@@ -38,7 +40,18 @@ export function monthInsight(
   const rateDetail =
     rate === null
       ? null
-      : `Savings rate ${pct(rate)}${current.savingsRateExBenefits !== null && current.benefitsCents > 0 ? ` · ${pct(current.savingsRateExBenefits)} ex-benefits` : ""}`;
+      : `Savings rate ${share(rate)}${current.savingsRateExBenefits !== null && current.benefitsCents > 0 ? ` · ${share(current.savingsRateExBenefits)} ex-benefits` : ""}`;
+
+  // A blown cap is news the owner can act on this week: it outranks how spending compares with last month.
+  const capsOver = options.capsOver ?? [];
+  if (capsOver.length > 0) {
+    return {
+      headline: capsOver.length === 1 ? `${capsOver[0].name} is ${formatBRL(capsOver[0].overCents)} over its cap` : `${capsOver.length} categories over their cap`,
+      detail: rateDetail,
+      ring: rate,
+      tone: "bad",
+    };
+  }
 
   if (change !== null && Math.abs(change) >= 0.01) {
     const down = change < 0;
@@ -52,12 +65,12 @@ export function monthInsight(
 
   if (rate !== null) {
     return {
-      headline: rate >= 0 ? `You kept ${pct(rate)} of what came in` : `Spending exceeds income by ${pct(-rate)}`,
+      headline: rate >= 0 ? `You kept ${share(rate)} of what came in` : `Spending exceeds income by ${share(rate)}`,
       detail:
         rate < 0 && rollingDetail
           ? `${rollingDetail} · this month is not over`
           : current.benefitsCents > 0 && current.savingsRateExBenefits !== null
-            ? `${pct(current.savingsRateExBenefits)} without benefits`
+            ? `${share(current.savingsRateExBenefits)} ex-benefits`
             : `${formatBRL(current.incomeCents - current.expenseCents)} left after expenses`,
       ring: rate,
       tone: rate >= 0.2 ? "good" : rate >= 0 ? "neutral" : "bad",

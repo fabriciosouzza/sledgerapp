@@ -83,8 +83,8 @@ export function MonthPicker({
       type="button"
       aria-label={`Month: ${formatPeriodLong(period)}. Change`}
       className={cn(
-        "flex h-11 items-center justify-center rounded-lg px-3 text-base font-semibold transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring",
-        compact ? "w-full justify-start border border-input text-sm font-medium" : "flex-1",
+        "flex min-h-11 items-center justify-center rounded-lg px-3 text-base font-semibold transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring",
+        compact ? "w-full justify-start border border-input text-sm font-medium" : "min-w-0 flex-1 text-center",
       )}
     >
       {formatPeriodLong(period)}
@@ -101,13 +101,13 @@ export function MonthPicker({
 
   return (
     <div className="flex items-center justify-between gap-2">
-      <Button variant="outline" size="icon-lg" className="size-11" aria-label="Previous month" onClick={() => go(addMonths(period, -1))}>
+      <Button variant="outline" size="icon-lg" className="size-[44px] shrink-0" aria-label="Previous month" onClick={() => go(addMonths(period, -1))}>
         <ChevronLeft aria-hidden />
       </Button>
       <PickerShell open={open} onOpenChange={(o) => { setOpen(o); if (o) setYear(parsePeriod(period).year); }} trigger={trigger} title="Month">
         {grid}
       </PickerShell>
-      <Button variant="outline" size="icon-lg" className="size-11" aria-label="Next month" onClick={() => go(addMonths(period, 1))}>
+      <Button variant="outline" size="icon-lg" className="size-[44px] shrink-0" aria-label="Next month" onClick={() => go(addMonths(period, 1))}>
         <ChevronRight aria-hidden />
       </Button>
     </div>

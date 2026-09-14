@@ -1,7 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { cashFlowSign, digitsToCents, formatBRL, formatBRLWhole, parseBRL, ratio, splitCents, sumCents } from "../money";
+import { cashFlowSign, digitsToCents, formatBRL, formatBRLWhole, formatBRLWrap, formatPercent, parseBRL, ratio, splitCents, sumCents } from "../money";
 
 const plain = (s: string) => s.replace(/ /g, " ");
+
+describe("formatBRLWrap", () => {
+  it("keeps the figure and lets the symbol wrap", () => {
+    expect(formatBRLWrap(5_364_978)).toBe("R$ 53.649,78");
+  });
+});
+
+describe("formatPercent", () => {
+  it("shows one decimal below 100% and drops a trailing .0", () => {
+    expect(formatPercent(0.355)).toBe("35.5%");
+    expect(formatPercent(0.4)).toBe("40%");
+    expect(formatPercent(-0.123)).toBe("-12.3%");
+    expect(formatPercent(1.234)).toBe("123%");
+  });
+});
 
 describe("formatBRL", () => {
   it("formats cents as pt-BR currency", () => {

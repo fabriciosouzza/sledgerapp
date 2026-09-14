@@ -185,6 +185,10 @@ export async function settleEntries(repos: Repositories, userId: string, ids: st
   return repos.entries.updateMany(userId, ids, { status: "settled", settledOn });
 }
 
+export async function unsettleEntries(repos: Repositories, userId: string, ids: string[]): Promise<Entry[]> {
+  return repos.entries.updateMany(userId, ids, { status: "planned", settledOn: null });
+}
+
 /** Parts of the group an edit or delete touches; a lone entry is its own group. */
 async function scopeOf(repos: Repositories, userId: string, entry: Entry, scope: InstallmentScope): Promise<Entry[]> {
   if (entry.installmentGroupId === null || entry.installmentNo === null) return [entry];

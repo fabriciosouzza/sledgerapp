@@ -28,26 +28,26 @@ export const SEED_ACCOUNTS: NewAccount[] = ACCOUNTS.map((a, i) => ({
 }));
 
 const EXPENSE_CATEGORIES = [
-  "Moradia",
-  "Alimentação",
-  "Transporte",
-  "Saúde",
-  "Educação",
-  "Assinaturas",
-  "Lazer",
-  "Dívidas e parcelas",
+  { name: "Moradia", icon: "home" },
+  { name: "Alimentação", icon: "utensils" },
+  { name: "Transporte", icon: "car" },
+  { name: "Saúde", icon: "heart-pulse" },
+  { name: "Educação", icon: "graduation-cap" },
+  { name: "Assinaturas", icon: "tv" },
+  { name: "Lazer", icon: "plane" },
+  { name: "Dívidas e parcelas", icon: "credit-card" },
 ];
 
 export const SEED_CATEGORIES: NewCategory[] = [
-  ...EXPENSE_CATEGORIES.map((name) => ({ name, appliesTo: ["expense" as const] })),
-  { name: "Outros", appliesTo: ["expense" as const, "income" as const] },
+  ...EXPENSE_CATEGORIES.map(({ name, icon }) => ({ name, icon, appliesTo: ["expense" as const] })),
+  { name: "Outros", icon: "wallet", appliesTo: ["expense" as const, "income" as const] },
 ].map((c, i) => ({
   ...c,
   parentId: null,
   monthlyCapCents: null,
   isBenefit: false,
+  // Icons only: colour stays for meaning, not decoration (DESIGN.md, 2026-09-14).
   color: null,
-  icon: null,
   isActive: true,
   sortOrder: i,
 }));

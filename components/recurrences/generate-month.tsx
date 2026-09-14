@@ -134,7 +134,7 @@ export function GenerateMonth({
                   </span>
                 </label>
                 <div className="w-32 shrink-0">
-                  <CurrencyInput id={`amount-${row.recurrenceId}`} name={`amount:${row.recurrenceId}`} defaultCents={row.amountCents} className={cn("h-11 text-right", row.kind === "income" ? "text-emerald-600 dark:text-emerald-400" : row.kind === "expense" ? "text-red-600 dark:text-red-400" : "")} />
+                  <CurrencyInput id={`amount-${row.recurrenceId}`} name={`amount:${row.recurrenceId}`} defaultCents={row.amountCents} className={cn("h-11 text-right", row.kind === "income" ? "text-positive" : "")} />
                 </div>
               </li>
             ))}

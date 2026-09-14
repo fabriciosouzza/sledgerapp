@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, CheckCheck, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { settleManyAction } from "@/app/(app)/entries/actions";
+import { settleManyAction, unsettleManyAction } from "@/app/(app)/entries/actions";
 import { periodOf, today } from "@/lib/domain/dates";
+import { formatBRL } from "@/lib/domain/money";
 import type { PendingMonth } from "@/lib/services/recurrences";
 import { cn } from "@/lib/utils";
 
@@ -14,7 +15,7 @@ const base =
   "flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3.5 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring";
 
 /** One row of the things a weekly visit usually needs (DESIGN.md §2). */
-export function QuickActions({ dueToday, pending: pendingMonths }: { dueToday: { id: string; description: string; kind: string }[]; pending: PendingMonth[] }) {
+export function QuickActions({ dueToday, pending: pendingMonths }: { dueToday: { id: string; description: string; kind: string; amountCents: number }[]; pending: PendingMonth[] }) {
   const dueTodayIds = dueToday.map((e) => e.id);
   const names = dueToday.map((e) => e.description);
   const dueLabel = names.length <= 2 ? names.join(" + ") : `${names.length} due today`;
@@ -32,19 +33,29 @@ export function QuickActions({ dueToday, pending: pendingMonths }: { dueToday: {
         toast.error(result.error);
         return;
       }
-      toast.success(`Settled ${names.join(", ")}`);
+      const total = dueToday.reduce((sum, e) => sum + e.amountCents, 0);
+      toast.success(`Settled ${names.join(", ")} · ${formatBRL(total)}`, {
+        action: {
+          label: "Undo",
+          onClick: async () => {
+            const undone = await unsettleManyAction(dueTodayIds);
+            if (!undone.ok) toast.error(undone.error);
+            router.refresh();
+          },
+        },
+      });
       router.refresh();
     });
   }
 
   return (
-    <div className="tile-strip" role="group" aria-label="Quick actions">
+    <div className="flex flex-wrap gap-2" role="group" aria-label="Quick actions">
       <Link href="/add?kind=expense" className={base}>
-        <ArrowUpRight className="size-4 text-red-600 dark:text-red-400" aria-hidden />
+        <ArrowUpRight className="size-4 text-muted-foreground" aria-hidden />
         Expense
       </Link>
       <Link href="/add?kind=income" className={base}>
-        <ArrowDownLeft className="size-4 text-emerald-600 dark:text-emerald-400" aria-hidden />
+        <ArrowDownLeft className="size-4 text-positive" aria-hidden />
         Income
       </Link>
       <Link href="/add?kind=transfer" className={base}>

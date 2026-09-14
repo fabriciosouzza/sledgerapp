@@ -21,7 +21,15 @@ describe("monthInsight", () => {
   it("compares spending with last month when both months have expenses", () => {
     const insight = monthInsight(metrics({ expenseCents: 88_000, incomeCents: 500_000, savingsRate: 0.824 }), metrics({ expenseCents: 100_000 }));
     expect(insight).toMatchObject({ headline: "Spending down 12% vs last month", tone: "good", ring: 0.824 });
-    expect(insight?.detail).toBe("Savings rate 82%");
+    expect(insight?.detail).toBe("Savings rate 82.4%");
+  });
+
+  it("puts a blown cap ahead of the comparison with last month", () => {
+    const current = metrics({ expenseCents: 88_000, incomeCents: 500_000, savingsRate: 0.824 });
+    const one = monthInsight(current, metrics({ expenseCents: 100_000 }), { capsOver: [{ name: "Alimentação", overCents: 15_255 }] });
+    expect(one).toMatchObject({ tone: "bad", detail: "Savings rate 82.4%" });
+    expect(one?.headline).toMatch(/^Alimentação is R\$.152,55 over its cap$/);
+    expect(monthInsight(current, null, { capsOver: [{ name: "A", overCents: 1 }, { name: "B", overCents: 2 }] })?.headline).toBe("2 categories over their cap");
   });
 
   it("flags spending up", () => {
@@ -31,7 +39,7 @@ describe("monthInsight", () => {
 
   it("falls back to the savings rate without a comparable last month", () => {
     const insight = monthInsight(metrics({ incomeCents: 500_000, expenseCents: 300_000, savingsRate: 0.4, benefitsCents: 50_000, savingsRateExBenefits: 0.44 }), null);
-    expect(insight).toMatchObject({ headline: "You kept 40% of what came in", detail: "44% without benefits", tone: "good" });
+    expect(insight).toMatchObject({ headline: "You kept 40% of what came in", detail: "44% ex-benefits", tone: "good" });
   });
 
   it("says when spending exceeds income", () => {

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { payStatementAction } from "@/app/(app)/cards/actions";
+import { payStatementAction, unpayStatementAction } from "@/app/(app)/cards/actions";
 import { DatePicker } from "@/components/forms/date-picker";
 import { Field } from "@/components/forms/field";
 import { Button } from "@/components/ui/button";
@@ -54,7 +54,19 @@ export function PayStatementDialog({
     setPending(false);
     if (result.error) return setError(result.error);
     setOpen(false);
-    toast.success(`Paid ${formatBRL(totalCents)}`);
+    // The payment can be taken back right here, not only from Cards → History behind a confirm.
+    toast.success(`Paid ${label} · ${formatBRL(totalCents)}`, {
+      action: {
+        label: "Undo",
+        onClick: async () => {
+          const data = new FormData();
+          data.set("statementId", statementId);
+          const undone = await unpayStatementAction(data);
+          if (undone.error) toast.error(undone.error);
+          else toast(`Payment of ${label} removed`);
+        },
+      },
+    });
   }
 
   return (
@@ -63,7 +75,7 @@ export function PayStatementDialog({
         render={
           <Button
             variant={small ? "outline" : "default"}
-            className={small ? "h-9" : "h-11 w-full"}
+            className={small ? "h-11" : "h-11 w-full"}
             disabled={totalCents <= 0}
           />
         }
@@ -100,7 +112,7 @@ export function PayStatementDialog({
             </Field>
             <p className="text-xs text-muted-foreground">A statement is paid whole, from one account. To split it, transfer between your accounts first.</p>
             {short !== null && short > 0 && (
-              <p className="text-sm text-amber-700 dark:text-amber-400" role="status">
+              <p className="text-sm text-caution" role="status">
                 {formatBRL(short)} short on {from?.name}: pay from another account, or transfer first.
               </p>
             )}

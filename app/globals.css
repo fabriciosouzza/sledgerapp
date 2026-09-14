@@ -27,6 +27,9 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-positive: var(--positive);
+  --color-negative: var(--negative);
+  --color-caution: var(--caution);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -65,6 +68,11 @@
   --accent: oklch(0.97 0 0);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
+  /* Sign and status (PROMPT.md §8): green for a + amount; red for a − amount and for what is overdue or
+     over its cap; amber for at risk. Text at ≥4.5:1 on white and on --muted (the 600s were 3.7:1). */
+  --positive: oklch(0.508 0.118 165.612);
+  --negative: oklch(0.505 0.213 27.518);
+  --caution: oklch(0.555 0.163 48.998);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
   /* Focus ring at ≥3:1 on white; the primitives draw it solid, not at 50 %. */
@@ -74,6 +82,13 @@
   --chart-3: oklch(0.7 0 0);
   --chart-4: oklch(0.8 0 0);
   --chart-5: oklch(0.88 0 0);
+  /* Donut slices, largest first: darkest on white, each ≥3:1 against the card. */
+  --donut-1: oklch(0.25 0 0);
+  --donut-2: oklch(0.35 0 0);
+  --donut-3: oklch(0.43 0 0);
+  --donut-4: oklch(0.5 0 0);
+  --donut-5: oklch(0.55 0 0);
+  --donut-6: oklch(0.6 0 0);
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
@@ -101,6 +116,9 @@
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
+  --positive: oklch(0.765 0.177 163.223);
+  --negative: oklch(0.704 0.191 22.216);
+  --caution: oklch(0.828 0.189 84.429);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.65 0 0);
@@ -109,6 +127,12 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
+  --donut-1: oklch(0.95 0 0);
+  --donut-2: oklch(0.84 0 0);
+  --donut-3: oklch(0.75 0 0);
+  --donut-4: oklch(0.67 0 0);
+  --donut-5: oklch(0.6 0 0);
+  --donut-6: oklch(0.54 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -128,6 +152,25 @@
   }
   html {
     @apply font-sans;
+    /* Focus moves and in-page jumps stop above the fixed bottom nav, not under it. */
+    scroll-padding-bottom: calc(3.5rem + env(safe-area-inset-bottom) + 1rem);
+  }
+  /* A pinned Save bar or the bulk-settle bar covers about 5rem more. */
+  html:has([data-pinned-actions]) {
+    scroll-padding-bottom: calc(3.5rem + env(safe-area-inset-bottom) + 6rem);
+  }
+  @media (width >= 48rem) {
+    html {
+      scroll-padding-bottom: 1rem;
+    }
+    html:has([data-pinned-actions]) {
+      scroll-padding-bottom: 6rem;
+    }
+  }
+  /* One visible ring for every link and control that does not draw its own. */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 }
 /*

@@ -106,7 +106,7 @@ export function RecordBatchForm({ assets, today }: { assets: { id: string; name:
             <li key={a.id} className="grid grid-cols-[1fr_9rem] items-center gap-3 px-3 py-2">
               <label htmlFor={`amount-${a.id}`} className="min-w-0">
                 <span className="block truncate text-sm font-medium">{a.name}</span>
-                <span className={cn("block text-xs tabular-nums text-muted-foreground", d !== null && d < 0 && "text-red-600 dark:text-red-400")}>
+                <span className={cn("block text-xs tabular-nums text-muted-foreground", d !== null && d < 0 && "text-negative")}>
                   {d === null
                     ? `recorded ${formatBRL(a.balanceCents)}`
                     : mode === "amount"

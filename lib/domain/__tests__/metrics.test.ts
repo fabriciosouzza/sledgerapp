@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { budgetFromCaps, budgetStatus, committedCents, computeMetrics, dailyCumulativeExpense, entryTiming, spendingByCategory } from "../metrics";
+import { budgetFromCaps, budgetStatus, cappedExpenseCents, committedCents, computeMetrics, dailyCumulativeExpense, entryTiming, spendingByCategory } from "../metrics";
 import { entry, recurrence, settled } from "./fixtures";
 
 const categories = [
@@ -199,6 +199,21 @@ describe("budget from caps", () => {
   it("sums root caps, or children caps when the root has none", () => {
     expect(budgetFromCaps(cats)).toBe(350_000);
     expect(budgetFromCaps([{ id: "x", parentId: null, monthlyCapCents: null, isActive: true }])).toBeNull();
+  });
+
+  it("counts only settled expense that a cap covers", () => {
+    const row = (categoryId: string | null, amountCents: number, status: "settled" | "planned" = "settled") => ({ kind: "expense" as const, status, categoryId, amountCents });
+    const rows = [
+      row("food", 100), // capped root
+      row("food-out", 20), // child of a capped root
+      row("rent", 300), // capped child of a root without a cap
+      row("home", 50), // the uncapped root itself
+      row("old", 7), // inactive category
+      row(null, 9), // no category
+      row("food", 1_000, "planned"), // not spent yet
+      { kind: "income" as const, status: "settled" as const, categoryId: "food", amountCents: 5 },
+    ];
+    expect(cappedExpenseCents(rows, cats)).toBe(420);
   });
 
   it("classifies usage", () => {

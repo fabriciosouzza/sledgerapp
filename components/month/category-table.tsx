@@ -35,7 +35,7 @@ function Line({ line, small = false, href }: { line: CategoryLine; small?: boole
   const width = line.capUsage === null ? 0 : Math.min(100, line.capUsage * 100);
   const name = (
     <span className="flex min-w-0 items-center gap-2">
-      {!small && <CategoryIcon icon={line.icon} color={line.color} size="sm" />}
+      {!small && <CategoryIcon icon={line.icon} color={line.color} name={line.name} size="sm" />}
       <span className={cn("truncate font-medium", small ? "text-xs text-muted-foreground" : "text-sm")}>{line.name}</span>
       {href && <ChevronRight className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />}
     </span>
@@ -44,20 +44,30 @@ function Line({ line, small = false, href }: { line: CategoryLine; small?: boole
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-3">
         {href ? (
-          <Link href={href} className="flex min-h-9 min-w-0 items-center rounded-md underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring" aria-label={`${line.name}: see the entries`}>
+          <Link href={href} className="flex min-h-11 min-w-0 items-center rounded-md underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-ring" aria-label={`${line.name}: see the entries`}>
             {name}
           </Link>
         ) : (
           name
         )}
-        <span className={cn("shrink-0 font-semibold tabular-nums", small ? "text-xs" : "text-sm", over && "text-red-600 dark:text-red-400")}>
+        <span className={cn("shrink-0 font-semibold tabular-nums", small ? "text-xs" : "text-sm", over && "text-negative")}>
           {formatBRL(line.settledCents)}
         </span>
       </div>
       {(line.plannedCents > 0 || line.capCents !== null) && (
-        <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-          <span>{line.plannedCents > 0 ? `+ ${formatBRL(line.plannedCents)} planned` : ""}</span>
-          <span>{line.capCents !== null ? `cap ${formatBRL(line.capCents)}` : ""}</span>
+        <div className="space-y-0.5 text-xs text-muted-foreground">
+          {line.plannedCents > 0 && <p>+ {formatBRL(line.plannedCents)} planned</p>}
+          <p>
+            {line.capCents !== null && (
+              <>
+                cap {formatBRL(line.capCents)} ·{" "}
+                {/* Over or under in words, not only in red. */}
+                <span className={cn(over && "font-medium text-negative")}>
+                  {over ? `over by ${formatBRL(line.settledCents - line.capCents)}` : `${formatBRL(line.capCents - line.settledCents)} left`}
+                </span>
+              </>
+            )}
+          </p>
         </div>
       )}
       {line.capCents !== null && (
@@ -69,7 +79,7 @@ function Line({ line, small = false, href }: { line: CategoryLine; small?: boole
           aria-valuemax={100}
           aria-label={`${line.name} cap usage`}
         >
-          <div className={cn("h-full rounded-full", over ? "bg-red-500" : "bg-primary")} style={{ width: `${width}%` }} />
+          <div className={cn("h-full rounded-full", over ? "bg-negative" : "bg-primary")} style={{ width: `${width}%` }} />
         </div>
       )}
     </div>

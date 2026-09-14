@@ -13,6 +13,14 @@ export function ratio(numerator: number, denominator: number): number | null {
   return denominator === 0 ? null : numerator / denominator;
 }
 
+/** `0.355` → `35.5%`, `0.4` → `40%`, `1.234` → `123%`: one decimal below 100%, never a trailing `.0`. */
+export function formatPercent(r: number): string {
+  const percent = r * 100;
+  if (Math.abs(percent) >= 100) return `${Math.round(percent)}%`;
+  const rounded = Math.round(percent * 10) / 10;
+  return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)}%`;
+}
+
 /**
  * Effect of an entry on cash. Contributions and transfers are neutral to
  * income/expense metrics, so they carry no sign here (§5.2).
@@ -46,6 +54,11 @@ export function formatBRLWhole(cents: number): string {
 /** `123456` → `R$ 1.234,56`. Negative cents render with a leading minus. */
 export function formatBRL(cents: number): string {
   return brl.format(cents / 100);
+}
+
+/** `formatBRL` with a plain space after "R$", for big figures that may wrap under large text instead of pushing past the screen. */
+export function formatBRLWrap(cents: number): string {
+  return formatBRL(cents).replace(/[\u00a0\u202f]/g, " ");
 }
 
 /**

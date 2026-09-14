@@ -197,6 +197,27 @@ export function budgetFromCaps(categories: Pick<Category, "id" | "parentId" | "m
   return any ? total : null;
 }
 
+/**
+ * Settled expense the budget covers — the scope `budgetFromCaps` sums: a capped
+ * root with all its children, or a capped child of a root without a cap.
+ * Spending anywhere else has no cap to be measured against.
+ */
+export function cappedExpenseCents(
+  entries: Pick<Entry, "kind" | "status" | "categoryId" | "amountCents">[],
+  categories: Pick<Category, "id" | "parentId" | "monthlyCapCents" | "isActive">[],
+): number {
+  const byId = new Map(categories.map((c) => [c.id, c]));
+  const covered = (categoryId: string | null): boolean => {
+    const category = categoryId === null ? undefined : byId.get(categoryId);
+    if (!category) return false;
+    const root = category.parentId === null ? category : byId.get(category.parentId);
+    if (!root?.isActive) return false;
+    if (root.monthlyCapCents !== null) return true;
+    return category !== root && category.isActive && category.monthlyCapCents !== null;
+  };
+  return entries.filter((e) => e.kind === "expense" && e.status === "settled" && covered(e.categoryId)).reduce((sum, e) => sum + e.amountCents, 0);
+}
+
 export type BudgetStatus = "within" | "risk" | "over";
 
 /** Under 80% within, up to 100% at risk, beyond that over; `null` without a budget. */

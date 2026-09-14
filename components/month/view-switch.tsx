@@ -18,7 +18,7 @@ export function ViewSwitch({ view, hrefs }: { view: MonthView; hrefs: Record<Mon
           href={hrefs[item.value]}
           aria-current={view === item.value ? "page" : undefined}
           className={cn(
-            "flex h-9 items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
+            "flex h-11 items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
             view === item.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
           )}
         >

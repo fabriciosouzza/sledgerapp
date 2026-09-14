@@ -131,7 +131,7 @@ export function LoginForm({
             <button
               type="button"
               onClick={() => setMode("forgot")}
-              className="min-h-9 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              className="min-h-11 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
             >
               Forgot your password?
             </button>
@@ -160,7 +160,7 @@ export function LoginForm({
             <button
               type="button"
               onClick={() => setMode("password")}
-              className="min-h-9 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+              className="min-h-11 text-sm text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
             >
               Back to sign in
             </button>

@@ -11,7 +11,7 @@ import type { Repositories } from "@/lib/repositories";
 import { cardsOverview, type CardsOverview, type StatementDue } from "./cards";
 import { netWorthOverview } from "./netWorth";
 import { pendingMonths, type PendingMonth } from "./recurrences";
-import { monthSummary, yearSummary } from "./summary";
+import { capsOver, monthSummary, yearSummary } from "./summary";
 
 export interface AccountTile {
   account: Account;
@@ -24,7 +24,7 @@ export interface TodayOverview {
   period: Period;
   /** Σ cash account balances today; `null` with no cash account yet. */
   cashCents: number | null;
-  /** Σ planned money leaving cash in the next 7 days (expenses, transfers out, contributions) plus card statements due by then, overdue included. */
+  /** Σ planned money leaving cash by 7 days from now (expenses, transfers out, contributions) plus card statements due by then; what is already late counts too. */
   dueSoonCents: number;
   /** Card statements closed and unpaid, oldest first. */
   statementsDue: StatementDue[];
@@ -37,7 +37,7 @@ export interface TodayOverview {
   savingsCents: number;
   /** Planned entries due today (for "settle all due today"). */
   /** Planned rows dated today that are safe to settle blind: variable bills (an estimate) are left out. */
-  dueToday: Pick<Entry, "id" | "description" | "kind">[];
+  dueToday: Pick<Entry, "id" | "description" | "kind" | "amountCents">[];
   metrics: PeriodMetrics;
   insight: Insight | null;
   accounts: AccountTile[];
@@ -80,8 +80,9 @@ export async function todayOverview(repos: Repositories, userId: string, today: 
     today,
     period,
     cashCents: netWorth.cashCents,
+    // "Due by <date>" includes whatever is late: overdue entries as well as overdue statements.
     dueSoonCents:
-      upcoming.filter((e) => e.kind !== "income").reduce((sum, e) => sum + e.amountCents, 0) +
+      [...overdue, ...upcoming].filter((e) => e.kind !== "income").reduce((sum, e) => sum + e.amountCents, 0) +
       cards.toPay.filter((s) => s.daysToDue <= UPCOMING_DAYS).reduce((sum, s) => sum + s.view.totalCents, 0),
     statementsDue: cards.toPay,
     toReceiveCents: toSettle.filter((e) => e.kind === "income").reduce((sum, e) => sum + e.amountCents, 0),
@@ -90,9 +91,9 @@ export async function todayOverview(repos: Repositories, userId: string, today: 
     savingsCents: netWorth.balances.filter((b) => b.account.type === "savings").reduce((sum, b) => sum + (b.balanceCents ?? 0), 0),
     dueToday: upcoming
       .filter((e) => e.date === today && !(e.recurrenceId !== null && variable.has(e.recurrenceId)))
-      .map(({ id, description, kind }) => ({ id, description, kind })),
+      .map(({ id, description, kind, amountCents }) => ({ id, description, kind, amountCents })),
     metrics: summary.metrics,
-    insight: monthInsight(summary.metrics, summary.previous, { throughDay: summary.delta.throughDay, rollingRate }),
+    insight: monthInsight(summary.metrics, summary.previous, { throughDay: summary.delta.throughDay, rollingRate, capsOver: capsOver(summary.categories) }),
     accounts: netWorth.balances
       .filter((b) => b.account.isActive)
       .sort((a, b) => Number(b.balanceCents !== null && b.balanceCents !== 0) - Number(a.balanceCents !== null && a.balanceCents !== 0)),

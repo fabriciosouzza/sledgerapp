@@ -3,19 +3,18 @@ import { formatBRL } from "@/lib/domain/money";
 import type { EntryKind } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
-/** Red for expense, green for income, plain for moves between accounts (§8). */
+/** Plain for money out, with a true minus; green only for money in. In a list of expenses the sign carries no news (§8, DESIGN.md 2026-09-14). */
 export function Amount({ kind, cents, className }: { kind: EntryKind; cents: number; className?: string }) {
   const sign = displaySign(kind);
   return (
     <span
       className={cn(
         "tabular-nums",
-        sign === "-" && "text-red-600 dark:text-red-400",
-        sign === "+" && "text-emerald-600 dark:text-emerald-400",
+        sign === "+" && "text-positive",
         className,
       )}
     >
-      {sign}
+      {sign === "-" ? "−" : sign}
       {formatBRL(cents)}
     </span>
   );

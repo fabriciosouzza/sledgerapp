@@ -6,6 +6,7 @@ import { addMonths, parseIsoDate, periodEnd, periodOf, periodRange, periodStart,
 import {
   budgetFromCaps,
   budgetStatus,
+  cappedExpenseCents,
   computeMetrics,
   dailyCumulativeExpense,
   spendingByCategory,
@@ -27,8 +28,12 @@ export interface CategoryLine extends Omit<CategorySpending, "children"> {
 
 export interface BudgetMonth {
   period: Period;
+  /** Settled expense, all of it. */
   expenseCents: number;
+  /** The part in capped categories: what the budget measures. */
+  spentCents: number;
   budgetCents: number | null;
+  /** From `spentCents`: spending without a cap has no budget to exceed. */
   status: BudgetStatus | null;
 }
 
@@ -40,6 +45,8 @@ export interface MonthSummary {
   entries: Entry[];
   /** Σ category caps (DESIGN.md §5); `null` without caps. */
   budgetCents: number | null;
+  /** Settled expense in capped categories, the part the budget measures. */
+  budgetSpentCents: number;
   /** Installment parts falling in this month — committed before any choice, like the fixed cost. */
   installmentsCents: number;
   budgetStatus: BudgetStatus | null;
@@ -55,6 +62,14 @@ export interface MonthSummary {
   delta: { income: number | null; expense: number | null; throughDay: number | null };
   /** Last month's metrics, cut the same way, for the insight. `null` when it has no entries. */
   previous: PeriodMetrics | null;
+}
+
+/** Capped categories past their cap, sub-categories included: the month's actionable news. */
+export function capsOver(lines: CategoryLine[]): { name: string; overCents: number }[] {
+  return lines
+    .flatMap((line) => [line, ...line.children])
+    .filter((line) => line.capCents !== null && line.settledCents > line.capCents)
+    .map((line) => ({ name: line.name, overCents: line.settledCents - (line.capCents ?? 0) }));
 }
 
 const HISTORY_MONTHS = 6;
@@ -104,8 +119,10 @@ export async function monthSummary(
   const history: BudgetMonth[] = periodRange(historyFrom, period).map((p) => {
     const rows = p === period ? entries : (byPeriod.get(p) ?? []);
     const expenseCents = rows.filter((e) => e.kind === "expense" && e.status === "settled").reduce((sum, e) => sum + e.amountCents, 0);
-    return { period: p, expenseCents, budgetCents, status: budgetStatus(expenseCents, budgetCents) };
+    const spentCents = cappedExpenseCents(rows, categories);
+    return { period: p, expenseCents, spentCents, budgetCents, status: budgetStatus(spentCents, budgetCents) };
   });
+  const budgetSpentCents = cappedExpenseCents(entries, categories);
 
   return {
     period,
@@ -114,8 +131,9 @@ export async function monthSummary(
     planned: entries.filter((e) => e.status === "planned"),
     entries,
     budgetCents,
+    budgetSpentCents,
     installmentsCents: entries.filter((e) => e.kind === "expense" && e.installmentGroupId !== null).reduce((sum, e) => sum + e.amountCents, 0),
-    budgetStatus: budgetStatus(metrics.expenseCents, budgetCents),
+    budgetStatus: budgetStatus(budgetSpentCents, budgetCents),
     dailySpend: {
       current: dailyCumulativeExpense(entries, period),
       previous: dailyCumulativeExpense(byPeriod.get(addMonths(period, -1)) ?? [], addMonths(period, -1)),

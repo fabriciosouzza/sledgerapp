@@ -29,7 +29,7 @@ export function MonthsStatus({ months }: { months: MonthStatus[] }) {
                 </span>
               </span>
               {done ? (
-                <Check className="size-4 text-emerald-600 dark:text-emerald-400" aria-label="All applied" />
+                <Check className="size-4 text-positive" aria-label="All applied" />
               ) : (
                 <span className="flex items-center gap-1 text-xs font-medium text-primary">
                   Apply in Review <ArrowRight className="size-3" aria-hidden />

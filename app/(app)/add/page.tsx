@@ -35,10 +35,6 @@ export default async function AddPage(props: PageProps<"/add">) {
     );
   }
 
-  return (
-    <>
-      <PageHeader title="Add" />
-      <EntryForm key={kind ?? "any"} accounts={activeAccounts} categories={activeCategories} today={today()} defaultKind={kind} />
-    </>
-  );
+  // The form draws its own header: the title confirms the kind chosen in the add sheet.
+  return <EntryForm key={kind ?? "any"} accounts={activeAccounts} categories={activeCategories} today={today()} defaultKind={kind} />;
 }

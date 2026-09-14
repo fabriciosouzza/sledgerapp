@@ -12,7 +12,7 @@ Where an idea would deviate, it is flagged and needs a decision.
 
 ## Keep as is
 
-- The palette (neutral dark with the lime accent) and dark-first look.
+- The palette (neutral dark, monochrome: no brand accent, decided 2026-09-14) and dark-first look.
 - Bottom nav with five items: Today · Add · Month · Portfolio · More (§7).
 - English UI, pt-BR formatting.
 
@@ -254,6 +254,87 @@ Each step ships on its own commit; 360px pass on every screen touched (§8).
 - Recurring entries are applied from Review (with per-month amounts);
   `/recurrences` only reports where each month stands.
 
+## Decisions (2026-09-14)
+
+After a design critique of the signed-in app:
+
+- **What needs you comes first on Today** (reopens "overdue below the
+  fold"). Closed card statements and overdue entries open the screen above
+  cash on hand, and head the left column on desktop. With nothing due, Today
+  opens on the cash as before. Both blocks always sit in that slot, so a row
+  settled from it stays on screen (and undoable) after the refresh.
+- The month insight is a line under cash on hand (headline, then its detail)
+  linking to Review, not a card with a ring. Quick actions follow Next 7 days.
+- Review lists "Still planned" oldest first, so what is overdue leads.
+- **The budget measures what it caps.** Its %, status and the "Last 6 months"
+  bars compare the caps with settled spending in capped categories; spending
+  in categories without a cap is shown beside it, not counted against it.
+- Red is for what is overdue, over a cap or below zero (a signed leftover or
+  rate); amber for at risk; green for money in and a positive signed value.
+  Amounts in lists are plain, with a true minus: in a list of expenses the
+  sign carries no news (reopened the same day, after the second critique).
+  Totals whose label already says the direction are plain too. The colours
+  are the `positive`, `negative` and `caution` tokens in `globals.css` (700
+  shades in light mode for contrast).
+- **Add confirms the kind instead of asking again** (deviation from `PROMPT.md`
+  §7, decided by the owner). Opened from the + sheet, the form is titled "New
+  expense" with a Change button that brings the segmented control back;
+  `/add` without a kind still opens on the control.
+- The entry form (add and edit) keeps Save in a bar pinned above the bottom
+  nav, and a failed save shows its error in that bar. On those two screens
+  the raised + lies flat as an "Add" tab so it does not sit on Save. Fields
+  run amount → description → category | account → already paid → date |
+  paid on; installments, repeat monthly and notes sit behind a disclosure
+  that names what is switched on.
+- Settling is hard to trigger by accident: a swipe counts only once it is
+  clearly sideways (a diagonal scroll never settles), and a second tap right
+  after settling does not undo it. The Settled toast sits at the bottom,
+  above the nav, with Undo and Other day (the date sheet, no press-and-hold
+  needed). Focus scrolls stop above the nav and pinned bars, and every link
+  and control without a ring of its own gets a 2px outline.
+- Today's due tile reads "Due by dd/MM" and counts everything to pay by then,
+  overdue entries included (they were left out while overdue statements were
+  in). A category without an icon shows its initial, not "…"; the seed gives
+  the default categories icons, and no colours.
+- Polish of 2026-09-14: the open card statement is no longer a card inside a
+  card, and past statements are one compact row each with an icon to undo a
+  payment. Captions are 12px (nav labels stay 11px). Contributions are
+  visible in the year chart. Rates read the same everywhere: one decimal
+  below 100%, no trailing ".0".
+- After the second critique (28/40): a card purchase follows its statement.
+  It is late only once the statement's due date passes, has no settle circle
+  (a link to the statement instead) and never joins bulk settle. Cards opens
+  on "To pay" (closed statements not yet paid, full-width Pay); the open
+  statement is a summary with its purchases one tap away; paid ones are
+  "History".
+- §8 in practice: the settle circle, Pay and inline links are 44px; page
+  headers wrap their actions under the title on narrow screens; under large
+  text an entry row puts the amount under the description and hides the
+  category disc.
+- Review leads with the month's verdict (savings rate, leftover, budget) and
+  what is still planned; the other numbers and every chart follow, and the
+  formulas live in the guide ("The numbers").
+- After the third critique (29/40): totals show settled and planned apart
+  (Entries as on Review), and "Due by" says what it includes. Saves, bulk
+  settles and statement payments say what and how much, with Undo (a save
+  also offers Edit). Settle buttons read the amount, a skip link leads to the
+  nav, and the settle hint can be dismissed. Capped categories say "over by"
+  or "left" in words. The donut sorts largest first in six greys at ≥3:1 and
+  labels slices of 10% or more; categories still get no colours. Entries
+  opens on what happened, with the days after today folded into one row.
+- After the fourth critique (30/40): the headlines count blown caps. Today's
+  sentence leads with a category over its cap, and Review's verdict reads
+  "2 caps over" in red. Today lists the week before the account strip
+  (reopens the §2 order); on wide screens the left column stays in view.
+  With nothing remembered, Add starts on "Pick a category" (required), and a
+  save, a bulk settle or "settle due today" says what, how much and where,
+  with Undo. A card purchase shows a card icon and its statement month,
+  announced as "On the … statement, due …". Entries shows In / Out / Moved
+  as a small grid beside the count; filters, donut legend and list headers
+  reflow under large text; switches have a 44px hit area.
+- **No brand accent.** The palette stays neutral monochrome and colour
+  carries meaning only; the lime from the reference is not coming.
+
 ## Done
 
 | Item | Commit |
@@ -287,7 +368,7 @@ last three months still to apply and links to Review's preview (a one-tap
 apply was tried and removed: a template recorded by hand in an earlier month
 would be duplicated); Review's card gained per-row skip; a month in progress is compared
 with the previous one up to the same day, and not at all in its first week.
-Left as they are, by decision: overdue below the fold, the "cash on hand"
+Left as they are, by decision: overdue below the fold (reopened on 2026-09-14), the "cash on hand"
 wording, checking what was typed in Entries, and the number of charts on
 Review. Paying a statement that has no recorded purchases is still not
 possible — the statement is the purchases.

@@ -23,7 +23,7 @@ export default async function NetWorthPage() {
         <section className="grid grid-cols-2 gap-2 md:grid-cols-3" aria-label="Current">
           <Stat label={`Net worth · ${formatPeriodLong(current.period)}`} cents={current.netWorthCents} tone="signed" className="col-span-2" />
           <Stat label="Cash" cents={current.cashCents} hint="accounts below" />
-          <Stat label="Debt" cents={current.debtCents} tone="negative" hint="unpaid statements" />
+          <Stat label="Debt" cents={current.debtCents} hint="unpaid statements" />
           <Stat label="Investments" cents={current.investmentsCents} hint="from movements" className="col-span-2" />
         </section>
 
@@ -37,7 +37,7 @@ export default async function NetWorthPage() {
           {active.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border p-6 text-center">
               <p className="text-sm text-muted-foreground">No cash account yet.</p>
-              <Link href="/settings/accounts/new" className="mt-2 inline-flex min-h-9 items-center text-sm text-primary hover:underline">
+              <Link href="/settings/accounts/new" className="mt-2 inline-flex min-h-11 items-center text-sm text-primary hover:underline">
                 Add one
               </Link>
             </div>

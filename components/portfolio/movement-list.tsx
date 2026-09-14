@@ -33,7 +33,7 @@ export function MovementList({ movements }: { movements: AssetMovement[] }) {
                 {m.notes ? ` · ${m.notes}` : ""}
               </span>
             </span>
-            <span className={cn("shrink-0 text-sm font-semibold tabular-nums", signed < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-600 dark:text-emerald-400")}>
+            <span className={cn("shrink-0 text-sm font-semibold tabular-nums", signed < 0 ? "text-negative" : "text-positive")}>
               {signed > 0 ? "+" : ""}
               {formatBRL(signed)}
             </span>

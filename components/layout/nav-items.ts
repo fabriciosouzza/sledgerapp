@@ -28,6 +28,11 @@ export const MORE_ITEMS: { href: "/entries" | "/cards" | "/recurrences" | "/net-
 /** Screens reachable from "More" that share its highlighted nav item. */
 export const MORE_PATHS = ["/more", "/entries", "/cards", "/recurrences", "/net-worth", "/settings", "/guide", "/accounts"];
 
+/** Screens whose form pins its Save bar above the nav: the raised "+" would sit on it, so it lies flat there. */
+export function isFormScreen(pathname: string): boolean {
+  return pathname === "/add" || /^\/entries\/[^/]+$/.test(pathname);
+}
+
 export function isNavActive(href: NavItem["href"], pathname: string): boolean {
   if (href === "/more") return MORE_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`));
   if (href === "/") return pathname === "/";
