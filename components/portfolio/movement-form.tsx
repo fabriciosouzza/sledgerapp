@@ -71,10 +71,9 @@ export function MovementForm({
   const [lastKinds, rememberKind] = useLocalMemory<Record<string, MovementKind>>(KIND_MEMORY, {});
   const kind: MovementKind = kindChoice ?? (editing ? "contribution" : (lastKinds[assetId] ?? "contribution"));
 
-  const cash = accounts.filter((a) => a.type !== "brokerage" && a.type !== "credit_card");
-  const brokerages = accounts.filter((a) => a.type === "brokerage");
+  const cash = accounts.filter((a) => a.type !== "credit_card");
   const hasHistory = assetId in balances;
-  const canPair = (kind === "contribution" || kind === "withdrawal") && cash.length > 0 && brokerages.length > 0;
+  const canPair = (kind === "contribution" || kind === "withdrawal") && cash.length > 0;
   const pair = pairChoice ?? (hasHistory || kind === "withdrawal");
   const hint = MOVEMENT_KINDS.find((k) => k.value === kind)?.hint;
   const recorded = balances[assetId] ?? 0;
@@ -87,10 +86,7 @@ export function MovementForm({
       if (adjustment === null || adjustment === 0) return setError(byBalance ? "The broker balance equals what is recorded: nothing to adjust." : "Enter an amount.");
       formData.set("amountCents", toField(adjustment));
     }
-    if (!(canPair && pair)) {
-      formData.delete("fromAccountId");
-      formData.delete("brokerageAccountId");
-    }
+    if (!(canPair && pair)) formData.delete("cashAccountId");
     setError(undefined);
     startTransition(async () => {
       const result = editing ? await updateMovementAction(formData) : await addMovementAction(formData);
@@ -209,34 +205,23 @@ export function MovementForm({
               <p className="text-xs text-muted-foreground">
                 {kind === "contribution"
                   ? hasHistory
-                    ? "A contribution entry from your cash account to the brokerage."
+                    ? "A contribution entry leaving your cash account, paired with this movement."
                     : "First movement of this asset. Leave it off if this is a balance you already hold — that money left the bank long ago."
-                  : "A transfer from the brokerage back to your cash account."}
+                  : "A redemption entry reaching your cash account, paired with this movement."}
               </p>
             </div>
             <Switch id="pair" checked={canPair && pair} onCheckedChange={setPairChoice} disabled={!canPair} />
           </div>
           {canPair && pair && (
-            <div className="grid grid-cols-2 gap-3">
-              <Field label={kind === "contribution" ? "From" : "To"} htmlFor="fromAccountId">
-                <NativeSelect id="fromAccountId" name="fromAccountId" defaultValue={cash[0]?.id} className="w-full [&>select]:h-11">
-                  {cash.map((a) => (
-                    <NativeSelectOption key={a.id} value={a.id}>
-                      {a.name}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
-              </Field>
-              <Field label={kind === "contribution" ? "To brokerage" : "From brokerage"} htmlFor="brokerageAccountId">
-                <NativeSelect id="brokerageAccountId" name="brokerageAccountId" defaultValue={brokerages[0]?.id} className="w-full [&>select]:h-11">
-                  {brokerages.map((a) => (
-                    <NativeSelectOption key={a.id} value={a.id}>
-                      {a.name}
-                    </NativeSelectOption>
-                  ))}
-                </NativeSelect>
-              </Field>
-            </div>
+            <Field label={kind === "contribution" ? "From" : "To"} htmlFor="cashAccountId">
+              <NativeSelect id="cashAccountId" name="cashAccountId" defaultValue={cash[0]?.id} className="w-full [&>select]:h-11">
+                {cash.map((a) => (
+                  <NativeSelectOption key={a.id} value={a.id}>
+                    {a.name}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </Field>
           )}
         </div>
       )}

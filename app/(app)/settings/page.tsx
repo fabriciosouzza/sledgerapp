@@ -8,8 +8,8 @@ import { getContext } from "@/lib/services/context";
 
 const SECTIONS = [
   { href: "/settings/profile", label: "Profile", description: "Name, email, password", icon: UserRound },
-  { href: "/settings/accounts", label: "Accounts", description: "Cash, cards with closing and due days, brokerage", icon: Landmark },
-  { href: "/settings/categories", label: "Categories", description: "Caps, benefits, sub-categories", icon: Tags },
+  { href: "/settings/accounts", label: "Accounts", description: "Cash, savings with a goal, cards with closing and due days", icon: Landmark },
+  { href: "/settings/categories", label: "Categories", description: "Caps, earmarked money, sub-categories", icon: Tags },
   { href: "/settings/assets", label: "Assets", description: "What you invest in", icon: Coins },
 ] as const;
 

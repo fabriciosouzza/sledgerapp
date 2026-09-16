@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { today } from "@/lib/domain/dates";
+import { allocationField } from "@/lib/schemas/allocation";
 import { optionalIsoDate } from "@/lib/schemas/entries";
 import { settleEntry, unsettleEntry } from "@/lib/services/entries";
 import { json, withUser } from "../../../_lib/handler";
@@ -8,9 +9,11 @@ const bodySchema = z.object({
   /** `false` reverts the settle. */
   settled: z.boolean().default(true),
   settledOn: optionalIsoDate,
+  /** Where a contribution goes (§5.2): [{ assetId, amountCents }], summing to the entry. */
+  allocation: allocationField,
 });
 
-/** PATCH /api/entries/:id/settle  { settledOn?: "2026-11-05", settled?: false } */
+/** PATCH /api/entries/:id/settle  { settledOn?: "2026-11-05", settled?: false, allocation?: [{ assetId, amountCents }] } */
 export async function PATCH(request: Request, ctx: RouteContext<"/api/entries/[id]/settle">) {
   const { id } = await ctx.params;
   return withUser(async ({ userId, repos }) => {
@@ -18,7 +21,7 @@ export async function PATCH(request: Request, ctx: RouteContext<"/api/entries/[i
     const parsed = bodySchema.safeParse(text.trim() === "" ? {} : JSON.parse(text));
     if (!parsed.success) return json({ error: parsed.error.issues[0]?.message ?? "Invalid body." }, 400);
     const raw = { data: parsed.data };
-    const entry = raw.data.settled ? await settleEntry(repos, userId, id, raw.data.settledOn ?? today()) : await unsettleEntry(repos, userId, id);
+    const entry = raw.data.settled ? await settleEntry(repos, userId, id, raw.data.settledOn ?? today(), raw.data.allocation) : await unsettleEntry(repos, userId, id);
     return json({ entry });
   });
 }

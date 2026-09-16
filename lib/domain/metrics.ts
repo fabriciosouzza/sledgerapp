@@ -1,6 +1,7 @@
 // Period metrics (PROMPT.md §5.10), computed from the entries of one period.
-// Transfers never enter any of these; contributions are not expenses; a
-// division by zero returns `null`, which the UI renders as `—`.
+// Transfers never enter any of these; contributions are not expenses and
+// redemptions are not income; a division by zero returns `null`, which the
+// UI renders as `—`.
 
 import { dayOf, daysInMonth, parsePeriod, periodOf } from "./dates";
 import { ratio, sumCents } from "./money";
@@ -11,10 +12,13 @@ export interface PeriodMetrics {
   incomeCents: number;
   expenseCents: number;
   contributionsCents: number;
-  benefitsCents: number;
+  /** The user's own money back from investments: not income (§5.2). */
+  redemptionsCents: number;
+  /** Income in earmarked categories (§5.8). */
+  earmarkedCents: number;
   leftoverCents: number;
   savingsRate: number | null;
-  savingsRateExBenefits: number | null;
+  savingsRateExEarmarked: number | null;
   fixedCostCents: number;
   monthsOfRunway: number | null;
   /** Planned, not yet settled, in the same period. */
@@ -24,19 +28,20 @@ export interface PeriodMetrics {
 
 export interface MetricsInput {
   entries: Entry[];
-  categories: Pick<Category, "id" | "isBenefit">[];
+  categories: Pick<Category, "id" | "isEarmarked">[];
   recurrences: Recurrence[];
   /** Cash on hand; `null` when unknown (no cash account yet) so runway stays `null`. */
   cashCents: number | null;
 }
 
 export function computeMetrics(input: MetricsInput): PeriodMetrics {
-  const benefitIds = new Set(input.categories.filter((c) => c.isBenefit).map((c) => c.id));
+  const earmarkedIds = new Set(input.categories.filter((c) => c.isEarmarked).map((c) => c.id));
 
   let income = 0;
   let expense = 0;
   let contributions = 0;
-  let benefits = 0;
+  let redemptions = 0;
+  let earmarked = 0;
   let plannedIncome = 0;
   let plannedExpense = 0;
 
@@ -45,13 +50,16 @@ export function computeMetrics(input: MetricsInput): PeriodMetrics {
       switch (e.kind) {
         case "income":
           income += e.amountCents;
-          if (e.categoryId !== null && benefitIds.has(e.categoryId)) benefits += e.amountCents;
+          if (e.categoryId !== null && earmarkedIds.has(e.categoryId)) earmarked += e.amountCents;
           break;
         case "expense":
           expense += e.amountCents;
           break;
         case "contribution":
           contributions += e.amountCents;
+          break;
+        case "redemption":
+          redemptions += e.amountCents;
           break;
         case "transfer":
           break;
@@ -69,10 +77,11 @@ export function computeMetrics(input: MetricsInput): PeriodMetrics {
     incomeCents: income,
     expenseCents: expense,
     contributionsCents: contributions,
-    benefitsCents: benefits,
-    leftoverCents: income - expense - contributions,
+    redemptionsCents: redemptions,
+    earmarkedCents: earmarked,
+    leftoverCents: income - expense - contributions + redemptions,
     savingsRate: ratio(income - expense, income),
-    savingsRateExBenefits: ratio(income - expense, income - benefits),
+    savingsRateExEarmarked: ratio(income - expense, income - earmarked),
     fixedCostCents: fixedCost,
     monthsOfRunway: input.cashCents === null ? null : ratio(input.cashCents, fixedCost),
     plannedIncomeCents: plannedIncome,

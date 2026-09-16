@@ -2,18 +2,19 @@
 
 import { revalidatePath } from "next/cache";
 import { isIsoDate, today } from "@/lib/domain/dates";
-import type { Entry, Period } from "@/lib/domain/types";
+import type { AllocationLine, Entry, Period } from "@/lib/domain/types";
 import type { EntryFilters } from "@/lib/repositories";
+import { allocationField, readAllocationFields } from "@/lib/schemas/allocation";
 import { entryUpdateSchema, installmentScopeSchema } from "@/lib/schemas/entries";
 import { firstIssue, formToObject } from "@/lib/schemas/form";
 import { getContext } from "@/lib/services/context";
-import { deleteEntry, listEntries, settleEntries, settleEntry, unsettleEntries, unsettleEntry, updateEntry } from "@/lib/services/entries";
+import { deleteEntry, listEntries, settleEntries, settleEntry, suggestAllocation, unsettleEntries, unsettleEntry, updateEntry, type AllocationSuggestion } from "@/lib/services/entries";
 import { ServiceError } from "@/lib/services/errors";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
 function revalidate() {
-  for (const path of ["/", "/entries", "/review", "/cards", "/net-worth", "/accounts/[id]"]) revalidatePath(path, "page");
+  for (const path of ["/", "/entries", "/review", "/cards", "/net-worth", "/accounts/[id]", "/portfolio", "/portfolio/[id]"]) revalidatePath(path, "page");
 }
 
 async function run(fn: () => Promise<unknown>): Promise<ActionResult> {
@@ -27,10 +28,24 @@ async function run(fn: () => Promise<unknown>): Promise<ActionResult> {
   }
 }
 
-export async function settleEntryAction(id: string, settledOn?: string): Promise<ActionResult> {
+/** `allocation`: where a contribution goes (§5.2); other kinds ignore it. */
+export async function settleEntryAction(id: string, settledOn?: string, allocation?: AllocationLine[]): Promise<ActionResult> {
   const { userId, repos } = await getContext();
   if (settledOn !== undefined && !isIsoDate(settledOn)) return { ok: false, error: "Pick a date." };
-  return run(() => settleEntry(repos, userId, id, settledOn ?? today()));
+  const lines = allocationField.safeParse(allocation ?? null);
+  if (!lines.success) return { ok: false, error: firstIssue(lines.error) };
+  return run(() => settleEntry(repos, userId, id, settledOn ?? today(), lines.data));
+}
+
+/** What the allocation sheet opens with: the assets, and the split the recurrence suggests. */
+export async function allocationSuggestionAction(id: string): Promise<{ ok: true; suggestion: AllocationSuggestion } | { ok: false; error: string }> {
+  const { userId, repos } = await getContext();
+  try {
+    return { ok: true, suggestion: await suggestAllocation(repos, userId, id) };
+  } catch (error) {
+    if (error instanceof ServiceError) return { ok: false, error: error.message };
+    throw error;
+  }
 }
 
 export async function unsettleEntryAction(id: string): Promise<ActionResult> {
@@ -68,7 +83,7 @@ export type UpdateEntryActionResult = { ok: true; count: number } | { ok: false;
 
 export async function updateEntryAction(formData: FormData): Promise<UpdateEntryActionResult> {
   const { userId, repos } = await getContext();
-  const parsed = entryUpdateSchema.safeParse(formToObject(formData));
+  const parsed = entryUpdateSchema.safeParse({ ...formToObject(formData), allocation: readAllocationFields(formData).allocation });
   if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
   try {
     const updated = await updateEntry(repos, userId, parsed.data);

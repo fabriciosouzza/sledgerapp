@@ -6,10 +6,11 @@ const metrics = (overrides: Partial<PeriodMetrics> = {}): PeriodMetrics => ({
   incomeCents: 0,
   expenseCents: 0,
   contributionsCents: 0,
-  benefitsCents: 0,
+  redemptionsCents: 0,
+  earmarkedCents: 0,
   leftoverCents: 0,
   savingsRate: null,
-  savingsRateExBenefits: null,
+  savingsRateExEarmarked: null,
   fixedCostCents: 0,
   monthsOfRunway: null,
   plannedIncomeCents: 0,
@@ -38,8 +39,8 @@ describe("monthInsight", () => {
   });
 
   it("falls back to the savings rate without a comparable last month", () => {
-    const insight = monthInsight(metrics({ incomeCents: 500_000, expenseCents: 300_000, savingsRate: 0.4, benefitsCents: 50_000, savingsRateExBenefits: 0.44 }), null);
-    expect(insight).toMatchObject({ headline: "You kept 40% of what came in", detail: "44% ex-benefits", tone: "good" });
+    const insight = monthInsight(metrics({ incomeCents: 500_000, expenseCents: 300_000, savingsRate: 0.4, earmarkedCents: 50_000, savingsRateExEarmarked: 0.44 }), null);
+    expect(insight).toMatchObject({ headline: "You kept 40% of what came in", detail: "44% ex-earmarked", tone: "good" });
   });
 
   it("says when spending exceeds income", () => {

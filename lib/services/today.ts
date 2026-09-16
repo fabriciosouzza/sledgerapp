@@ -4,6 +4,7 @@
 import { isCreditCard } from "@/lib/domain/accounts";
 import { addDays, addMonths, periodOf } from "@/lib/domain/dates";
 import { monthInsight, type Insight } from "@/lib/domain/insights";
+import { needsAllocation } from "@/lib/domain/entries";
 import { entryTiming, type PeriodMetrics } from "@/lib/domain/metrics";
 import type { NetWorthPoint } from "@/lib/domain/netWorth";
 import type { Account, Entry, IsoDate, Period } from "@/lib/domain/types";
@@ -36,7 +37,7 @@ export interface TodayOverview {
   /** Part of the cash that sits in savings accounts. */
   savingsCents: number;
   /** Planned entries due today (for "settle all due today"). */
-  /** Planned rows dated today that are safe to settle blind: variable bills (an estimate) are left out. */
+  /** Planned rows dated today that are safe to settle blind: variable bills (an estimate) and contributions (they need an allocation) are left out. */
   dueToday: Pick<Entry, "id" | "description" | "kind" | "amountCents">[];
   metrics: PeriodMetrics;
   insight: Insight | null;
@@ -90,7 +91,7 @@ export async function todayOverview(repos: Repositories, userId: string, today: 
     toReceiveFrom: toSettle.filter((e) => e.kind === "income").reduce<IsoDate | null>((min, e) => (min === null || e.date < min ? e.date : min), null),
     savingsCents: netWorth.balances.filter((b) => b.account.type === "savings").reduce((sum, b) => sum + (b.balanceCents ?? 0), 0),
     dueToday: upcoming
-      .filter((e) => e.date === today && !(e.recurrenceId !== null && variable.has(e.recurrenceId)))
+      .filter((e) => e.date === today && !needsAllocation(e.kind) && !(e.recurrenceId !== null && variable.has(e.recurrenceId)))
       .map(({ id, description, kind, amountCents }) => ({ id, description, kind, amountCents })),
     metrics: summary.metrics,
     insight: monthInsight(summary.metrics, summary.previous, { throughDay: summary.delta.throughDay, rollingRate, capsOver: capsOver(summary.categories) }),

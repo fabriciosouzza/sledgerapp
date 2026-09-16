@@ -1,21 +1,21 @@
 // Account balances are derived (DESIGN.md, decided 2026-09-13): an account
 // starts at its opening balance on its opening date, and every settled entry
-// since then moves it. Cards are debt (their statements, §5.6) and brokerages
-// are investments (their movements, §5.7); only cash accounts have a balance
-// here.
+// since then moves it. Cards are debt (their statements, §5.6) and investments
+// are assets (their movements, §5.7); only cash accounts have a balance here.
 
 import { isCashAccount } from "./accounts";
 import type { Account, Entry, IsoDate } from "./types";
 
 /**
  * How a settled entry moves `accountId`: money leaves the source account and
- * arrives at the counter account. Contributions leave cash and land in a
- * brokerage, which is not a cash balance, so only the leaving side counts.
+ * arrives at the counter account. A contribution leaves cash for the
+ * portfolio and a redemption brings it back (§5.2): their other side is an
+ * asset, never an account, so only the cash side counts here.
  */
 export function entryEffectOn(entry: Pick<Entry, "kind" | "amountCents" | "accountId" | "counterAccountId">, accountId: string): number {
   let effect = 0;
   if (entry.accountId === accountId) {
-    effect += entry.kind === "income" ? entry.amountCents : -entry.amountCents;
+    effect += entry.kind === "income" || entry.kind === "redemption" ? entry.amountCents : -entry.amountCents;
   }
   if (entry.counterAccountId === accountId && entry.kind === "transfer") {
     effect += entry.amountCents;

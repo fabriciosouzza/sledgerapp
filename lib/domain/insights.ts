@@ -40,7 +40,7 @@ export function monthInsight(
   const rateDetail =
     rate === null
       ? null
-      : `Savings rate ${share(rate)}${current.savingsRateExBenefits !== null && current.benefitsCents > 0 ? ` · ${share(current.savingsRateExBenefits)} ex-benefits` : ""}`;
+      : `Savings rate ${share(rate)}${current.savingsRateExEarmarked !== null && current.earmarkedCents > 0 ? ` · ${share(current.savingsRateExEarmarked)} ex-earmarked` : ""}`;
 
   // A blown cap is news the owner can act on this week: it outranks how spending compares with last month.
   const capsOver = options.capsOver ?? [];
@@ -69,8 +69,8 @@ export function monthInsight(
       detail:
         rate < 0 && rollingDetail
           ? `${rollingDetail} · this month is not over`
-          : current.benefitsCents > 0 && current.savingsRateExBenefits !== null
-            ? `${share(current.savingsRateExBenefits)} ex-benefits`
+          : current.earmarkedCents > 0 && current.savingsRateExEarmarked !== null
+            ? `${share(current.savingsRateExEarmarked)} ex-earmarked`
             : `${formatBRL(current.incomeCents - current.expenseCents)} left after expenses`,
       ring: rate,
       tone: rate >= 0.2 ? "good" : rate >= 0 ? "neutral" : "bad",

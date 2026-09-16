@@ -76,11 +76,6 @@ export default async function AccountPage(props: PageProps<"/accounts/[id]">) {
             )}
           </section>
         )}
-        {!isCashAccount(account) && (
-          <p className="text-sm text-muted-foreground">
-            A brokerage holds investments; its value is on <Link href="/portfolio" className="text-primary hover:underline">Portfolio</Link>. Below, the cash that went in and out.
-          </p>
-        )}
 
         <MonthPicker period={month} basePath={`/accounts/${account.id}`} />
 

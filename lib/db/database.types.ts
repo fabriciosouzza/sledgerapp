@@ -186,7 +186,7 @@ export type Database = {
           icon: string | null
           id: string
           is_active: boolean
-          is_benefit: boolean
+          is_earmarked: boolean
           monthly_cap_cents: number | null
           name: string
           parent_id: string | null
@@ -201,7 +201,7 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
-          is_benefit?: boolean
+          is_earmarked?: boolean
           monthly_cap_cents?: number | null
           name: string
           parent_id?: string | null
@@ -216,7 +216,7 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
-          is_benefit?: boolean
+          is_earmarked?: boolean
           monthly_cap_cents?: number | null
           name?: string
           parent_id?: string | null
@@ -338,6 +338,51 @@ export type Database = {
             columns: ["statement_id", "user_id"]
             isOneToOne: false
             referencedRelation: "statements"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      recurrence_allocations: {
+        Row: {
+          asset_id: string
+          created_at: string
+          id: string
+          recurrence_id: string
+          share_percent: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          id?: string
+          recurrence_id: string
+          share_percent: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          id?: string
+          recurrence_id?: string
+          share_percent?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurrence_allocations_asset_fkey"
+            columns: ["asset_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id", "user_id"]
+          },
+          {
+            foreignKeyName: "recurrence_allocations_recurrence_fkey"
+            columns: ["recurrence_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "recurrences"
             referencedColumns: ["id", "user_id"]
           },
         ]
@@ -475,7 +520,6 @@ export type Database = {
         | "savings"
         | "cash"
         | "credit_card"
-        | "brokerage"
         | "other"
       asset_class:
         | "fixed_income"
@@ -484,7 +528,12 @@ export type Database = {
         | "stocks"
         | "reits"
         | "other"
-      entry_kind: "income" | "expense" | "contribution" | "transfer"
+      entry_kind:
+        | "income"
+        | "expense"
+        | "contribution"
+        | "redemption"
+        | "transfer"
       entry_source: "manual" | "recurrence" | "installment"
       entry_status: "planned" | "settled"
       movement_kind:
@@ -628,7 +677,6 @@ export const Constants = {
         "savings",
         "cash",
         "credit_card",
-        "brokerage",
         "other",
       ],
       asset_class: [
@@ -639,7 +687,13 @@ export const Constants = {
         "reits",
         "other",
       ],
-      entry_kind: ["income", "expense", "contribution", "transfer"],
+      entry_kind: [
+        "income",
+        "expense",
+        "contribution",
+        "redemption",
+        "transfer",
+      ],
       entry_source: ["manual", "recurrence", "installment"],
       entry_status: ["planned", "settled"],
       movement_kind: [

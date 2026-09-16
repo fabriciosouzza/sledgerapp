@@ -57,6 +57,7 @@ def entry(**e):
 
 # ---- wipe & starting points ------------------------------------------------
 sql.append(f"delete from asset_movements where user_id = '{UID}';")
+sql.append(f"delete from recurrence_allocations where user_id = '{UID}';")
 sql.append(f"delete from assets where user_id = '{UID}';")
 sql.append(f"delete from entries where user_id = '{UID}';")
 sql.append(f"delete from statements where user_id = '{UID}';")
@@ -64,7 +65,7 @@ sql.append(f"delete from recurrences where user_id = '{UID}';")
 sql.append(f"update accounts set opening_on = '{START}', opening_balance_cents = case name when 'Conta Corrente' then 620000 when 'Dinheiro' then 15000 when 'Reserva' then 1200000 else 0 end, target_cents = case name when 'Reserva' then 2000000 else null end where user_id = '{UID}';")
 # The sign-in seed only creates the basic set; the demo needs two cards and three more categories.
 sql.append(f"insert into accounts (user_id, name, type, institution, closing_day, due_day, credit_limit_cents, sort_order) values ('{UID}', 'Nubank', 'credit_card', 'Nubank', 20, 28, 750000, 10), ('{UID}', 'Inter', 'credit_card', 'Inter', 14, 21, 300000, 11) on conflict (user_id, name) do nothing;")
-sql.append(f"insert into categories (user_id, name, applies_to, is_benefit, sort_order) values ('{UID}', 'Salário', '{{income}}', false, 20), ('{UID}', 'Vale-refeição', '{{income}}', true, 21), ('{UID}', 'Restaurantes', '{{expense}}', false, 22) on conflict (user_id, parent_id, name) do nothing;")
+sql.append(f"insert into categories (user_id, name, applies_to, is_earmarked, sort_order) values ('{UID}', 'Salário', '{{income}}', false, 20), ('{UID}', 'Vale-refeição', '{{income}}', true, 21), ('{UID}', 'Restaurantes', '{{expense}}', false, 22) on conflict (user_id, parent_id, name) do nothing;")
 sql.append(f"update categories set monthly_cap_cents = case name when 'Alimentação' then 180000 when 'Transporte' then 60000 when 'Lazer' then 50000 when 'Assinaturas' then 30000 when 'Restaurantes' then 70000 else monthly_cap_cents end where user_id = '{UID}';")
 
 # ---- recurrences -----------------------------------------------------------
@@ -83,7 +84,7 @@ recurrence("gym", "Academia", "expense", "Saúde", "Conta Corrente", 12000, 17, 
 recurrence("water", "Água", "expense", "Moradia", "Conta Corrente", 9000, 12, START, variable=True)
 recurrence("power", "Luz", "expense", "Moradia", "Conta Corrente", 22000, 15, START, variable=True)
 recurrence("stream", "Streaming", "expense", "Assinaturas", "Nubank", 5590, 8, START)
-recurrence("cdb", "Aporte CDB", "contribution", None, "Conta Corrente", 100000, 6, START, counter="Corretora")
+recurrence("cdb", "Aporte CDB", "contribution", None, "Conta Corrente", 100000, 6, START)
 
 def apply_recurrences(month):
     for key, r in recs.items():
@@ -210,12 +211,12 @@ cdb_balance = 0; selic_balance = 0
 for month in months():
     d = clamp(month.year, month.month, 6)
     if d > TODAY: break
-    # paired contribution: cash leaves Conta Corrente into Corretora, movement records the asset
-    e = entry(date=d, kind="contribution", amount=100000, description="Aporte CDB", account="Conta Corrente", counter="Corretora",
+    # paired contribution: cash leaves Conta Corrente, the movement is where it went (one entry, one movement per asset)
+    e = entry(date=d, kind="contribution", amount=100000, description="Aporte CDB", account="Conta Corrente",
               source="recurrence", recurrence_id=recs["cdb"]["id"], period=month)
     movement("CDB 110% CDI", d, "contribution", 100000, entry_id=e["id"]); cdb_balance += 100000
     if month.month % 3 == 0:
-        e2 = entry(date=clamp(month.year, month.month, 7), kind="contribution", amount=150000, description="Aporte Tesouro Selic", account="Conta Corrente", counter="Corretora")
+        e2 = entry(date=clamp(month.year, month.month, 7), kind="contribution", amount=150000, description="Aporte Tesouro Selic", account="Conta Corrente")
         movement("Tesouro Selic 2029", clamp(month.year, month.month, 7), "contribution", 150000, entry_id=e2["id"]); selic_balance += 150000
     # yield at month end (0.85–1.05% a month), from the previous month's balance
     end = clamp(month.year, month.month, 28)
@@ -229,10 +230,10 @@ for month in months():
     d = clamp(month.year, month.month, 15)
     if d > TODAY: break
     if month.month in (1, 4, 7, 10):
-        e = entry(date=d, kind="contribution", amount=80000, description="Compra de Bitcoin", account="Conta Corrente", counter="Corretora")
+        e = entry(date=d, kind="contribution", amount=80000, description="Compra de Bitcoin", account="Conta Corrente")
         movement("Bitcoin", d, "contribution", 80000, entry_id=e["id"]); btc_bal += 80000
     if month.month in (2, 8):
-        e = entry(date=d, kind="contribution", amount=120000, description="Compra de dólar", account="Conta Corrente", counter="Corretora")
+        e = entry(date=d, kind="contribution", amount=120000, description="Compra de dólar", account="Conta Corrente")
         movement("Dólar", d, "contribution", 120000, entry_id=e["id"]); usd_bal += 120000
     end = clamp(month.year, month.month, 27)
     if end <= TODAY and btc_bal:
@@ -241,10 +242,12 @@ for month in months():
     if end <= TODAY and usd_bal:
         adj = int(usd_bal * rng.uniform(-0.05, 0.06)); usd_bal += adj
         if adj: movement("Dólar", end, "market_adjustment", adj)
-# a withdrawal with its tax, and the cash coming back
+# a withdrawal with its tax, and the cash coming back as a redemption (paired with the withdrawal)
 wd = date(2025, 11, 18)
-movement("CDB 110% CDI", wd, "withdrawal", 300000, notes="Resgate para a viagem"); movement("CDB 110% CDI", wd, "fee_tax", 22500, notes="IR sobre o resgate")
-entry(date=wd, kind="transfer", amount=277500, description="Resgate CDB", account="Corretora", counter="Conta Corrente")
+r = entry(date=wd, kind="redemption", amount=277500, description="Resgate CDB", account="Conta Corrente")
+movement("CDB 110% CDI", wd, "withdrawal", 277500, entry_id=r["id"], notes="Resgate para a viagem"); movement("CDB 110% CDI", wd, "fee_tax", 22500, notes="IR sobre o resgate")
+# the recurring contribution's default split: all of it into the CDB
+sql.append(f"insert into recurrence_allocations (user_id, recurrence_id, asset_id, share_percent) values ('{UID}', '{recs['cdb']['id']}', '{asset_ids['CDB 110% CDI']}', 100);")
 
 # ---- entries ---------------------------------------------------------------
 for e in entries:

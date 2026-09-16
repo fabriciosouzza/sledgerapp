@@ -29,7 +29,7 @@ function fields(input: CategoryInput, sortOrder: number): Omit<Category, "id"> {
     parentId: input.parentId,
     appliesTo: input.appliesTo.length === 0 ? null : input.appliesTo,
     monthlyCapCents: input.monthlyCapCents,
-    isBenefit: input.isBenefit,
+    isEarmarked: input.isEarmarked,
     color: input.color,
     icon: input.icon,
     isActive: input.isActive,

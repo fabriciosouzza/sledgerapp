@@ -11,6 +11,7 @@ import { Field } from "@/components/forms/field";
 import { DatePicker } from "@/components/forms/date-picker";
 import { FormError } from "@/components/forms/form-error";
 import { PageHeader } from "@/components/layout/page-header";
+import { AllocationFields } from "@/components/portfolio/allocation-fields";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,10 +20,10 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { appliesToKind } from "@/lib/domain/categories";
 import { formatPeriodShort, periodOf } from "@/lib/domain/dates";
-import { canBeInstallments, ENTRY_KINDS, needsCategory, needsCounterAccount } from "@/lib/domain/entries";
+import { canBeInstallments, ENTRY_KINDS, entryKindLabel, isMove, needsAllocation, needsCategory, needsCounterAccount } from "@/lib/domain/entries";
 import { lastInstallmentPeriod } from "@/lib/domain/installments";
 import { formatBRL } from "@/lib/domain/money";
-import type { Account, Category, Entry, EntryKind } from "@/lib/domain/types";
+import type { Account, AllocationLine, Asset, Category, Entry, EntryKind } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
 const MEMORY_KEY = "sledger.lastUsed";
@@ -68,15 +69,21 @@ function pick<T extends { id: string }>(chosen: string, remembered: string | und
 export function EntryForm({
   accounts,
   categories,
+  assets,
   today,
   entry,
+  allocation,
   defaultKind,
 }: {
   accounts: Account[];
   categories: Category[];
+  /** Active assets, for where a settled contribution goes (§5.2). */
+  assets: Asset[];
   today: string;
   /** Present when editing. */
   entry?: Entry;
+  /** When editing a settled contribution: where it went. */
+  allocation?: AllocationLine[];
   /** Pre-selected kind (from the add sheet). */
   defaultKind?: EntryKind;
 }) {
@@ -121,8 +128,10 @@ export function EntryForm({
     : remembered?.categoryId && kindCategories.some((c) => c.id === remembered.categoryId)
       ? remembered.categoryId
       : "";
-  const effectiveAccountId = pick(accountId, remembered?.accountId, accounts);
-  const counterOptions = accounts.filter((a) => a.id !== effectiveAccountId && (kind !== "contribution" || a.type === "brokerage"));
+  // A contribution leaves cash, never a card (§5.2).
+  const accountOptions = needsAllocation(kind) ? accounts.filter((a) => a.type !== "credit_card") : accounts;
+  const effectiveAccountId = pick(accountId, remembered?.accountId, accountOptions);
+  const counterOptions = accounts.filter((a) => a.id !== effectiveAccountId);
   const effectiveCounterId = pick(counterAccountId, remembered?.counterAccountId, counterOptions);
 
   const showInstallments = !editing && canBeInstallments(kind);
@@ -133,7 +142,9 @@ export function EntryForm({
       ? `${firstNo > 1 ? `${firstNo}/${parts} → ${parts}/${parts}` : `${parts} × ${formatBRL(amountCents)}`}, ${formatPeriodShort(periodOf(date))} → ${formatPeriodShort(lastInstallmentPeriod(date, parts, firstNo))} · ${formatBRL(amountCents * remaining)} ${firstNo > 1 ? "still to go" : "in total"}`
       : null;
 
-  const kindLabel = ENTRY_KINDS.find((k) => k.value === kind)?.label ?? "Entry";
+  const kindLabel = entryKindLabel(kind);
+  // Where a settled contribution goes is part of the form; a planned one decides at settle time.
+  const showAllocation = needsAllocation(kind) && settled;
   const moreLabel = editing ? "Notes" : showInstallments ? "Installments, repeat, notes" : "Repeat monthly, notes";
   // What is switched on stays visible while the section is closed.
   const moreSummary = [
@@ -157,6 +168,7 @@ export function EntryForm({
     const categoryName = kindCategories.find((c) => c.id === effectiveCategoryId)?.name;
     const accountName = accounts.find((a) => a.id === effectiveAccountId)?.name;
     const counterName = needsCounterAccount(kind) ? accounts.find((a) => a.id === effectiveCounterId)?.name : undefined;
+    if (showAllocation && assets.length === 0) return setError("Add an asset first: a contribution is never settled without a destination.");
     const where = [needsCategory(kind) ? categoryName : null, counterName ? `${accountName} → ${counterName}` : accountName].filter(Boolean).join(" · ");
     startTransition(async () => {
       if (editing) {
@@ -202,9 +214,9 @@ export function EntryForm({
   }
 
   const accountField = (
-    <Field label={needsCounterAccount(kind) ? "From" : "Account"} htmlFor="accountId">
+    <Field label={needsCounterAccount(kind) || kind === "contribution" ? "From" : kind === "redemption" ? "To" : "Account"} htmlFor="accountId">
       <NativeSelect id="accountId" name="accountId" value={effectiveAccountId} onChange={(e) => setAccountId(e.target.value)} required className="w-full [&>select]:h-11">
-        {accounts.map((a) => (
+        {accountOptions.map((a) => (
           <NativeSelectOption key={a.id} value={a.id}>
             {a.name}
           </NativeSelectOption>
@@ -238,7 +250,7 @@ export function EntryForm({
         {entry && <input type="hidden" name="id" value={entry.id} />}
         <input type="hidden" name="kind" value={kind} />
 
-        {!kindLocked && !(editing && entry?.installmentGroupId) && (
+        {!kindLocked && !(editing && entry?.installmentGroupId) && kind !== "redemption" && (
           <div
             ref={kindGroupRef}
             role="radiogroup"
@@ -297,9 +309,7 @@ export function EntryForm({
                 required
                 className="w-full [&>select]:h-11"
               >
-                {counterOptions.length === 0 && (
-                  <NativeSelectOption value="">{kind === "contribution" ? "Add a brokerage account" : "No other account"}</NativeSelectOption>
-                )}
+                {counterOptions.length === 0 && <NativeSelectOption value="">No other account</NativeSelectOption>}
                 {counterOptions.map((a) => (
                   <NativeSelectOption key={a.id} value={a.id}>
                     {a.name}
@@ -311,16 +321,20 @@ export function EntryForm({
         )}
 
         {/* Straight after the amount: one typing path with the keyboard up, and Enter saves. */}
-        <Field label="Description" htmlFor="description" hint={needsCounterAccount(kind) ? "Optional: blank means “From → To”." : undefined}>
+        <Field
+          label="Description"
+          htmlFor="description"
+          hint={needsCounterAccount(kind) ? "Optional: blank means “From → To”." : needsAllocation(kind) ? `Optional: blank means “${kind === "redemption" ? "Resgate" : "Aporte"}” plus the asset.` : undefined}
+        >
           <Input
             id="description"
             name="description"
-            required={!needsCounterAccount(kind)}
+            required={!isMove(kind)}
             maxLength={120}
             defaultValue={entry?.description}
             className="h-11"
             autoComplete="off"
-            aria-describedby={needsCounterAccount(kind) ? "description-hint" : undefined}
+            aria-describedby={isMove(kind) ? "description-hint" : undefined}
           />
         </Field>
 
@@ -353,6 +367,7 @@ export function EntryForm({
         )}
         {!needsCategory(kind) && !needsCounterAccount(kind) && accountField}
 
+
         {onCard && !editing ? (
           <div className="space-y-3">
             {dateField}
@@ -363,17 +378,29 @@ export function EntryForm({
         ) : (
           <div className="space-y-3">
             <div className="flex min-h-11 items-center justify-between gap-3">
-              <Label htmlFor="settled">{kind === "income" ? "Already received?" : "Already paid?"}</Label>
+              <Label htmlFor="settled">{kind === "income" || kind === "redemption" ? "Already received?" : kind === "contribution" ? "Already invested?" : "Already paid?"}</Label>
               <Switch id="settled" name="settled" checked={settled} onCheckedChange={setSettledChoice} />
             </div>
             <div className={cn("grid gap-3", settled && "grid-cols-2")}>
               {dateField}
               {settled && (
-                <Field label={kind === "income" ? "Received on" : "Paid on"} htmlFor="settledOn">
+                <Field label={kind === "income" || kind === "redemption" ? "Received on" : "Paid on"} htmlFor="settledOn">
                   <DatePicker id="settledOn" name="settledOn" defaultValue={entry?.settledOn ?? (editing ? today : date <= today ? date : today)} />
                 </Field>
               )}
             </div>
+          </div>
+        )}
+
+        {showAllocation && (
+          <div className="space-y-2 rounded-xl bg-muted/40 p-4">
+            <p className="text-sm font-medium">{kind === "redemption" ? "Comes from" : "Goes to"}</p>
+            <p className="text-xs text-muted-foreground">
+              {kind === "redemption"
+                ? "The assets this money came out of; the parts add up to the amount."
+                : "The assets this money becomes; the parts add up to the amount. Split it however you like this time."}
+            </p>
+            <AllocationFields key={`${kind}-${assets.length}`} assets={assets} totalCents={amountCents} initial={allocation} verb={kind === "redemption" ? "comes from" : "goes to"} />
           </div>
         )}
 

@@ -1,16 +1,46 @@
 import Link from "next/link";
-import { ChevronRight, ListChecks, Plus } from "lucide-react";
+import { AlertTriangle, ChevronRight, ListChecks, Plus } from "lucide-react";
 import { ClassDonut } from "@/components/charts/class-donut";
 import { PortfolioArea } from "@/components/charts/portfolio-area";
 import { PageHeader } from "@/components/layout/page-header";
 import { Stat } from "@/components/month/stat";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { Unallocated } from "@/lib/domain/allocation";
 import { assetClassLabel } from "@/lib/domain/assets";
 import { formatDate, today } from "@/lib/domain/dates";
 import { formatBRL } from "@/lib/domain/money";
 import { getContext } from "@/lib/services/context";
 import { portfolioOverview } from "@/lib/services/portfolio";
+
+/** Money that left (or reached) cash with no asset behind it: shown, never hidden (§5.2). */
+function UnallocatedAlert({ rows }: { rows: Unallocated[] }) {
+  if (rows.length === 0) return null;
+  const missing = rows.reduce((sum, r) => sum + Math.abs(r.entry.amountCents - r.allocatedCents), 0);
+  return (
+    <Alert variant="destructive">
+      <AlertTriangle aria-hidden />
+      <AlertTitle>
+        {formatBRL(missing)} in {rows.length} {rows.length === 1 ? "entry has" : "entries have"} no asset behind it
+      </AlertTitle>
+      <AlertDescription>
+        <p>Settled contributions and redemptions whose split does not add up. Open each one and say where the money went.</p>
+        <ul className="mt-1 space-y-1">
+          {rows.map(({ entry, allocatedCents }) => (
+            <li key={entry.id}>
+              <Link href={`/entries/${entry.id}`} className="inline-flex min-h-11 items-center gap-1 underline-offset-4 hover:underline">
+                {formatDate(entry.date)} · {entry.description} · {formatBRL(entry.amountCents)}
+                {allocatedCents !== 0 ? ` (${formatBRL(allocatedCents)} placed)` : ""}
+                <ChevronRight className="size-3" aria-hidden />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </AlertDescription>
+    </Alert>
+  );
+}
 
 export default async function PortfolioPage() {
   const now = today();
@@ -22,6 +52,9 @@ export default async function PortfolioPage() {
     return (
       <>
         <PageHeader title="Portfolio" />
+        <div className="mb-4">
+          <UnallocatedAlert rows={overview.unallocated} />
+        </div>
         <div className="rounded-xl border border-dashed border-border p-6 text-center">
           <p className="text-sm text-muted-foreground">No assets yet. Add what you invest in, then record contributions and yield.</p>
           <Button render={<Link href="/settings/assets/new" />} nativeButton={false} className="mt-4 h-11">
@@ -50,6 +83,7 @@ export default async function PortfolioPage() {
         }
       />
       <div className="space-y-6">
+        <UnallocatedAlert rows={overview.unallocated} />
         <section className="grid grid-cols-2 gap-2 md:grid-cols-3" aria-label="Totals">
           <Stat label="Total balance" cents={t.balanceCents} className="col-span-2" />
           <Stat label="Contributed" cents={t.contributedCents} hint="contributions − withdrawals" />

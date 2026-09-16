@@ -103,8 +103,8 @@ users, and only runs under `make test-db`. Together they prove every item of
 The app is a stock Next.js build with Supabase behind it; nothing else runs.
 
 1. **Supabase project.** Create one, then from the repo:
-   `supabase link --project-ref <ref>` and `supabase db push` (applies the
-   three files in `supabase/migrations/`). Keep the service role key out of
+   `supabase link --project-ref <ref>` and `supabase db push` (applies every
+   file in `supabase/migrations/`, in order). Keep the service role key out of
    the repo.
 2. **Auth settings** (dashboard → Authentication → URL configuration): site
    URL `https://<your-app>` and `https://<your-app>/auth/callback` in the

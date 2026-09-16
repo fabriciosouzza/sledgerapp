@@ -10,7 +10,7 @@ describe("seedUserIfEmpty", () => {
     expect(result.seeded).toBe(true);
     const accounts = await repos.accounts.list("u1");
     const categories = await repos.categories.list("u1");
-    expect(accounts.map((a) => a.name)).toEqual(["Conta Corrente", "Dinheiro", "Reserva", "Corretora"]);
+    expect(accounts.map((a) => a.name)).toEqual(["Conta Corrente", "Dinheiro", "Reserva"]);
     expect(accounts.some((a) => a.type === "credit_card")).toBe(false);
     expect(categories.map((c) => c.name)).toEqual([
       "Moradia", "Alimentação", "Transporte", "Saúde", "Educação",
@@ -23,7 +23,7 @@ describe("seedUserIfEmpty", () => {
     const repos = fakeRepositories();
     await seedUserIfEmpty(repos, "u1");
     expect(await seedUserIfEmpty(repos, "u1")).toEqual({ seeded: false });
-    expect(await repos.accounts.count("u1")).toBe(4);
+    expect(await repos.accounts.count("u1")).toBe(3);
 
     await repos.accounts.insert("u2", { ...(await repos.accounts.list("u1"))[0], name: "Minha" });
     expect(await seedUserIfEmpty(repos, "u2")).toEqual({ seeded: false });
@@ -34,7 +34,7 @@ describe("seedUserIfEmpty", () => {
     const repos = fakeRepositories();
     await seedUserIfEmpty(repos, "u1");
     await seedUserIfEmpty(repos, "u2");
-    expect(await repos.accounts.count("u1")).toBe(4);
-    expect(await repos.accounts.count("u2")).toBe(4);
+    expect(await repos.accounts.count("u1")).toBe(3);
+    expect(await repos.accounts.count("u2")).toBe(3);
   });
 });

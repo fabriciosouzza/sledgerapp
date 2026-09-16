@@ -7,9 +7,8 @@ export type AccountType =
   | "savings"
   | "cash"
   | "credit_card"
-  | "brokerage"
   | "other";
-export type EntryKind = "income" | "expense" | "contribution" | "transfer";
+export type EntryKind = "income" | "expense" | "contribution" | "redemption" | "transfer";
 export type EntryStatus = "planned" | "settled";
 export type EntrySource = "manual" | "recurrence" | "installment";
 export type AssetClass =
@@ -54,11 +53,19 @@ export interface Category {
   parentId: string | null;
   appliesTo: EntryKind[] | null;
   monthlyCapCents: number | null;
-  isBenefit: boolean;
+  /** Money that arrives with its destination set (meal voucher, allowance): out of the second savings rate (§5.8). */
+  isEarmarked: boolean;
   color: string | null;
   icon: string | null;
   isActive: boolean;
   sortOrder: number;
+}
+
+/** One line of a recurring contribution's default split (§5.5). */
+export interface RecurrenceShare {
+  assetId: string;
+  /** 1–100; a recurrence's shares sum to 100. */
+  sharePercent: number;
 }
 
 export interface Recurrence {
@@ -74,6 +81,8 @@ export interface Recurrence {
   endsOn: IsoDate | null;
   isVariable: boolean;
   isActive: boolean;
+  /** Empty unless the recurrence is a contribution with a default split. */
+  allocations: RecurrenceShare[];
 }
 
 export interface Entry {
@@ -124,7 +133,14 @@ export interface AssetMovement {
   date: IsoDate;
   kind: MovementKind;
   amountCents: number;
+  /** The cash entry this movement is one side of: a contribution split across assets is one entry, N movements (§5.2). */
   entryId: string | null;
   notes: string | null;
+}
+
+/** Where a settled contribution (or redemption) goes: one line per asset, summing to the entry's amount. */
+export interface AllocationLine {
+  assetId: string;
+  amountCents: number;
 }
 

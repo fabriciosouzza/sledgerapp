@@ -72,8 +72,8 @@ export default async function CategoriesPage() {
                       <span className="truncate text-sm font-medium">
                         {c.name}
                       </span>
-                      {c.isBenefit && (
-                        <Badge variant="secondary">benefit</Badge>
+                      {c.isEarmarked && (
+                        <Badge variant="secondary">earmarked</Badge>
                       )}
                       {!c.isActive && <Badge variant="outline">inactive</Badge>}
                     </span>

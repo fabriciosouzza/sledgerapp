@@ -1,12 +1,17 @@
 import type { DbClient } from "@/lib/db/client";
 import type { Database } from "@/lib/db/database.types";
-import type { Recurrence } from "@/lib/domain/types";
+import type { Recurrence, RecurrenceShare } from "@/lib/domain/types";
 import { fromPostgres, RepositoryError } from "./errors";
 
 type Row = Database["public"]["Tables"]["recurrences"]["Row"];
 type Insert = Database["public"]["Tables"]["recurrences"]["Insert"];
+type ShareRow = Pick<Database["public"]["Tables"]["recurrence_allocations"]["Row"], "asset_id" | "share_percent">;
+/** A recurrence with its default split embedded, the way PostgREST returns the child rows. */
+type RowWithShares = Row & { recurrence_allocations: ShareRow[] };
 
 export type NewRecurrence = Omit<Recurrence, "id">;
+
+const SELECT = "*, recurrence_allocations(asset_id, share_percent)";
 
 export interface RecurrencesRepo {
   list(userId: string): Promise<Recurrence[]>;
@@ -16,8 +21,9 @@ export interface RecurrencesRepo {
   delete(userId: string, id: string): Promise<void>;
 }
 
-function toDomain(row: Row): Recurrence {
+function toDomain(row: RowWithShares): Recurrence {
   return {
+    allocations: row.recurrence_allocations.map((s): RecurrenceShare => ({ assetId: s.asset_id, sharePercent: s.share_percent })),
     id: row.id,
     description: row.description,
     kind: row.kind,
@@ -62,23 +68,42 @@ function toInsert(userId: string, data: NewRecurrence): Insert {
 }
 
 export function supabaseRecurrencesRepo(db: DbClient): RecurrencesRepo {
+  /** The default split is replaced whole: delete, then insert what was given. */
+  async function writeShares(userId: string, recurrenceId: string, shares: RecurrenceShare[]): Promise<void> {
+    const { error: cleared } = await db.from("recurrence_allocations").delete().eq("user_id", userId).eq("recurrence_id", recurrenceId);
+    if (cleared) throw fromPostgres(cleared);
+    if (shares.length === 0) return;
+    const { error } = await db
+      .from("recurrence_allocations")
+      .insert(shares.map((s) => ({ user_id: userId, recurrence_id: recurrenceId, asset_id: s.assetId, share_percent: s.sharePercent })));
+    if (error) throw fromPostgres(error);
+  }
+
+  async function read(userId: string, id: string): Promise<Recurrence> {
+    const { data, error } = await db.from("recurrences").select(SELECT).eq("user_id", userId).eq("id", id).maybeSingle();
+    if (error) throw fromPostgres(error);
+    if (!data) throw new RepositoryError("not_found", "recurrence not found");
+    return toDomain(data);
+  }
+
   return {
     async list(userId) {
-      const { data, error } = await db.from("recurrences").select("*").eq("user_id", userId).order("due_day").order("description");
+      const { data, error } = await db.from("recurrences").select(SELECT).eq("user_id", userId).order("due_day").order("description");
       if (error) throw fromPostgres(error);
       return data.map(toDomain);
     },
 
     async getById(userId, id) {
-      const { data, error } = await db.from("recurrences").select("*").eq("user_id", userId).eq("id", id).maybeSingle();
+      const { data, error } = await db.from("recurrences").select(SELECT).eq("user_id", userId).eq("id", id).maybeSingle();
       if (error) throw fromPostgres(error);
       return data ? toDomain(data) : null;
     },
 
     async insert(userId, data) {
-      const { data: row, error } = await db.from("recurrences").insert(toInsert(userId, data)).select("*").single();
+      const { data: row, error } = await db.from("recurrences").insert(toInsert(userId, data)).select("id").single();
       if (error) throw fromPostgres(error);
-      return toDomain(row);
+      await writeShares(userId, row.id, data.allocations);
+      return read(userId, row.id);
     },
 
     async update(userId, id, patch) {
@@ -87,11 +112,12 @@ export function supabaseRecurrencesRepo(db: DbClient): RecurrencesRepo {
         .update(toRow(userId, patch))
         .eq("user_id", userId)
         .eq("id", id)
-        .select("*")
+        .select("id")
         .maybeSingle();
       if (error) throw fromPostgres(error);
       if (!row) throw new RepositoryError("not_found", "recurrence not found");
-      return toDomain(row);
+      if (patch.allocations !== undefined) await writeShares(userId, id, patch.allocations);
+      return read(userId, id);
     },
 
     async delete(userId, id) {

@@ -12,14 +12,15 @@ import { useLocalMemory } from "@/lib/client/local-memory";
 import { Checkbox } from "@/components/ui/checkbox";
 import { addMonths, formatDate, formatDayMonth, formatPeriodLong, formatPeriodShort, periodOf } from "@/lib/domain/dates";
 import { formatBRL } from "@/lib/domain/money";
-import { groupByDay, installmentLabel } from "@/lib/domain/entries";
+import { groupByDay, installmentLabel, needsAllocation } from "@/lib/domain/entries";
 import { entryTiming } from "@/lib/domain/metrics";
 import { resolveCycle } from "@/lib/domain/statements";
-import type { Entry, IsoDate, Period } from "@/lib/domain/types";
+import type { AllocationLine, Entry, IsoDate, Period } from "@/lib/domain/types";
 import type { EntryFilters } from "@/lib/repositories";
 import { cn } from "@/lib/utils";
 import { Amount } from "./amount";
 import type { Lookups } from "./lookups";
+import { AllocateSheet } from "./allocate-sheet";
 import { SettleOnSheet } from "./settle-on-sheet";
 import { DatePicker } from "@/components/forms/date-picker";
 
@@ -107,17 +108,24 @@ export function EntryList({
   const [pending, startTransition] = useTransition();
   const [loadingMore, startLoading] = useTransition();
   const [settleOnTarget, setSettleOnTarget] = useState<Entry | null>(null);
+  // A contribution settles with its allocation (§5.2): its own sheet, with the date inside.
+  const [allocateTarget, setAllocateTarget] = useState<Entry | null>(null);
   // Rows settled a moment ago: a tap on their ✓ is the second half of a double tap, not an undo.
   const settleGrace = useRef(new Set<string>());
   const [hintDismissed, dismissHint] = useLocalMemory("sledger.settleHintDismissed", false);
   const [showFuture, setShowFuture] = useState(false);
 
-  function settle(id: string, settledOn: string = today) {
+  function settle(id: string, settledOn: string = today, allocation?: AllocationLine[]) {
+    const target = entries.find((e) => e.id === id);
+    if (target && needsAllocation(target.kind) && allocation === undefined) {
+      setAllocateTarget(target);
+      return;
+    }
     settleGrace.current.add(id);
     setTimeout(() => settleGrace.current.delete(id), DOUBLE_TAP_MS);
     startTransition(async () => {
       patchOptimistic({ id, status: "settled", settledOn });
-      const result = await settleEntryAction(id, settledOn);
+      const result = await settleEntryAction(id, settledOn, allocation);
       if (!result.ok) {
         toast.error(result.error);
         return;
@@ -127,7 +135,7 @@ export function EntryList({
       // Most things are paid today; the other day is offered right here, where the thumb already is (no press-and-hold needed).
       toast.success(settledOn === today ? "Settled" : `Settled on ${formatDate(settledOn)}`, {
         action: { label: "Undo", onClick: () => unsettle(id) },
-        cancel: { label: "Other day", onClick: () => setSettleOnTarget(entries.find((e) => e.id === id) ?? null) },
+        cancel: allocation ? undefined : { label: "Other day", onClick: () => setSettleOnTarget(entries.find((e) => e.id === id) ?? null) },
       });
     });
   }
@@ -217,7 +225,8 @@ export function EntryList({
   }
   const months = [...byMonth.keys()].sort((a, b) => (a < b ? 1 : -1) * (ascending ? -1 : 1));
   // Card purchases are paid through their statement (§5.6), never settled here: they are not "to settle".
-  const plannedRows = optimistic.filter((e) => e.status === "planned" && lookups.accounts[e.accountId]?.type !== "credit_card");
+  // Contributions settle one by one, with their allocation (§5.2), so bulk settle leaves them out too.
+  const plannedRows = optimistic.filter((e) => e.status === "planned" && lookups.accounts[e.accountId]?.type !== "credit_card" && !needsAllocation(e.kind));
   const plannedIds = plannedRows.map((e) => e.id);
   const plannedExpense = plannedRows.filter((e) => e.kind === "expense").reduce((sum, e) => sum + e.amountCents, 0);
   // Bulk settle earns its control only when there is more than one thing to settle.
@@ -354,7 +363,7 @@ export function EntryList({
                       justSettled={recent.has(entry.id)}
                       onToggle={() => toggle(entry.id)}
                       onSettle={() => settle(entry.id)}
-                      onSettleOn={() => setSettleOnTarget(entry)}
+                      onSettleOn={() => (needsAllocation(entry.kind) ? setAllocateTarget(entry) : setSettleOnTarget(entry))}
                       onUnsettle={() => unsettle(entry.id)}
                       statementLink={statementLink}
                     />
@@ -369,6 +378,7 @@ export function EntryList({
       {selecting && <div className="h-16" aria-hidden />}
 
       <SettleOnSheet entry={settleOnTarget} today={today} onClose={() => setSettleOnTarget(null)} onSettle={(id, date) => settle(id, date)} />
+      <AllocateSheet entry={allocateTarget} today={today} onClose={() => setAllocateTarget(null)} onSettle={(id, date, allocation) => settle(id, date, allocation)} />
 
       {infinite && (
         <Button variant="outline" className="h-11 w-full" onClick={loadEarlier} disabled={loadingMore}>
@@ -518,12 +528,12 @@ function EntryRow({
       >
         {selecting && (
           <span className="flex size-11 items-center justify-center">
-            <Checkbox checked={selected} onCheckedChange={onToggle} aria-label={`Select ${entry.description}`} disabled={entry.status === "settled" || cycle !== null} />
+            <Checkbox checked={selected} onCheckedChange={onToggle} aria-label={`Select ${entry.description}`} disabled={entry.status === "settled" || cycle !== null || needsAllocation(entry.kind)} />
           </span>
         )}
         {!selecting && (
           <CategoryIcon
-            icon={categoryRow?.icon ?? (entry.kind === "transfer" ? "landmark" : entry.kind === "contribution" ? "piggy-bank" : null)}
+            icon={categoryRow?.icon ?? (entry.kind === "transfer" ? "landmark" : needsAllocation(entry.kind) ? "piggy-bank" : null)}
             color={categoryRow?.color ?? null}
             name={category}
             size="sm"
@@ -535,7 +545,7 @@ function EntryRow({
           onClick={(e) => {
             if (selecting) {
               e.preventDefault();
-              if (entry.status === "planned" && !cycle) onToggle();
+              if (entry.status === "planned" && !cycle && !needsAllocation(entry.kind)) onToggle();
             }
           }}
           className="flex min-w-0 flex-1 flex-col justify-center py-2 focus-visible:outline-2 focus-visible:outline-ring"

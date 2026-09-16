@@ -9,8 +9,8 @@ import type { NewAccount, NewCategory, Repositories } from "@/lib/repositories";
 const ACCOUNTS: { name: string; type: AccountType }[] = [
   { name: "Conta Corrente", type: "checking" },
   { name: "Dinheiro", type: "cash" },
+  // No brokerage account: investments are assets, held at the asset's `broker` (§5.7).
   { name: "Reserva", type: "savings" },
-  { name: "Corretora", type: "brokerage" },
 ];
 
 export const SEED_ACCOUNTS: NewAccount[] = ACCOUNTS.map((a, i) => ({
@@ -45,7 +45,7 @@ export const SEED_CATEGORIES: NewCategory[] = [
   ...c,
   parentId: null,
   monthlyCapCents: null,
-  isBenefit: false,
+  isEarmarked: false,
   // Icons only: colour stays for meaning, not decoration (DESIGN.md, 2026-09-14).
   color: null,
   isActive: true,

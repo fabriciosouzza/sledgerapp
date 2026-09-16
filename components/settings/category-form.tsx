@@ -119,12 +119,19 @@ export function CategoryForm({
         </Field>
       )}
 
-      <div className="flex min-h-11 items-center justify-between gap-3">
-        <div>
-          <Label htmlFor="isBenefit">Benefit</Label>
-          <p className="text-xs text-muted-foreground">Meal voucher, allowance: excluded from the second savings rate.</p>
+      <div className="space-y-2 rounded-xl bg-muted/40 p-4">
+        <div className="flex min-h-11 items-center justify-between gap-3">
+          <div>
+            <Label htmlFor="isEarmarked">Earmarked money</Label>
+            <p className="text-xs text-muted-foreground">Arrives with its destination set: it will be spent, it cannot be saved.</p>
+          </div>
+          <Switch id="isEarmarked" name="isEarmarked" defaultChecked={category?.isEarmarked ?? false} aria-describedby="isEarmarked-hint" />
         </div>
-        <Switch id="isBenefit" name="isBenefit" defaultChecked={category?.isBenefit ?? false} />
+        <p id="isEarmarked-hint" className="text-xs text-muted-foreground">
+          Example: a R$ 800 meal voucher comes in as income and goes out as lunches. Put both in an earmarked category (say “Alimentação — VR”) and the
+          second savings rate leaves them out — otherwise a bigger voucher would make your rate look worse for no reason. Money you could keep is
+          not earmarked: it is plain income.
+        </p>
       </div>
 
       <div className="flex min-h-11 items-center justify-between gap-3">

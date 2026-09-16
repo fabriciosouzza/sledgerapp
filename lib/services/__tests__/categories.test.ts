@@ -47,7 +47,7 @@ describe("categories", () => {
 
   it("stores benefit flag and cap in cents", async () => {
     const repos = fakeRepositories();
-    const va = await createCategory(repos, "u1", input({ name: "Vale", appliesTo: ["income"], isBenefit: "on", monthlyCapCents: "800,00" }));
-    expect(va).toMatchObject({ isBenefit: true, monthlyCapCents: 80_000, appliesTo: ["income"] });
+    const va = await createCategory(repos, "u1", input({ name: "Vale", appliesTo: ["income"], isEarmarked: "on", monthlyCapCents: "800,00" }));
+    expect(va).toMatchObject({ isEarmarked: true, monthlyCapCents: 80_000, appliesTo: ["income"] });
   });
 });

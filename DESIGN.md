@@ -335,6 +335,44 @@ After a design critique of the signed-in app:
 - **No brand accent.** The palette stays neutral monochrome and colour
   carries meaning only; the lime from the reference is not coming.
 
+## Decisions (2026-09-16)
+
+Contributions, assets and the "brokerage account", after the owner asked how
+the three relate (the spec now says this in §5.2, §5.5, §5.7, §5.8):
+
+- **A contribution has one side in cash and the other in the portfolio.**
+  The brokerage account type is gone: it held no balance (investments come
+  from asset movements) and existed only to be the contribution's counter
+  account. Where an asset is held is its `broker`. The seed no longer
+  creates `Corretora`.
+- **A planned contribution has no asset; a settled one always does.** The
+  amount is planned; the destination is decided when the money moves.
+  Settling opens an allocation sheet (one row per asset, "still to place"
+  until the parts add up); each part becomes a paired movement on that
+  asset. Unsettling removes them. Bulk settle and "settle due today" leave
+  contributions out. Add → Contribution asks for the split only when
+  "already invested" is on.
+- **A recurring contribution carries a default split** in percent
+  (`recurrence_allocations`), a suggestion that pre-fills the sheet; amounts
+  come out by largest remainder so they always sum. Saving a contribution
+  with "repeat monthly" learns the split from how it was divided.
+- **Redemption is a kind of its own**: the mirror of a contribution, cash
+  coming back from an asset, not income, paired with a withdrawal. Recorded
+  from the Portfolio (withdrawal + "record the cash entry"); not offered in
+  Add or the + sheet.
+- **The Portfolio points at unallocated money**: a settled contribution or
+  redemption whose paired movements do not add up is listed with a link to
+  the entry, never hidden.
+- **`is_benefit` is now `is_earmarked`** ("verba carimbada"): the flag is
+  about money arriving with its destination set, not about where it comes
+  from. The category form explains it with the meal-voucher example; money
+  the user could have kept is plain income.
+- Account types, restated for the guide: **checking** and **cash** are
+  liquid money; **savings** is money set aside with a goal, whose yield is
+  not tracked (money one wants to see earning is an asset); **other** is any
+  liquid balance that is not a bank (Mercado Pago, prepaid card); **credit
+  card** is debt through statements.
+
 ## Done
 
 | Item | Commit |

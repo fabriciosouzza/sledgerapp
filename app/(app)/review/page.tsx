@@ -114,9 +114,9 @@ export default async function MonthPage(props: PageProps<"/review">) {
               <p className={cn("text-3xl font-semibold tracking-tight tabular-nums", signColor(m.savingsRate))}>
                 {m.savingsRate === null ? "—" : formatPercent(m.savingsRate)}
               </p>
-              {m.savingsRateExBenefits !== null && m.benefitsCents > 0 && (
+              {m.savingsRateExEarmarked !== null && m.earmarkedCents > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  {formatPercent(m.savingsRateExBenefits)} ex-benefits · benefits {formatBRL(m.benefitsCents)}
+                  {formatPercent(m.savingsRateExEarmarked)} ex-earmarked · earmarked {formatBRL(m.earmarkedCents)}
                 </p>
               )}
             </div>
@@ -165,7 +165,7 @@ export default async function MonthPage(props: PageProps<"/review">) {
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,8.5rem),1fr))] gap-2 md:grid-cols-3">
             <Stat label="Income" cents={m.incomeCents} hint={deltaHint(summary.delta.throughDay === null ? summary.delta.income : null, m.plannedIncomeCents, summary.delta.throughDay)} href={`/entries?month=${month}&kind=income`} />
             <Stat label="Expense" cents={m.expenseCents} hint={deltaHint(summary.delta.expense, m.plannedExpenseCents, summary.delta.throughDay)} href={`/entries?month=${month}&kind=expense`} />
-            <Stat label="Contributions" cents={m.contributionsCents} href={`/entries?month=${month}&kind=moves`} />
+            <Stat label="Contributions" cents={m.contributionsCents} hint={m.redemptionsCents > 0 ? `− ${formatBRL(m.redemptionsCents)} redeemed` : undefined} href={`/entries?month=${month}&kind=moves`} />
             <Stat label="Fixed cost" cents={m.fixedCostCents} hint={summary.installmentsCents > 0 ? `+ ${formatBRL(summary.installmentsCents)} in installments this month` : undefined} />
             <Stat
               label="Months of runway"

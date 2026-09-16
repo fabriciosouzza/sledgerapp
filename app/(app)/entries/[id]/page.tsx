@@ -4,12 +4,13 @@ import { DeleteEntryDialog } from "@/components/entries/delete-entry-dialog";
 import { EntryForm } from "@/components/entries/entry-form";
 import { PageHeader } from "@/components/layout/page-header";
 import { today } from "@/lib/domain/dates";
-import { installmentLabel } from "@/lib/domain/entries";
+import { installmentLabel, needsAllocation } from "@/lib/domain/entries";
 import { listAccounts } from "@/lib/services/accounts";
 import { listCategories } from "@/lib/services/categories";
 import { getContext } from "@/lib/services/context";
-import { getEntry } from "@/lib/services/entries";
+import { entryAllocation, getEntry } from "@/lib/services/entries";
 import { ServiceError } from "@/lib/services/errors";
+import { listAssets } from "@/lib/services/portfolio";
 
 export default async function EditEntryPage(props: PageProps<"/entries/[id]">) {
   const { id } = await props.params;
@@ -18,8 +19,15 @@ export default async function EditEntryPage(props: PageProps<"/entries/[id]">) {
     if (error instanceof ServiceError && error.code === "not_found") notFound();
     throw error;
   });
-  const [accounts, categories] = await Promise.all([listAccounts(repos, userId), listCategories(repos, userId)]);
+  const [accounts, categories, assets, allocation] = await Promise.all([
+    listAccounts(repos, userId),
+    listCategories(repos, userId),
+    needsAllocation(entry.kind) ? listAssets(repos, userId) : Promise.resolve([]),
+    needsAllocation(entry.kind) ? entryAllocation(repos, userId, entry.id) : Promise.resolve([]),
+  ]);
   const parts = installmentLabel(entry);
+  // An asset that went inactive keeps showing where money already went.
+  const allocated = new Set(allocation.map((l) => l.assetId));
 
   return (
     <>
@@ -36,8 +44,10 @@ export default async function EditEntryPage(props: PageProps<"/entries/[id]">) {
       <EntryForm
         accounts={accounts.filter((a) => a.isActive || a.id === entry.accountId || a.id === entry.counterAccountId)}
         categories={categories.filter((c) => c.isActive || c.id === entry.categoryId)}
+        assets={assets.filter((a) => a.isActive || allocated.has(a.id))}
         today={today()}
         entry={entry}
+        allocation={allocation}
       />
     </>
   );

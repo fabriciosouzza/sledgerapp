@@ -16,11 +16,14 @@ export interface MovementsRepo {
   list(userId: string): Promise<AssetMovement[]>;
   listByAsset(userId: string, assetId: string): Promise<AssetMovement[]>;
   getById(userId: string, id: string): Promise<AssetMovement | null>;
-  /** The movement paired with a cash entry, if any. */
-  getByEntry(userId: string, entryId: string): Promise<AssetMovement | null>;
+  /** The movements paired with a cash entry: one per asset the contribution went to (§5.2). */
+  listByEntry(userId: string, entryId: string): Promise<AssetMovement[]>;
   insert(userId: string, data: NewMovement): Promise<AssetMovement>;
+  insertMany(userId: string, data: NewMovement[]): Promise<AssetMovement[]>;
   update(userId: string, id: string, patch: Partial<NewMovement>): Promise<AssetMovement>;
   delete(userId: string, id: string): Promise<void>;
+  /** Unsettling a contribution takes its allocation with it. */
+  deleteByEntry(userId: string, entryId: string): Promise<number>;
 }
 
 function toDomain(row: Row): AssetMovement {
@@ -79,14 +82,28 @@ export function supabaseMovementsRepo(db: DbClient): MovementsRepo {
       if (!row) throw new RepositoryError("not_found", "movement not found");
       return toDomain(row);
     },
-    async getByEntry(userId, entryId) {
-      const { data, error } = await db.from("asset_movements").select("*").eq("user_id", userId).eq("entry_id", entryId).maybeSingle();
+    async listByEntry(userId, entryId) {
+      const { data, error } = await db.from("asset_movements").select("*").eq("user_id", userId).eq("entry_id", entryId).order("created_at").order("id");
       if (error) throw fromPostgres(error);
-      return data ? toDomain(data) : null;
+      return data.map(toDomain);
+    },
+    async insertMany(userId, data) {
+      if (data.length === 0) return [];
+      const { data: rows, error } = await db
+        .from("asset_movements")
+        .insert(data.map((d) => ({ ...toRow(d), user_id: userId, asset_id: d.assetId, date: d.date, kind: d.kind, amount_cents: d.amountCents })))
+        .select("*");
+      if (error) throw fromPostgres(error);
+      return rows.map(toDomain);
     },
     async delete(userId, id) {
       const { error } = await db.from("asset_movements").delete().eq("user_id", userId).eq("id", id);
       if (error) throw fromPostgres(error);
+    },
+    async deleteByEntry(userId, entryId) {
+      const { data, error } = await db.from("asset_movements").delete().eq("user_id", userId).eq("entry_id", entryId).select("id");
+      if (error) throw fromPostgres(error);
+      return data.length;
     },
   };
 }

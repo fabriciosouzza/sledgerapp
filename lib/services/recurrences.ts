@@ -1,9 +1,10 @@
 // Recurrences (PROMPT.md §5.5): templates, never summed into realised
 // reports; "generate month" turns them into planned entries, idempotently.
 
-import { isCreditCard } from "@/lib/domain/accounts";
+import { isCashAccount, isCreditCard } from "@/lib/domain/accounts";
+import { sharesProblem } from "@/lib/domain/allocation";
 import { appliesToKind } from "@/lib/domain/categories";
-import { needsCategory, needsCounterAccount } from "@/lib/domain/entries";
+import { needsAllocation, needsCategory, needsCounterAccount } from "@/lib/domain/entries";
 import { expandRecurrences, monthlyFixedCost } from "@/lib/domain/recurrences";
 import { addMonths, periodEnd, periodOf, periodStart } from "@/lib/domain/dates";
 import type { Entry, IsoDate, NewEntry, Period, Recurrence } from "@/lib/domain/types";
@@ -32,11 +33,19 @@ async function fields(repos: Repositories, userId: string, input: RecurrenceInpu
 
   const account = await repos.accounts.getById(userId, input.accountId);
   if (!account) throw new ServiceError("invalid", "Account not found.");
+  if (needsAllocation(kind) && !isCashAccount(account)) throw new ServiceError("invalid", "A contribution leaves a cash account.");
   if (counterAccountId !== null) {
     const counter = await repos.accounts.getById(userId, counterAccountId);
     if (!counter) throw new ServiceError("invalid", "Destination account not found.");
-    if (kind === "contribution" && counter.type !== "brokerage") throw new ServiceError("invalid", "A contribution goes to a brokerage account.");
     if (kind === "transfer" && isCreditCard(account)) throw new ServiceError("invalid", "A card is paid from a cash account into the card.");
+  }
+  // The default split (§5.5): a suggestion for settling, so it must at least add up and name real assets.
+  const allocations = needsAllocation(kind) ? input.allocations : [];
+  const problem = sharesProblem(allocations);
+  if (problem) throw new ServiceError("invalid", problem);
+  if (allocations.length > 0) {
+    const assets = new Set((await repos.assets.list(userId)).map((a) => a.id));
+    for (const share of allocations) if (!assets.has(share.assetId)) throw new ServiceError("invalid", "Asset not found.");
   }
   if (categoryId !== null) {
     const category = await repos.categories.getById(userId, categoryId);
@@ -57,6 +66,7 @@ async function fields(repos: Repositories, userId: string, input: RecurrenceInpu
     endsOn: input.endsOn,
     isVariable: input.isVariable,
     isActive: input.isActive,
+    allocations,
   };
 }
 

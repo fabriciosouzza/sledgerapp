@@ -8,7 +8,7 @@ import { boolField, optionalCents, optionalInt, optionalText, requiredText } fro
 const openingCents = zod.preprocess((v) => (typeof v === "string" ? (v.trim() === "" ? 0 : parseBRL(v)) : v), zod.number({ error: "Enter an amount like 1.234,56." }).int()).default(0);
 const openingDate = zod.preprocess((v) => (typeof v === "string" && v.trim() === "" ? undefined : v), zod.string().refine((v) => isIsoDate(v), { error: "Enter a valid date." }).optional());
 
-export const accountTypeSchema = z.enum(["checking", "savings", "cash", "credit_card", "brokerage", "other"]);
+export const accountTypeSchema = z.enum(["checking", "savings", "cash", "credit_card", "other"]);
 
 export const accountInputSchema = z
   .object({

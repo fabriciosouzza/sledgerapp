@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 import { isPeriod, periodOf, today } from "@/lib/domain/dates";
-import { entryInputSchema } from "@/lib/schemas/entries";
+import type { EntryKind } from "@/lib/domain/types";
+import { entryInputSchema, entryKindSchema } from "@/lib/schemas/entries";
 import { createEntry, listEntries } from "@/lib/services/entries";
 import { json, parseBody, withUser } from "../_lib/handler";
 
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     const entries = await listEntries(repos, userId, {
       period,
       status: status === "planned" || status === "settled" ? status : undefined,
-      kind: kind === "income" || kind === "expense" || kind === "contribution" || kind === "transfer" ? kind : undefined,
+      kind: entryKindSchema.safeParse(kind).success ? (kind as EntryKind) : undefined,
       accountId: sp.get("account") ?? undefined,
       categoryId: sp.get("category") ?? undefined,
       search: sp.get("q") ?? undefined,

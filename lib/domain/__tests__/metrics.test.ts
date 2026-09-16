@@ -3,9 +3,9 @@ import { budgetFromCaps, budgetStatus, cappedExpenseCents, committedCents, compu
 import { entry, recurrence, settled } from "./fixtures";
 
 const categories = [
-  { id: "cat-salario", isBenefit: false },
-  { id: "cat-va", isBenefit: true },
-  { id: "cat-outros", isBenefit: false },
+  { id: "cat-salario", isEarmarked: false },
+  { id: "cat-va", isEarmarked: true },
+  { id: "cat-outros", isEarmarked: false },
 ];
 
 const base = { categories, recurrences: [], cashCents: null };
@@ -18,7 +18,7 @@ describe("computeMetrics", () => {
       entries: [
         settled({ kind: "income", amountCents: 500_000, categoryId: "cat-salario" }),
         settled({ kind: "expense", amountCents: 200_000 }),
-        settled({ kind: "contribution", amountCents: 100_000, categoryId: null, counterAccountId: "acc-broker" }),
+        settled({ kind: "contribution", amountCents: 100_000, categoryId: null }),
       ],
     });
 
@@ -60,7 +60,7 @@ describe("computeMetrics", () => {
     expect(before.savingsRate).toBe(0.5);
   });
 
-  // Acceptance 5: savingsRateExBenefits excludes is_benefit categories from the denominator.
+  // Acceptance 5: savingsRateExEarmarked excludes is_earmarked categories from the denominator.
   it("computes both savings rates", () => {
     const m = computeMetrics({
       ...base,
@@ -71,9 +71,9 @@ describe("computeMetrics", () => {
       ],
     });
 
-    expect(m.benefitsCents).toBe(100_000);
+    expect(m.earmarkedCents).toBe(100_000);
     expect(m.savingsRate).toBeCloseTo(0.4); // 200k / 500k
-    expect(m.savingsRateExBenefits).toBeCloseTo(0.5); // 200k / 400k
+    expect(m.savingsRateExEarmarked).toBeCloseTo(0.5); // 200k / 400k
   });
 
   it("counts only settled entries and reports planned separately", () => {
@@ -94,7 +94,7 @@ describe("computeMetrics", () => {
   it("returns null rates instead of dividing by zero", () => {
     const m = computeMetrics({ ...base, entries: [settled({ kind: "expense", amountCents: 10 })] });
     expect(m.savingsRate).toBeNull();
-    expect(m.savingsRateExBenefits).toBeNull();
+    expect(m.savingsRateExEarmarked).toBeNull();
     expect(m.monthsOfRunway).toBeNull();
   });
 

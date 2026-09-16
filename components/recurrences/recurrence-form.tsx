@@ -12,20 +12,24 @@ import { Label } from "@/components/ui/label";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import { appliesToKind } from "@/lib/domain/categories";
-import { ENTRY_KINDS, needsCategory, needsCounterAccount } from "@/lib/domain/entries";
-import type { Account, Category, EntryKind, Recurrence } from "@/lib/domain/types";
+import { ENTRY_KINDS, needsAllocation, needsCategory, needsCounterAccount } from "@/lib/domain/entries";
+import type { Account, Asset, Category, EntryKind, Recurrence } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
+import { SplitFields } from "./split-fields";
 
 export function RecurrenceForm({
   recurrence,
   accounts,
   categories,
+  assets,
   today,
   action,
 }: {
   recurrence?: Recurrence;
   accounts: Account[];
   categories: Category[];
+  /** For the default split of a recurring contribution (§5.5). */
+  assets: Asset[];
   today: string;
   action: (prev: RecurrenceFormState, formData: FormData) => Promise<RecurrenceFormState>;
 }) {
@@ -37,7 +41,8 @@ export function RecurrenceForm({
   const [kind, setKind] = useState<EntryKind>((str("kind", recurrence?.kind) || "expense") as EntryKind);
   const [accountId, setAccountId] = useState(str("accountId", recurrence?.accountId) || accounts[0]?.id || "");
   const kindCategories = categories.filter((c) => appliesToKind(c, kind));
-  const counterOptions = accounts.filter((a) => a.id !== accountId && (kind !== "contribution" || a.type === "brokerage"));
+  const counterOptions = accounts.filter((a) => a.id !== accountId);
+  const accountOptions = needsAllocation(kind) ? accounts.filter((a) => a.type !== "credit_card") : accounts;
 
   return (
     <form action={dispatch} className="space-y-5">
@@ -89,9 +94,9 @@ export function RecurrenceForm({
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <Field label={needsCounterAccount(kind) ? "From" : "Account"} htmlFor="accountId">
+        <Field label={needsCounterAccount(kind) || kind === "contribution" ? "From" : "Account"} htmlFor="accountId">
           <NativeSelect id="accountId" name="accountId" value={accountId} onChange={(e) => setAccountId(e.target.value)} required className="w-full [&>select]:h-11">
-            {accounts.map((a) => (
+            {accountOptions.map((a) => (
               <NativeSelectOption key={a.id} value={a.id}>
                 {a.name}
               </NativeSelectOption>
@@ -110,6 +115,17 @@ export function RecurrenceForm({
           </Field>
         )}
       </div>
+
+      {kind === "contribution" && (
+        <div className="space-y-2 rounded-xl bg-muted/40 p-4">
+          <p className="text-sm font-medium">Default split</p>
+          <p className="text-xs text-muted-foreground">
+            How each month&apos;s contribution is usually divided. It pre-fills the allocation when the month is settled, where it can still be changed — all
+            into fixed income one month, half crypto the next.
+          </p>
+          <SplitFields key={kind} assets={assets} initial={recurrence?.allocations ?? []} />
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
         <Field label="Starts on" htmlFor="startsOn">

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { today } from "@/lib/domain/dates";
+import { readAllocationFields } from "@/lib/schemas/allocation";
 import { entryInputSchema } from "@/lib/schemas/entries";
 import { firstIssue, formToObject } from "@/lib/schemas/form";
 import { getContext } from "@/lib/services/context";
@@ -14,7 +15,7 @@ export type CreateEntryActionResult =
 
 export async function createEntryAction(formData: FormData): Promise<CreateEntryActionResult> {
   const { userId, repos } = await getContext();
-  const parsed = entryInputSchema.safeParse(formToObject(formData));
+  const parsed = entryInputSchema.safeParse({ ...formToObject(formData), allocation: readAllocationFields(formData).allocation });
   if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
 
   try {
@@ -29,5 +30,5 @@ export async function createEntryAction(formData: FormData): Promise<CreateEntry
 }
 
 export async function revalidateEntries(): Promise<void> {
-  for (const path of ["/", "/entries", "/review", "/cards", "/recurrences", "/net-worth", "/accounts/[id]"]) revalidatePath(path, "page");
+  for (const path of ["/", "/entries", "/review", "/cards", "/recurrences", "/net-worth", "/accounts/[id]", "/portfolio", "/portfolio/[id]"]) revalidatePath(path, "page");
 }

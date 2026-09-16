@@ -8,6 +8,7 @@ import { today } from "@/lib/domain/dates";
 import { listAccounts } from "@/lib/services/accounts";
 import { listCategories } from "@/lib/services/categories";
 import { getContext } from "@/lib/services/context";
+import { listAssets } from "@/lib/services/portfolio";
 import { ServiceError } from "@/lib/services/errors";
 import { getRecurrence } from "@/lib/services/recurrences";
 import { deleteRecurrenceAction, updateRecurrenceAction } from "../actions";
@@ -19,7 +20,7 @@ export default async function EditRecurrencePage(props: PageProps<"/recurrences/
     if (error instanceof ServiceError && error.code === "not_found") notFound();
     throw error;
   });
-  const [accounts, categories] = await Promise.all([listAccounts(repos, userId), listCategories(repos, userId)]);
+  const [accounts, categories, assets] = await Promise.all([listAccounts(repos, userId), listCategories(repos, userId), listAssets(repos, userId)]);
 
   return (
     <>
@@ -44,6 +45,7 @@ export default async function EditRecurrencePage(props: PageProps<"/recurrences/
         recurrence={recurrence}
         accounts={accounts.filter((a) => a.isActive || a.id === recurrence.accountId || a.id === recurrence.counterAccountId)}
         categories={categories.filter((c) => c.isActive || c.id === recurrence.categoryId)}
+        assets={assets.filter((a) => a.isActive || recurrence.allocations.some((s) => s.assetId === a.id))}
         today={today()}
         action={updateRecurrenceAction}
       />

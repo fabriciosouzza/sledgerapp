@@ -134,18 +134,36 @@ use floats, never map `numeric` to a JS number.
 Only one exception in the entire system: `market_adjustment` on an asset
 movement, which may be negative.
 
-### 5.2 The four entry kinds
+### 5.2 The five entry kinds
 
 | `kind` | What it is | Counts as income? | Counts as expense? | Net worth |
 |---|---|---|---|---|
 | `income` | salary, benefit, refund | yes | no | up |
 | `expense` | consumption | no | yes | down |
 | `contribution` | money leaving cash to become an investment | no | **no** | neutral |
+| `redemption` | money coming back from an investment to cash | **no** | no | neutral |
 | `transfer` | money moving between accounts | no | no | neutral |
 
 **A contribution is not an expense.** If it were, the savings rate would punish
-the user for investing. A contribution has a source account and a counter
-account of type `brokerage`.
+the user for investing. **A redemption is not income.** It is the user's own
+money coming back; counting it would inflate the savings rate.
+
+A contribution has **one side in cash** (the source account) and its other
+side in the portfolio: it is split across one or more **assets** (§5.7). A
+redemption is the mirror: the cash account that receives the money, and the
+assets it came out of. Neither has a counter *account* — there is no
+"brokerage account" in the model. Where an asset is held is the asset's
+`broker` text.
+
+**A planned contribution needs no asset; a settled one always does.** The
+amount is decided when the month is planned ("R$ 1.000 on the 5th"); the
+destination is decided when the money actually moves ("all of it into fixed
+income this month, half crypto the next"). Settling a contribution therefore
+asks for its **allocation** — a list of `(asset, amount)` whose sum equals the
+entry's amount — and records one `contribution` movement per asset, paired to
+the entry. Unsettling removes them. The same holds for redemptions, with
+`withdrawal` movements. A settled contribution whose paired movements do not
+add up to its amount is a defect the Portfolio must point at, never hide.
 
 **Paying a credit card statement is a `transfer`** from a cash account to the
 card account. The expense was already recorded on the purchase date. Counting
@@ -194,6 +212,12 @@ the service returns how many rows it created.
 Day-of-month clamping: due day 31 becomes the last day of a short month. Pure
 function, unit tested against February.
 
+A recurring contribution may carry a **default split**: percentages per asset
+summing to 100 (`recurrence_allocations`). It is a suggestion, not data: the
+generated entry is planned and unallocated; the split pre-fills the allocation
+when that entry is settled, where it can be changed for the month. Amounts are
+derived from the percentages by largest remainder, so they always add up.
+
 ### 5.6 Credit cards — plural
 
 **The user has more than one credit card.** Nothing in the model, the UI or the
@@ -219,10 +243,10 @@ sum of its movements:
 
 | `kind` | Sign | Purpose |
 |---|---|---|
-| `contribution` | + | new money; pairs with an `entries` row of kind `contribution` |
+| `contribution` | + | new money; pairs with an `entries` row of kind `contribution` (one entry, one movement per asset) |
 | `yield` | + | fixed-income interest, entered by hand |
 | `market_adjustment` | ± | crypto/FX: difference between the broker app balance and the recorded balance |
-| `withdrawal` | − | money out |
+| `withdrawal` | − | money out; pairs with an `entries` row of kind `redemption` when the cash arrives in an account |
 | `fee_tax` | − | cost |
 
 `balance = contribution + yield + market_adjustment − withdrawal − fee_tax`
@@ -233,12 +257,25 @@ it earned**. Only `market_adjustment` may be negative.
 **Yield is not income.** It raises net worth and stays out of the savings-rate
 denominator. If it leaks in, the metric inflates itself.
 
-### 5.8 Linked benefits
+**Accounts and assets are different in nature.** An account's balance moves
+only when the user moves money (an entry). An asset's balance moves on its own
+— it yields, swings, gets charged — with no cash flow behind it. Modelling an
+asset as an account would need entries with no counterpart, which is how yield
+leaks into income. So: an account is money in liquid form; an asset is money
+put to work.
+
+### 5.8 Earmarked money
 
 Meal vouchers and allowances arrive as income and leave as expense in the same
 month, inflating both sides and distorting the savings rate. Categories carry an
-`is_benefit` flag, and the app shows **two rates**: gross, and one that removes
-benefits from the denominator.
+`is_earmarked` flag ("this money arrives with its destination set: it will be
+spent, it cannot be saved"), and the app shows **two rates**: gross, and one
+that removes earmarked income from the denominator. Both the income and the
+matching expenses go in the earmarked category.
+
+The test for the flag is "could this money have been saved?". A cash
+allowance the user is free to keep is plain income — it *is* capacity to save.
+Only money that must be spent is earmarked, whatever form it arrives in.
 
 ### 5.9 Net worth
 
@@ -259,10 +296,11 @@ Computed in `domain/metrics.ts` from the entries of one period:
 income            = Σ settled income
 expense           = Σ settled expense
 contributions     = Σ settled contribution
-benefits          = Σ settled income where category.is_benefit
-leftover          = income − expense − contributions
+redemptions       = Σ settled redemption
+earmarked         = Σ settled income where category.is_earmarked
+leftover          = income − expense − contributions + redemptions
 savingsRate       = (income − expense) / income
-savingsRateExBen  = (income − expense) / (income − benefits)
+savingsRateExEar  = (income − expense) / (income − earmarked)
 fixedCost         = Σ active expense recurrences
 monthsOfRunway    = cash / fixedCost
 committed         = Σ future planned entries in debt/installment categories
@@ -283,8 +321,8 @@ Every table: `id uuid primary key default gen_random_uuid()`,
 ### Enums
 
 ```sql
-create type account_type   as enum ('checking','savings','cash','credit_card','brokerage','other');
-create type entry_kind     as enum ('income','expense','contribution','transfer');
+create type account_type   as enum ('checking','savings','cash','credit_card','other');
+create type entry_kind     as enum ('income','expense','contribution','redemption','transfer');
 create type entry_status   as enum ('planned','settled');
 create type entry_source   as enum ('manual','recurrence','installment');
 create type asset_class    as enum ('fixed_income','crypto','foreign_currency','stocks','reits','other');
@@ -302,7 +340,7 @@ every other type must have both null.
 ### `categories`
 `name`, `parent_id uuid references categories(id)` (max depth 1),
 `applies_to entry_kind[]`, `monthly_cap_cents bigint`,
-`is_benefit bool default false`, `color text`, `icon text`,
+`is_earmarked bool default false`, `color text`, `icon text`,
 `is_active bool default true`, `sort_order int`.
 Unique: `(user_id, parent_id, name)`.
 
@@ -310,6 +348,12 @@ Unique: `(user_id, parent_id, name)`.
 `description`, `kind entry_kind`, `category_id`, `account_id`,
 `counter_account_id`, `amount_cents bigint`, `due_day int`, `starts_on date`,
 `ends_on date`, `is_variable bool`, `is_active bool default true`.
+
+### `recurrence_allocations`
+The default split of a recurring contribution (§5.5): `recurrence_id`,
+`asset_id`, `share_percent int check (between 1 and 100)`.
+Unique: `(recurrence_id, asset_id)`. The application checks the shares of one
+recurrence sum to 100.
 
 ### `entries` — the central table
 
@@ -337,7 +381,7 @@ Required constraints:
 
 ```sql
 check ((status = 'settled') = (settled_on is not null))
-check ((kind in ('transfer','contribution')) = (counter_account_id is not null))
+check ((kind = 'transfer') = (counter_account_id is not null))
 check (counter_account_id is distinct from account_id)
 check ((installment_no is null) = (installment_group_id is null))
 check (installment_no is null or installment_no <= installment_total)
@@ -360,6 +404,8 @@ Indexes: `(user_id, date)`, `(user_id, status, date)`,
 `asset_id`, `date date`, `kind movement_kind`, `amount_cents bigint`,
 `entry_id uuid references entries(id) on delete set null`, `notes text`.
 Check: `kind = 'market_adjustment' or amount_cents > 0`.
+Several movements may point at one entry: a contribution split across assets
+is one entry and N movements (§5.2).
 
 ### `balance_snapshots`
 `period date` (first day of the month), `account_id`, `kind balance_kind`,
@@ -395,19 +441,24 @@ Answers "what do I need to do right now".
 - Cards: **cash on hand**, **due in the next 7 days**, **leftover this month**,
   **savings rate**.
 - **Overdue** block, prominent, when non-empty.
-- **Upcoming (7 days)** list with one-tap settle and an undo toast.
+- **Upcoming (7 days)** list with one-tap settle and an undo toast. Settling
+  a contribution opens its allocation first (pre-filled from the recurrence's
+  default split), so it is never left without a destination.
 - **Cards** strip: one tile per credit card with open statement total and days
   to due date.
 - 12-month net-worth sparkline.
 
 ### `/add`
 Fast entry form. Opens focused on the amount, numeric keyboard, kind as a
-segmented control.
+segmented control (expense, income, transfer, contribution; a redemption is
+recorded from the Portfolio, as a withdrawal that also records the cash).
 
 Conditional fields by kind:
 - `expense` / `income`: amount, date, category, account, description,
   "already paid?" toggle (sets status and `settled_on`);
-- `transfer` / `contribution`: amount, date, source account, counter account;
+- `transfer`: amount, date, source account, counter account;
+- `contribution`: amount, date, source account, and — when "already paid" is
+  on — the allocation across assets (§5.2); a planned one waits for settling;
 - **installments** toggle: number of parts, with a preview before saving
   ("12 × R$ 149,90, Oct/26 → Sep/27");
 - **repeat monthly** toggle: creates a recurrence instead of an entry.
@@ -427,7 +478,10 @@ is still planned this month.
 ### `/portfolio`
 Total balance, total contributed, total earned, return on contributions. Donut
 by asset class. Stacked area of contributed versus earned over time. Per-asset
-list. Movement entry form.
+list. Movement entry form: a contribution or withdrawal can record its cash
+side at once (the entry of kind `contribution` / `redemption`, paired).
+A warning, with a link to each entry, when a settled contribution or
+redemption has no allocation or one that does not add up.
 
 ### `/net-worth`
 Net worth line. Monthly snapshot form listing every active account at once.
@@ -439,13 +493,15 @@ due dates, past statements with their paid status, and a "pay statement" action
 that creates the transfer.
 
 ### `/recurrences`
-CRUD. **Monthly fixed cost** summed at the top — the number that sizes the
+CRUD; a recurring contribution takes its default split here. **Monthly fixed
+cost** summed at the top — the number that sizes the
 emergency fund. **Generate month** with a period picker, a preview of what will
 be created, and a warning when it was already generated.
 
 ### `/settings`
 Accounts (with per-card closing and due days), categories and caps (with
-`is_benefit`), assets, profile, sign out.
+`is_earmarked`, explained with the meal-voucher example), assets (with the
+broker they are held at), profile, sign out.
 
 ---
 
@@ -498,7 +554,9 @@ PORTABILITY.md
 
 On user creation, seed an editable starting set — **no entries**:
 
-- Accounts: `Conta Corrente`, `Dinheiro`, `Reserva`, `Corretora`.
+- Accounts: `Conta Corrente`, `Dinheiro`, `Reserva`. No brokerage account:
+  investments are assets (§5.7), and where they are held is the asset's
+  `broker`.
 - Categories: `Moradia`, `Alimentação`, `Transporte`, `Saúde`, `Educação`,
   `Assinaturas`, `Lazer`, `Dívidas e parcelas`, `Outros` — all with null caps.
 
@@ -543,7 +601,7 @@ database and two JWTs.
 2. A transfer appears in neither income nor expense.
 3. Paying a card statement is not an expense; the original purchase is.
 4. Investment yield enters neither income nor the savings rate.
-5. `savingsRateExBenefits` excludes `is_benefit` categories from the denominator.
+5. `savingsRateExEarmarked` excludes `is_earmarked` categories from the denominator.
 6. Generating the same month twice creates nothing the second time.
 7. A recurrence whose `ends_on` precedes the month generates nothing; likewise
    one whose `starts_on` follows it.
@@ -557,6 +615,14 @@ database and two JWTs.
     different statement cycles, and a purchase after the closing day lands in
     the next cycle.
 15. Total card debt sums every card and excludes paid statements.
+16. Settling a contribution with an allocation creates one paired movement per
+    asset whose amounts sum to the entry; unsettling removes them; an
+    allocation that does not add up is rejected.
+17. A redemption raises the cash account and enters neither income nor the
+    savings rate; a contribution lowers it and enters neither expense nor the
+    rate.
+18. A default split of 70/30 over R$ 1.000,01 allocates amounts that sum to
+    exactly R$ 1.000,01.
 
 ---
 

@@ -6,6 +6,7 @@ import { CategoryTable } from "@/components/month/category-table";
 import { Stat } from "@/components/month/stat";
 import { Button } from "@/components/ui/button";
 import { formatPeriodShort, periodEnd, periodStart } from "@/lib/domain/dates";
+import { formatBRL } from "@/lib/domain/money";
 import type { YearSummary } from "@/lib/services/summary";
 
 export function YearView({ summary, title, prevHref, nextHref }: { summary: YearSummary; title: string; prevHref?: string; nextHref?: string }) {
@@ -39,10 +40,10 @@ export function YearView({ summary, title, prevHref, nextHref }: { summary: Year
       <section aria-label="Totals" className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,8.5rem),1fr))] gap-2 md:grid-cols-3">
         <Stat label="Income" cents={t.incomeCents} href={`${rangeHref}&kind=income`} />
         <Stat label="Expense" cents={t.expenseCents} href={`${rangeHref}&kind=expense`} />
-        <Stat label="Contributions" cents={t.contributionsCents} href={`${rangeHref}&kind=moves`} />
+        <Stat label="Contributions" cents={t.contributionsCents} hint={t.redemptionsCents > 0 ? `− ${formatBRL(t.redemptionsCents)} redeemed` : undefined} href={`${rangeHref}&kind=moves`} />
         <Stat label="Leftover" cents={t.leftoverCents} tone="signed" href={rangeHref} />
         <Stat label="Savings rate" rate={t.savingsRate} tone="signed" />
-        <Stat label="Savings rate ex-benefits" rate={t.savingsRateExBenefits} tone="signed" />
+        <Stat label="Savings rate ex-earmarked" rate={t.savingsRateExEarmarked} tone="signed" />
       </section>
 
       <section className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">

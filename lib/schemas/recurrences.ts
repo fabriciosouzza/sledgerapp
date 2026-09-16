@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { needsCategory, needsCounterAccount } from "@/lib/domain/entries";
 import { isoDateField, optionalIsoDate, requiredCents } from "./entries";
+import { sharesField } from "./allocation";
 import { boolField, optionalId, optionalInt, requiredId, requiredText } from "./form";
 
 export const recurrenceInputSchema = z
@@ -16,6 +17,8 @@ export const recurrenceInputSchema = z
     endsOn: optionalIsoDate,
     isVariable: boolField.default(false),
     isActive: boolField.default(true),
+    /** Default split of a recurring contribution (§5.5); ignored for other kinds. */
+    allocations: sharesField,
   })
   .superRefine((r, ctx) => {
     if (r.dueDay === null) ctx.addIssue({ code: "custom", path: ["dueDay"], message: "Pick the due day." });

@@ -2,6 +2,7 @@
 
 import type { Entry, EntryKind, IsoDate } from "./types";
 
+/** The kinds the add form and the + sheet offer. A redemption is recorded from the Portfolio (a withdrawal that also records the cash). */
 export const ENTRY_KINDS: { value: EntryKind; label: string }[] = [
   { value: "expense", label: "Expense" },
   { value: "income", label: "Income" },
@@ -9,12 +10,28 @@ export const ENTRY_KINDS: { value: EntryKind; label: string }[] = [
   { value: "contribution", label: "Contribution" },
 ];
 
+export function entryKindLabel(kind: EntryKind): string {
+  if (kind === "redemption") return "Redemption";
+  return ENTRY_KINDS.find((k) => k.value === kind)?.label ?? kind;
+}
+
 export function needsCategory(kind: EntryKind): boolean {
   return kind === "income" || kind === "expense";
 }
 
+/** Only a transfer has a second account; a contribution's other side is the portfolio (§5.2). */
 export function needsCounterAccount(kind: EntryKind): boolean {
-  return kind === "transfer" || kind === "contribution";
+  return kind === "transfer";
+}
+
+/** Contributions and redemptions are settled with an allocation across assets (§5.2). */
+export function needsAllocation(kind: EntryKind): boolean {
+  return kind === "contribution" || kind === "redemption";
+}
+
+/** Transfers, contributions and redemptions: money that moved, not income or spending. */
+export function isMove(kind: EntryKind): boolean {
+  return kind === "transfer" || needsAllocation(kind);
 }
 
 export function canBeInstallments(kind: EntryKind): boolean {
@@ -30,6 +47,7 @@ export function displaySign(kind: EntryKind): "+" | "-" | "" {
       return "-";
     case "transfer":
     case "contribution":
+    case "redemption":
       return "";
   }
 }

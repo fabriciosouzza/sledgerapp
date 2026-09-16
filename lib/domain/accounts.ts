@@ -8,7 +8,6 @@ export const ACCOUNT_TYPES: { value: AccountType; label: string }[] = [
   { value: "savings", label: "Savings" },
   { value: "cash", label: "Cash" },
   { value: "credit_card", label: "Credit card" },
-  { value: "brokerage", label: "Brokerage" },
   { value: "other", label: "Other" },
 ];
 
@@ -20,9 +19,9 @@ export function isCreditCard(account: Pick<Account, "type">): boolean {
   return account.type === "credit_card";
 }
 
-/** Card debt is never cash (§5.6); brokerage balances come from movements (§5.7). Cash accounts carry a derived balance. */
+/** Card debt is never cash (§5.6); investments are assets, not accounts (§5.7). Every other account carries a derived cash balance. */
 export function isCashAccount(account: Pick<Account, "type">): boolean {
-  return account.type === "checking" || account.type === "savings" || account.type === "cash" || account.type === "other";
+  return !isCreditCard(account);
 }
 
 export type AccountFields = Omit<Account, "id">;

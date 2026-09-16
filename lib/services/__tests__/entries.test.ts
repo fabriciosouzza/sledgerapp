@@ -9,7 +9,7 @@ const TODAY = "2026-11-05";
 
 let repos: FakeRepositories;
 let checking: string;
-let broker: string;
+let savings: string;
 let food: string;
 let misc: string;
 
@@ -18,7 +18,7 @@ beforeEach(async () => {
   await seedUserIfEmpty(repos, U);
   const accounts = await repos.accounts.list(U);
   checking = accounts.find((a) => a.name === "Conta Corrente")!.id;
-  broker = accounts.find((a) => a.name === "Corretora")!.id;
+  savings = accounts.find((a) => a.name === "Reserva")!.id;
   const categories = await repos.categories.list(U);
   food = categories.find((c) => c.name === "Alimentação")!.id;
   misc = categories.find((c) => c.name === "Outros")!.id;
@@ -61,21 +61,18 @@ describe("createEntry", () => {
     const { entries } = await createEntry(
       repos,
       U,
-      input({ kind: "transfer", categoryId: food, counterAccountId: broker, description: "Aporte" }),
+      input({ kind: "transfer", categoryId: food, counterAccountId: savings, description: "Guardar" }),
       { today: TODAY },
     );
-    expect(entries[0]).toMatchObject({ kind: "transfer", categoryId: null, counterAccountId: broker });
+    expect(entries[0]).toMatchObject({ kind: "transfer", categoryId: null, counterAccountId: savings });
 
     expect(() => input({ kind: "transfer", counterAccountId: checking })).toThrow();
   });
 
-  it("requires a brokerage counter account for contributions", async () => {
-    const cash = (await repos.accounts.list(U)).find((a) => a.name === "Dinheiro")!.id;
-    await expect(
-      createEntry(repos, U, input({ kind: "contribution", counterAccountId: cash }), { today: TODAY }),
-    ).rejects.toMatchObject({ code: "invalid" });
-    const ok = await createEntry(repos, U, input({ kind: "contribution", counterAccountId: broker }), { today: TODAY });
-    expect(ok.entries[0].kind).toBe("contribution");
+  it("plans a contribution with no asset, and settles one only with its allocation", async () => {
+    const planned = await createEntry(repos, U, input({ kind: "contribution", description: "" }), { today: TODAY });
+    expect(planned.entries[0]).toMatchObject({ kind: "contribution", status: "planned", counterAccountId: null, categoryId: null, description: "Aporte" });
+    await expect(createEntry(repos, U, input({ kind: "contribution", settled: "on" }), { today: TODAY })).rejects.toMatchObject({ code: "invalid" });
   });
 
   it("rejects a category that does not apply to the kind", async () => {

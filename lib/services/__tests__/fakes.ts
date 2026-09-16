@@ -120,7 +120,7 @@ export function fakeRepositories(): FakeRepositories {
   const checkEntry = (e: NewEntry) => {
     if (e.amountCents <= 0) throw new RepositoryError("invalid", "amount");
     if ((e.status === "settled") !== (e.settledOn !== null)) throw new RepositoryError("invalid", "settled");
-    if ((e.kind === "transfer" || e.kind === "contribution") !== (e.counterAccountId !== null)) {
+    if ((e.kind === "transfer") !== (e.counterAccountId !== null)) {
       throw new RepositoryError("invalid", "counter");
     }
     if ((e.kind === "income" || e.kind === "expense") && e.categoryId === null) throw new RepositoryError("invalid", "category");
@@ -207,7 +207,7 @@ export function fakeRepositories(): FakeRepositories {
       return row ? strip(row) : null;
     },
     async insert(userId, data: NewRecurrence) {
-      const row = { ...data, id: nextId(), userId };
+      const row = { ...data, allocations: [...data.allocations], id: nextId(), userId };
       recurrences.push(row);
       return strip(row);
     },
@@ -287,15 +287,29 @@ export function fakeRepositories(): FakeRepositories {
       const row = movements.find((m) => m.userId === userId && m.id === id);
       return row ? strip(row) : null;
     },
-    async getByEntry(userId, entryId) {
-      const row = movements.find((m) => m.userId === userId && m.entryId === entryId);
-      return row ? strip(row) : null;
+    async listByEntry(userId, entryId) {
+      return movements.filter((m) => m.userId === userId && m.entryId === entryId).map(strip);
     },
     async insert(userId, data: NewMovement) {
       if (data.kind !== "market_adjustment" && data.amountCents <= 0) throw new RepositoryError("invalid", "amount");
       const row = { ...data, id: nextId(), userId };
       movements.push(row);
       return strip(row);
+    },
+    async insertMany(userId, data) {
+      const out: AssetMovement[] = [];
+      for (const d of data) out.push(await movementsRepo.insert(userId, d));
+      return out;
+    },
+    async deleteByEntry(userId, entryId) {
+      let n = 0;
+      for (let i = movements.length - 1; i >= 0; i--) {
+        if (movements[i].userId === userId && movements[i].entryId === entryId) {
+          movements.splice(i, 1);
+          n++;
+        }
+      }
+      return n;
     },
     async update(userId, id, patch) {
       const row = movements.find((m) => m.userId === userId && m.id === id);

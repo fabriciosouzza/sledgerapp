@@ -22,8 +22,8 @@ export function formatPercent(r: number): string {
 }
 
 /**
- * Effect of an entry on cash. Contributions and transfers are neutral to
- * income/expense metrics, so they carry no sign here (§5.2).
+ * Effect of an entry on cash. Contributions, redemptions and transfers are
+ * neutral to income/expense metrics, so they carry no sign here (§5.2).
  */
 export function cashFlowSign(kind: EntryKind): 1 | -1 | 0 {
   switch (kind) {
@@ -32,6 +32,7 @@ export function cashFlowSign(kind: EntryKind): 1 | -1 | 0 {
     case "expense":
       return -1;
     case "contribution":
+    case "redemption":
     case "transfer":
       return 0;
   }

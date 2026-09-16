@@ -26,7 +26,7 @@ function toDomain(row: Row): Category {
     parentId: row.parent_id,
     appliesTo: row.applies_to,
     monthlyCapCents: row.monthly_cap_cents,
-    isBenefit: row.is_benefit,
+    isEarmarked: row.is_earmarked,
     color: row.color,
     icon: row.icon,
     isActive: row.is_active,
@@ -40,7 +40,7 @@ function toRow(userId: string, data: Partial<NewCategory>): Partial<Insert> & { 
   if (data.parentId !== undefined) row.parent_id = data.parentId;
   if (data.appliesTo !== undefined) row.applies_to = data.appliesTo;
   if (data.monthlyCapCents !== undefined) row.monthly_cap_cents = data.monthlyCapCents;
-  if (data.isBenefit !== undefined) row.is_benefit = data.isBenefit;
+  if (data.isEarmarked !== undefined) row.is_earmarked = data.isEarmarked;
   if (data.color !== undefined) row.color = data.color;
   if (data.icon !== undefined) row.icon = data.icon;
   if (data.isActive !== undefined) row.is_active = data.isActive;

@@ -1,10 +1,13 @@
 import { z } from "zod";
 import { isIsoDate } from "@/lib/domain/dates";
-import { canBeInstallments, needsCategory, needsCounterAccount } from "@/lib/domain/entries";
+import { canBeInstallments, isMove, needsCategory, needsCounterAccount } from "@/lib/domain/entries";
 import { parseBRL } from "@/lib/domain/money";
+import { allocationField } from "./allocation";
 import { boolField, optionalId, optionalInt, optionalText, requiredId, requiredText } from "./form";
 
-export const entryKindSchema = z.enum(["income", "expense", "contribution", "transfer"]);
+export const entryKindSchema = z.enum(["income", "expense", "contribution", "redemption", "transfer"]);
+/** What the add form offers; a redemption is recorded from the Portfolio (§7). */
+export const addableKindSchema = z.enum(["income", "expense", "contribution", "transfer"]);
 
 export const isoDateField = z
   .string({ error: "Enter a date." })
@@ -24,10 +27,10 @@ export const requiredCents = z.preprocess(
 
 export const entryInputSchema = z
   .object({
-    kind: entryKindSchema,
+    kind: addableKindSchema,
     amountCents: requiredCents,
     date: isoDateField,
-    /** Optional for transfers and contributions: "From → To" is description enough. */
+    /** Optional for transfers and contributions: "From → To" / "Aporte" is description enough. */
     description: optionalText(120),
     categoryId: optionalId(),
     accountId: requiredId("an account"),
@@ -35,6 +38,8 @@ export const entryInputSchema = z
     notes: optionalText(500),
     settled: boolField.default(false),
     settledOn: optionalIsoDate,
+    /** Where a settled contribution goes (§5.2); ignored for other kinds. */
+    allocation: allocationField,
     installments: boolField.default(false),
     installmentParts: optionalInt(2, 120),
     /** "This is part N": a plan already under way starts here. */
@@ -47,7 +52,7 @@ export const entryInputSchema = z
     if (needsCategory(e.kind) && e.categoryId === null) {
       ctx.addIssue({ code: "custom", path: ["categoryId"], message: "Pick a category." });
     }
-    if (!needsCounterAccount(e.kind) && e.description === null) {
+    if (!isMove(e.kind) && e.description === null) {
       ctx.addIssue({ code: "custom", path: ["description"], message: "Description is required." });
     }
     if (needsCounterAccount(e.kind)) {
@@ -88,14 +93,13 @@ export const entryUpdateSchema = z
     notes: optionalText(500),
     settled: boolField.default(false),
     settledOn: optionalIsoDate,
+    /** Given, it replaces the allocation of a settled contribution; absent, the recorded one stays. */
+    allocation: allocationField,
     scope: z.enum(["this", "this_and_future", "all"]).default("this"),
   })
   .superRefine((e, ctx) => {
     if (needsCategory(e.kind) && e.categoryId === null) {
       ctx.addIssue({ code: "custom", path: ["categoryId"], message: "Pick a category." });
-    }
-    if (!needsCounterAccount(e.kind) && e.description === null) {
-      ctx.addIssue({ code: "custom", path: ["description"], message: "Description is required." });
     }
     if (needsCounterAccount(e.kind)) {
       if (e.counterAccountId === null) {

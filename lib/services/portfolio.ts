@@ -1,9 +1,12 @@
 // Investments (PROMPT.md §5.7): balances are running sums of movements; no
-// quotes. A contribution pairs with an `entries` row of kind contribution so
-// cash flow and portfolio agree without counting twice.
+// quotes. A contribution pairs with an `entries` row of kind contribution
+// (a redemption with a withdrawal) so cash flow and portfolio agree without
+// counting twice.
 
+import { isCashAccount } from "@/lib/domain/accounts";
+import { unallocated, type Unallocated } from "@/lib/domain/allocation";
 import { addMonths, periodOf, today as todayInSaoPaulo } from "@/lib/domain/dates";
-import { balanceByClass, portfolioSeries, summarize, type PortfolioPoint, type PortfolioSummary } from "@/lib/domain/portfolio";
+import { balanceByClass, movementSign, portfolioSeries, summarize, type PortfolioPoint, type PortfolioSummary } from "@/lib/domain/portfolio";
 import type { Asset, AssetClass, AssetMovement, IsoDate } from "@/lib/domain/types";
 import type { Repositories } from "@/lib/repositories";
 import type { AssetInput, MovementInput, MovementUpdate, NewAssetInput } from "@/lib/schemas/assets";
@@ -20,6 +23,8 @@ export interface PortfolioOverview {
   byClass: { assetClass: AssetClass; balanceCents: number }[];
   assets: AssetLine[];
   series: PortfolioPoint[];
+  /** Settled contributions and redemptions whose paired movements do not add up: money with no asset behind it (§5.2). */
+  unallocated: Unallocated[];
 }
 
 export async function listAssets(repos: Repositories, userId: string): Promise<Asset[]> {
@@ -61,8 +66,16 @@ export async function deleteAsset(repos: Repositories, userId: string, id: strin
   await repos.assets.delete(userId, id);
 }
 
+/** Every settled contribution and redemption, from the day the oldest cash account opened (nothing settles before that). */
+async function cashSideEntries(repos: Repositories, userId: string, until: IsoDate) {
+  const accounts = (await repos.accounts.list(userId)).filter(isCashAccount);
+  if (accounts.length === 0) return [];
+  const from = accounts.reduce((min, a) => (a.openingOn < min ? a.openingOn : min), accounts[0].openingOn);
+  return repos.entries.list(userId, { kinds: ["contribution", "redemption"], status: "settled", settledFrom: from, settledTo: until });
+}
+
 export async function portfolioOverview(repos: Repositories, userId: string, today: IsoDate, months = 12): Promise<PortfolioOverview> {
-  const [assets, movements] = await Promise.all([repos.assets.list(userId), repos.movements.list(userId)]);
+  const [assets, movements, cashSide] = await Promise.all([repos.assets.list(userId), repos.movements.list(userId), cashSideEntries(repos, userId, today)]);
   const byAsset = new Map<string, AssetMovement[]>();
   for (const m of movements) byAsset.set(m.assetId, [...(byAsset.get(m.assetId) ?? []), m]);
 
@@ -83,14 +96,15 @@ export async function portfolioOverview(repos: Repositories, userId: string, tod
       .sort((a, b) => b.balanceCents - a.balanceCents),
     assets: lines,
     series: portfolioSeries(movements, addMonths(period, -(months - 1)), period),
+    unallocated: unallocated(cashSide, movements).sort((a, b) => (a.entry.date < b.entry.date ? -1 : 1)),
   };
 }
 
-/** Recorded balance per asset id (running sum of movements). */
+/** Recorded balance per asset id (running sum of movements, each with its sign). */
 export async function assetBalances(repos: Repositories, userId: string): Promise<Record<string, number>> {
   const movements = await repos.movements.list(userId);
   const out: Record<string, number> = {};
-  for (const m of movements) out[m.assetId] = (out[m.assetId] ?? 0) + m.amountCents;
+  for (const m of movements) out[m.assetId] = (out[m.assetId] ?? 0) + movementSign(m.kind) * m.amountCents;
   return out;
 }
 
@@ -132,30 +146,26 @@ export async function assetDetail(repos: Repositories, userId: string, id: strin
 export async function addMovement(repos: Repositories, userId: string, input: MovementInput): Promise<AssetMovement> {
   const asset = await getAsset(repos, userId, input.assetId);
 
-  // A contribution pairs with a contribution entry (cash → brokerage); a
-  // withdrawal with a transfer back (brokerage → cash). Both keep the cash
-  // side and the portfolio in step without counting twice.
+  // A contribution pairs with a contribution entry (cash → this asset); a
+  // withdrawal with a redemption (this asset → cash). Both keep the cash side
+  // and the portfolio in step without counting twice (§5.2).
   let entryId: string | null = null;
-  const pairs = (input.kind === "contribution" || input.kind === "withdrawal") && input.fromAccountId !== null && input.brokerageAccountId !== null;
+  const pairs = (input.kind === "contribution" || input.kind === "withdrawal") && input.cashAccountId !== null;
   if (pairs) {
-    const [cash, brokerage] = await Promise.all([
-      repos.accounts.getById(userId, input.fromAccountId!),
-      repos.accounts.getById(userId, input.brokerageAccountId!),
-    ]);
+    const cash = await repos.accounts.getById(userId, input.cashAccountId!);
     if (!cash) throw new ServiceError("invalid", "Cash account not found.");
-    if (!brokerage || brokerage.type !== "brokerage") throw new ServiceError("invalid", "Pick a brokerage account.");
-    if (cash.id === brokerage.id) throw new ServiceError("invalid", "Cash and brokerage accounts must differ.");
+    if (!isCashAccount(cash)) throw new ServiceError("invalid", "Pick a cash account, not a card.");
     const outgoing = input.kind === "contribution";
     const entry = await repos.entries.insert(userId, {
       date: input.date,
       settledOn: input.date,
-      kind: outgoing ? "contribution" : "transfer",
+      kind: outgoing ? "contribution" : "redemption",
       status: "settled",
       amountCents: input.amountCents,
       description: outgoing ? `Aporte ${asset.name}` : `Resgate ${asset.name}`,
       categoryId: null,
-      accountId: outgoing ? cash.id : brokerage.id,
-      counterAccountId: outgoing ? brokerage.id : cash.id,
+      accountId: cash.id,
+      counterAccountId: null,
       notes: input.notes,
       source: "manual",
       recurrenceId: null,
@@ -189,6 +199,11 @@ export async function updateMovement(repos: Repositories, userId: string, input:
   const current = await getMovement(repos, userId, input.id);
   if (current.entryId !== null) {
     if (input.kind !== current.kind) throw new ServiceError("invalid", "A movement paired with a cash entry keeps its kind; delete it to change that.");
+    // One entry split across assets: its amount is the sum of its parts, so a part is re-allocated from the entry, not here.
+    const siblings = await repos.movements.listByEntry(userId, current.entryId);
+    if (siblings.length > 1 && input.amountCents !== current.amountCents) {
+      throw new ServiceError("invalid", "This is one part of a contribution split across assets; change the split from the entry.");
+    }
     await repos.entries.update(userId, current.entryId, { amountCents: input.amountCents, date: input.date, settledOn: input.date, notes: input.notes });
   }
   return repos.movements.update(userId, input.id, { kind: input.kind, date: input.date, amountCents: input.amountCents, notes: input.notes });
@@ -198,6 +213,10 @@ export async function updateMovement(repos: Repositories, userId: string, input:
 export async function deleteMovement(repos: Repositories, userId: string, id: string): Promise<void> {
   const movement = await repos.movements.getById(userId, id);
   if (!movement) throw new ServiceError("not_found", "Movement not found.");
+  if (movement.entryId !== null) {
+    const siblings = await repos.movements.listByEntry(userId, movement.entryId);
+    if (siblings.length > 1) throw new ServiceError("invalid", "This is one part of a contribution split across assets; change the split from the entry.");
+  }
   await repos.movements.delete(userId, id);
   if (movement.entryId !== null) await repos.entries.deleteMany(userId, [movement.entryId]);
 }

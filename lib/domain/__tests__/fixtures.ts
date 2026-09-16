@@ -45,6 +45,7 @@ export function recurrence(overrides: Partial<Recurrence> = {}): Recurrence {
     endsOn: null,
     isVariable: false,
     isActive: true,
+    allocations: [],
     ...overrides,
   };
 }

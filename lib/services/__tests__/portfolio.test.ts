@@ -11,7 +11,6 @@ const U = "u1";
 const TODAY = "2026-11-10";
 let repos: FakeRepositories;
 let checking: string;
-let broker: string;
 let cdb: string;
 
 beforeEach(async () => {
@@ -19,7 +18,6 @@ beforeEach(async () => {
   await seedUserIfEmpty(repos, U);
   const accounts = await repos.accounts.list(U);
   checking = accounts.find((a) => a.name === "Conta Corrente")!.id;
-  broker = accounts.find((a) => a.name === "Corretora")!.id;
   cdb = (await createAsset(repos, U, assetInputSchema.parse({ name: "CDB 110%", assetClass: "fixed_income" }))).id;
 });
 
@@ -28,10 +26,10 @@ const move = (overrides: Record<string, unknown>) =>
 
 describe("addMovement", () => {
   it("pairs a contribution with a settled contribution entry", async () => {
-    const movement = await addMovement(repos, U, move({ kind: "contribution", amountCents: "1.000,00", fromAccountId: checking, brokerageAccountId: broker }));
+    const movement = await addMovement(repos, U, move({ kind: "contribution", amountCents: "1.000,00", cashAccountId: checking }));
     expect(movement.entryId).not.toBeNull();
     const entry = (await repos.entries.getById(U, movement.entryId!))!;
-    expect(entry).toMatchObject({ kind: "contribution", status: "settled", amountCents: 100_000, accountId: checking, counterAccountId: broker });
+    expect(entry).toMatchObject({ kind: "contribution", status: "settled", amountCents: 100_000, accountId: checking, counterAccountId: null, description: "Aporte CDB 110%" });
 
     // Acceptance 1 again, end to end: the contribution is not an expense.
     const m = computeMetrics({ entries: await repos.entries.list(U, { period: "2026-11" }), categories: [], recurrences: [], cashCents: null });
@@ -54,10 +52,9 @@ describe("addMovement", () => {
     expect(overview.total.balanceCents).toBe(-3_000);
   });
 
-  it("requires a brokerage counter account when pairing", async () => {
-    await expect(
-      addMovement(repos, U, move({ kind: "contribution", amountCents: "1,00", fromAccountId: checking, brokerageAccountId: checking })),
-    ).rejects.toMatchObject({ code: "invalid" });
+  it("pairs only with a cash account", async () => {
+    const card = await repos.accounts.insert(U, { name: "Card", type: "credit_card", institution: null, closingDay: 5, dueDay: 15, creditLimitCents: null, openingBalanceCents: 0, openingOn: "2026-01-01", targetCents: null, isActive: true, sortOrder: 9 });
+    await expect(addMovement(repos, U, move({ kind: "contribution", amountCents: "1,00", cashAccountId: card.id }))).rejects.toMatchObject({ code: "invalid" });
   });
 });
 
@@ -82,18 +79,34 @@ describe("portfolioOverview", () => {
 });
 
 describe("withdrawal", () => {
-  it("pairs with a transfer from the brokerage back to cash", async () => {
-    await addMovement(repos, U, move({ kind: "contribution", amountCents: "1.000,00", fromAccountId: checking, brokerageAccountId: broker }));
-    const out = await addMovement(repos, U, move({ kind: "withdrawal", amountCents: "300,00", date: "2026-11-08", fromAccountId: checking, brokerageAccountId: broker }));
+  // Acceptance 17: a redemption reaches cash and is not income.
+  it("pairs with a redemption into the cash account", async () => {
+    await addMovement(repos, U, move({ kind: "contribution", amountCents: "1.000,00", cashAccountId: checking }));
+    const out = await addMovement(repos, U, move({ kind: "withdrawal", amountCents: "300,00", date: "2026-11-08", cashAccountId: checking }));
     const entry = (await repos.entries.getById(U, out.entryId!))!;
-    expect(entry).toMatchObject({ kind: "transfer", accountId: broker, counterAccountId: checking, amountCents: 30_000, status: "settled" });
+    expect(entry).toMatchObject({ kind: "redemption", accountId: checking, counterAccountId: null, amountCents: 30_000, status: "settled", description: "Resgate CDB 110%" });
     expect((await portfolioOverview(repos, U, TODAY)).total.balanceCents).toBe(70_000);
+    const m = computeMetrics({ entries: await repos.entries.list(U, { period: "2026-11" }), categories: [], recurrences: [], cashCents: null });
+    expect(m.incomeCents).toBe(0);
+    expect(m.redemptionsCents).toBe(30_000);
+    expect(m.leftoverCents).toBe(-100_000 + 30_000);
+  });
+});
+
+describe("assetBalances", () => {
+  it("honours the sign of every movement kind, as the broker-balance hint relies on it", async () => {
+    await addMovement(repos, U, move({ kind: "contribution", amountCents: "1.000,00" }));
+    await addMovement(repos, U, move({ kind: "yield", amountCents: "10,00" }));
+    await addMovement(repos, U, move({ kind: "withdrawal", amountCents: "200,00" }));
+    await addMovement(repos, U, move({ kind: "fee_tax", amountCents: "5,00" }));
+    await addMovement(repos, U, move({ kind: "market_adjustment", amountCents: "-30,00" }));
+    expect(await assetBalances(repos, U)).toEqual({ [cdb]: 100_000 + 1_000 - 20_000 - 500 - 3_000 });
   });
 });
 
 describe("updateMovement", () => {
   it("edits amount and date, and the paired entry follows", async () => {
-    const movement = await addMovement(repos, U, move({ kind: "contribution", amountCents: "1.000,00", fromAccountId: checking, brokerageAccountId: broker }));
+    const movement = await addMovement(repos, U, move({ kind: "contribution", amountCents: "1.000,00", cashAccountId: checking }));
     const updated = await updateMovement(repos, U, movementUpdateSchema.parse({ id: movement.id, kind: "contribution", date: "2026-11-20", amountCents: "1.250,00" }));
     expect(updated).toMatchObject({ amountCents: 125_000, date: "2026-11-20" });
     expect(await repos.entries.getById(U, movement.entryId!)).toMatchObject({ amountCents: 125_000, date: "2026-11-20", settledOn: "2026-11-20" });
@@ -103,11 +116,12 @@ describe("updateMovement", () => {
 
 describe("the entry side of a pair", () => {
   it("edits and deletes reach the movement", async () => {
-    const movement = await addMovement(repos, U, move({ kind: "contribution", amountCents: "1.000,00", fromAccountId: checking, brokerageAccountId: broker }));
-    const base = { id: movement.entryId!, kind: "contribution", description: "Aporte", accountId: checking, counterAccountId: broker, settled: "on", scope: "this" };
+    const movement = await addMovement(repos, U, move({ kind: "contribution", amountCents: "1.000,00", cashAccountId: checking }));
+    const base = { id: movement.entryId!, kind: "contribution", description: "Aporte", accountId: checking, settled: "on", scope: "this" };
     await updateEntry(repos, U, entryUpdateSchema.parse({ ...base, amountCents: "900,00", date: "2026-11-07" }));
     expect(await repos.movements.getById(U, movement.id)).toMatchObject({ amountCents: 90_000, date: "2026-11-07" });
-    await expect(updateEntry(repos, U, entryUpdateSchema.parse({ ...base, kind: "transfer", amountCents: "900,00", date: "2026-11-07" }))).rejects.toMatchObject({ code: "invalid" });
+    const savings = (await repos.accounts.list(U)).find((a) => a.name === "Reserva")!.id;
+    await expect(updateEntry(repos, U, entryUpdateSchema.parse({ ...base, kind: "transfer", counterAccountId: savings, amountCents: "900,00", date: "2026-11-07" }))).rejects.toMatchObject({ code: "invalid" });
     await deleteEntry(repos, U, movement.entryId!);
     expect(await repos.movements.getById(U, movement.id)).toBeNull();
   });
@@ -115,7 +129,7 @@ describe("the entry side of a pair", () => {
 
 describe("delete", () => {
   it("removes a paired entry with its movement, and protects assets in use", async () => {
-    const movement = await addMovement(repos, U, move({ kind: "contribution", amountCents: "1,00", fromAccountId: checking, brokerageAccountId: broker }));
+    const movement = await addMovement(repos, U, move({ kind: "contribution", amountCents: "1,00", cashAccountId: checking }));
     await expect(deleteAsset(repos, U, cdb)).rejects.toMatchObject({ code: "in_use" });
     await deleteMovement(repos, U, movement.id);
     expect(await repos.entries.getById(U, movement.entryId!)).toBeNull();

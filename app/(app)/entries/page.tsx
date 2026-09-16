@@ -6,6 +6,7 @@ import { buildLookups } from "@/components/entries/lookups";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { addDays, formatDate, isIsoDate, isPeriod, periodOf, today } from "@/lib/domain/dates";
+import { isMove } from "@/lib/domain/entries";
 import type { Entry, EntryKind, EntryStatus } from "@/lib/domain/types";
 import { listAccounts } from "@/lib/services/accounts";
 import { listCategories } from "@/lib/services/categories";
@@ -13,7 +14,7 @@ import { formatBRL } from "@/lib/domain/money";
 import { getContext } from "@/lib/services/context";
 import { listEntries } from "@/lib/services/entries";
 
-const KINDS: EntryKind[] = ["income", "expense", "contribution", "transfer"];
+const KINDS: EntryKind[] = ["income", "expense", "contribution", "redemption", "transfer"];
 const STATUSES: EntryStatus[] = ["planned", "settled"];
 
 function str(v: string | string[] | undefined): string {
@@ -38,7 +39,7 @@ export default async function EntriesPage(props: PageProps<"/entries">) {
   const categoryIds = values.category ? [values.category, ...categories.filter((c) => c.parentId === values.category).map((c) => c.id)] : undefined;
   const filters = {
     kind,
-    kinds: moves ? (["transfer", "contribution"] as EntryKind[]) : undefined,
+    kinds: moves ? (["transfer", "contribution", "redemption"] as EntryKind[]) : undefined,
     status,
     accountId: values.account || undefined,
     categoryIds,
@@ -54,7 +55,7 @@ export default async function EntriesPage(props: PageProps<"/entries">) {
     count: entries.length,
     in: sumOf((e) => e.kind === "income"),
     out: sumOf((e) => e.kind === "expense"),
-    moved: sumOf((e) => e.kind === "transfer" || e.kind === "contribution"),
+    moved: sumOf((e) => isMove(e.kind)),
   };
 
   return (

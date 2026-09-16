@@ -48,12 +48,12 @@ describe("expandRecurrences", () => {
     expect(row.amountCents).toBe(150_000);
   });
 
-  it("carries the counter account of transfers and contributions", () => {
+  it("carries the counter account of transfers", () => {
     const [row] = expandRecurrences(
-      [recurrence({ kind: "contribution", categoryId: null, counterAccountId: "acc-broker" })],
+      [recurrence({ kind: "transfer", categoryId: null, counterAccountId: "acc-broker" })],
       "2026-11",
     );
-    expect(row.kind).toBe("contribution");
+    expect(row.kind).toBe("transfer");
     expect(row.counterAccountId).toBe("acc-broker");
   });
 });
@@ -65,7 +65,7 @@ describe("monthlyFixedCost", () => {
       recurrence({ amountCents: 20_000 }),
       recurrence({ amountCents: 99_999, isActive: false }),
       recurrence({ amountCents: 500_000, kind: "income", categoryId: "cat-salario" }),
-      recurrence({ amountCents: 100_000, kind: "contribution", categoryId: null, counterAccountId: "b" }),
+      recurrence({ amountCents: 100_000, kind: "contribution", categoryId: null }),
     ]);
     expect(cost).toBe(170_000);
   });

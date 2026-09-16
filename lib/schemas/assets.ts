@@ -38,17 +38,12 @@ export const movementInputSchema = z
     date: isoDateField,
     amountCents: signedCents,
     notes: optionalText(500),
-    /** For contributions: the cash account the money leaves; pairs with an entry (§5.7). */
-    fromAccountId: optionalId(),
-    /** The brokerage account that receives it. */
-    brokerageAccountId: optionalId(),
+    /** For a contribution, the cash account the money leaves; for a withdrawal, the one it reaches. Given, the cash entry is recorded too (§5.7). */
+    cashAccountId: optionalId(),
   })
   .superRefine((m, ctx) => {
     if (m.kind !== "market_adjustment" && m.amountCents < 0) {
       ctx.addIssue({ code: "custom", path: ["amountCents"], message: "Only a market adjustment can be negative." });
-    }
-    if (m.kind === "contribution" && (m.fromAccountId === null) !== (m.brokerageAccountId === null)) {
-      ctx.addIssue({ code: "custom", path: ["fromAccountId"], message: "Pick both the source and the brokerage account, or neither." });
     }
   });
 

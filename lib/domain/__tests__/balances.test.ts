@@ -26,10 +26,11 @@ describe("entryEffectOn", () => {
     const transfer = settled({ kind: "transfer", amountCents: 300, counterAccountId: "acc-savings" });
     expect(entryEffectOn(transfer, "acc-checking")).toBe(-300);
     expect(entryEffectOn(transfer, "acc-savings")).toBe(300);
-    // A contribution leaves cash; the brokerage side is an asset movement, not a cash balance.
-    const contribution = settled({ kind: "contribution", amountCents: 200, counterAccountId: "acc-broker" });
+    // Acceptance 17: a contribution leaves cash and a redemption brings it back; the other side is an asset movement, not a cash balance.
+    const contribution = settled({ kind: "contribution", amountCents: 200 });
     expect(entryEffectOn(contribution, "acc-checking")).toBe(-200);
-    expect(entryEffectOn(contribution, "acc-broker")).toBe(0);
+    const redemption = settled({ kind: "redemption", amountCents: 150 });
+    expect(entryEffectOn(redemption, "acc-checking")).toBe(150);
     expect(entryEffectOn(transfer, "acc-other")).toBe(0);
   });
 });
@@ -50,10 +51,9 @@ describe("accountBalanceAt", () => {
   });
 
   // Acceptance 12, reinterpreted: before the account existed there is no number, never zero.
-  it("is null before the opening date and for non-cash accounts", () => {
+  it("is null before the opening date and for cards", () => {
     expect(accountBalanceAt(account(), entries, "2026-08-31")).toBeNull();
     expect(accountBalanceAt(account({ type: "credit_card", closingDay: 5, dueDay: 15 }), entries, "2026-09-30")).toBeNull();
-    expect(accountBalanceAt(account({ type: "brokerage" }), entries, "2026-09-30")).toBeNull();
   });
 
   it("sums cash across accounts, ignoring the ones that do not exist yet", () => {

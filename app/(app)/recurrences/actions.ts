@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { readAllocationFields } from "@/lib/schemas/allocation";
 import { firstIssue, formToObject } from "@/lib/schemas/form";
 import { recurrenceInputSchema } from "@/lib/schemas/recurrences";
 import { getContext } from "@/lib/services/context";
@@ -22,7 +23,7 @@ function revalidate() {
 export async function createRecurrenceAction(_prev: RecurrenceFormState, formData: FormData): Promise<RecurrenceFormState> {
   const { userId, repos } = await getContext();
   const values = formToObject(formData);
-  const parsed = recurrenceInputSchema.safeParse(values);
+  const parsed = recurrenceInputSchema.safeParse({ ...values, allocations: readAllocationFields(formData).allocations });
   if (!parsed.success) return { error: firstIssue(parsed.error), values };
   try {
     await createRecurrence(repos, userId, parsed.data);
@@ -37,7 +38,7 @@ export async function createRecurrenceAction(_prev: RecurrenceFormState, formDat
 export async function updateRecurrenceAction(_prev: RecurrenceFormState, formData: FormData): Promise<RecurrenceFormState> {
   const { userId, repos } = await getContext();
   const values = formToObject(formData);
-  const parsed = recurrenceInputSchema.safeParse(values);
+  const parsed = recurrenceInputSchema.safeParse({ ...values, allocations: readAllocationFields(formData).allocations });
   if (!parsed.success) return { error: firstIssue(parsed.error), values };
   try {
     await updateRecurrence(repos, userId, String(values.id ?? ""), parsed.data);
