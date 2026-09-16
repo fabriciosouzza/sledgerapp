@@ -602,17 +602,18 @@ function EntryRow({
                 onContextMenu={(e) => e.preventDefault()}
                 aria-label={`${settleVerb(entry)} ${entry.description}, ${amountText}${timing === "overdue" ? ", overdue" : ""}, today`}
                 title={`${settleVerb(entry)} today · Shift+Enter for another day`}
-                className="flex h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring md:px-3"
+                className="flex h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-full px-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring @lg:px-3"
               >
                 <Circle className="size-5" aria-hidden />
-                <span className="hidden text-sm font-medium md:inline">{settleVerb(entry)}</span>
+                {/* The label, the calendar and the pencil need room: they follow the row's width (a container), not the screen's. */}
+                <span className="hidden text-sm font-medium @lg:inline">{settleVerb(entry)}</span>
               </button>
               <button
                 type="button"
                 onClick={onSettleOn}
                 aria-label={`${settleVerb(entry)} ${entry.description} on another day`}
                 title="Pick the day"
-                className="hidden size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring md:flex"
+                className="hidden size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring @lg:flex"
               >
                 <CalendarDays className="size-4" aria-hidden />
               </button>
@@ -628,7 +629,7 @@ function EntryRow({
               <Check className="size-5" aria-hidden />
             </button>
           ))}
-        <Link href={editHref} aria-label={`Edit ${entry.description}`} className="hidden size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground md:flex">
+        <Link href={editHref} aria-label={`Edit ${entry.description}`} className="hidden size-11 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground @lg:flex">
           <Pencil className="size-4" aria-hidden />
         </Link>
       </div>

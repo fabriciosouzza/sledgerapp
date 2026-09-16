@@ -84,11 +84,15 @@ export function AllocationFields({
   }
 
   return (
-    <div className="space-y-3" role="group" aria-label={`Which assets it ${verb}`}>
-      {shown.map((row, i) => (
-        <div key={row.key} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-end gap-2">
-          <div className="space-y-1.5">
-            {i === 0 && <span className="block text-sm font-medium">Asset</span>}
+    <div className="space-y-2" role="group" aria-label={`Which assets it ${verb}`}>
+      <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 text-sm font-medium" aria-hidden>
+        <span>Asset</span>
+        <span>Amount</span>
+        <span className="w-11" />
+      </div>
+      {shown.map((row) => (
+        <div key={row.key} className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2">
+          <div>
             <NativeSelect value={row.assetId} onChange={(e) => update(row.key, { assetId: e.target.value })} aria-label="Asset" className="w-full [&>select]:h-11">
               {assets
                 .filter((a) => a.id === row.assetId || !rows.some((r) => r.assetId === a.id))
@@ -99,8 +103,7 @@ export function AllocationFields({
                 ))}
             </NativeSelect>
           </div>
-          <div className="space-y-1.5">
-            {i === 0 && <span className="block text-sm font-medium">Amount</span>}
+          <div>
             <CurrencyInput
               key={`${row.key}-${bump}-${following ? row.cents ?? 0 : "typed"}`}
               name={`allocation:${row.assetId}`}
@@ -110,7 +113,7 @@ export function AllocationFields({
               aria-describedby="allocation-left"
             />
           </div>
-          <div className="flex gap-1">
+          <div className="flex min-w-11 justify-end gap-1">
             {left !== null && left > 0 && (
               <Button type="button" variant="ghost" className="h-11 px-2 text-xs" onClick={() => fillRest(row.key)} aria-label={`Put the remaining ${formatBRL(left)} here`}>
                 Rest
@@ -125,7 +128,7 @@ export function AllocationFields({
         </div>
       ))}
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
         <p id="allocation-left" className={cn("text-sm tabular-nums", left !== null && left !== 0 ? "text-caution" : "text-muted-foreground")} aria-live="polite">
           {totalCents === null || left === null
             ? "Type the amount first."
