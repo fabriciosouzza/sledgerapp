@@ -28,7 +28,7 @@ export default async function RecordBatchPage() {
   return (
     <>
       <PageHeader title="Record the month" description="One line per asset: type the yield, or what the broker shows and let the difference be recorded. Blank lines are skipped." />
-      <RecordBatchForm assets={active.map((a) => ({ id: a.id, name: a.name, balanceCents: balances[a.id] ?? 0 }))} today={today()} />
+      <RecordBatchForm assets={active.map((a) => ({ id: a.id, name: a.name, broker: a.broker, balanceCents: balances[a.id] ?? 0 }))} today={today()} />
     </>
   );
 }

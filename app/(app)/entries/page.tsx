@@ -95,8 +95,9 @@ export default async function EntriesPage(props: PageProps<"/entries">) {
       <EntryList
         key={JSON.stringify({ ...values, range })}
         meta={
+          // Elements handed across the server/client boundary lose their "static child" mark: without a key React warns.
           totals.count > 0 ? (
-            <p className="min-w-0 text-xs text-muted-foreground tabular-nums" aria-live="polite">
+            <p key="meta" className="min-w-0 text-xs text-muted-foreground tabular-nums" aria-live="polite">
               {totals.count} {totals.count === 1 ? "entry" : "entries"}
               {range ? ` · ${formatDate(range.from)} → ${formatDate(range.to)}` : ""}
             </p>

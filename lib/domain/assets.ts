@@ -1,4 +1,4 @@
-import type { AssetClass, MovementKind } from "./types";
+import type { Asset, AssetClass, MovementKind } from "./types";
 
 export const ASSET_CLASSES: { value: AssetClass; label: string }[] = [
   { value: "fixed_income", label: "Fixed income" },
@@ -23,4 +23,9 @@ export const MOVEMENT_KINDS: { value: MovementKind; label: string; hint: string 
 
 export function movementKindLabel(value: MovementKind): string {
   return MOVEMENT_KINDS.find((k) => k.value === value)?.label ?? value;
+}
+
+/** "CDB 110% CDI · Nubank": two assets may share a name across brokers, so a pick list says where each one is. */
+export function assetLabel(asset: Pick<Asset, "name" | "broker">): string {
+  return asset.broker ? `${asset.name} · ${asset.broker}` : asset.name;
 }

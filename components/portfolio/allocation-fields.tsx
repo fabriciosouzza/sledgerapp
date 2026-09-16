@@ -6,6 +6,7 @@ import { CurrencyInput } from "@/components/forms/currency-input";
 import { Button } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { allocationTotal } from "@/lib/domain/allocation";
+import { assetLabel } from "@/lib/domain/assets";
 import { formatBRL } from "@/lib/domain/money";
 import type { AllocationLine, Asset } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
@@ -98,7 +99,7 @@ export function AllocationFields({
                 .filter((a) => a.id === row.assetId || !rows.some((r) => r.assetId === a.id))
                 .map((a) => (
                   <NativeSelectOption key={a.id} value={a.id}>
-                    {a.name}
+                    {assetLabel(a)}
                   </NativeSelectOption>
                 ))}
             </NativeSelect>

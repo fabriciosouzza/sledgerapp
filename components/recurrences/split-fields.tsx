@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import type { Asset, RecurrenceShare } from "@/lib/domain/types";
+import { assetLabel } from "@/lib/domain/assets";
 import { cn } from "@/lib/utils";
 
 interface Row {
@@ -55,7 +56,7 @@ export function SplitFields({ assets, initial }: { assets: Asset[]; initial: Rec
                 .filter((a) => a.id === row.assetId || !rows.some((r) => r.assetId === a.id))
                 .map((a) => (
                   <NativeSelectOption key={a.id} value={a.id}>
-                    {a.name}
+                    {assetLabel(a)}
                   </NativeSelectOption>
                 ))}
             </NativeSelect>

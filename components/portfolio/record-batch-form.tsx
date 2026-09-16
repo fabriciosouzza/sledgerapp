@@ -11,13 +11,14 @@ import { FormError } from "@/components/forms/form-error";
 import { Button } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { useLocalMemory } from "@/lib/client/local-memory";
+import { assetLabel } from "@/lib/domain/assets";
 import { formatBRL } from "@/lib/domain/money";
 import { cn } from "@/lib/utils";
 
 type Mode = "amount" | "balance";
 type Kind = "yield" | "market_adjustment";
 
-export function RecordBatchForm({ assets, today }: { assets: { id: string; name: string; balanceCents: number }[]; today: string }) {
+export function RecordBatchForm({ assets, today }: { assets: { id: string; name: string; broker: string | null; balanceCents: number }[]; today: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string>();
@@ -105,7 +106,7 @@ export function RecordBatchForm({ assets, today }: { assets: { id: string; name:
           return (
             <li key={a.id} className="grid grid-cols-[1fr_9rem] items-center gap-3 px-3 py-2">
               <label htmlFor={`amount-${a.id}`} className="min-w-0">
-                <span className="block truncate text-sm font-medium">{a.name}</span>
+                <span className="block truncate text-sm font-medium">{assetLabel(a)}</span>
                 <span className={cn("block text-xs tabular-nums text-muted-foreground", d !== null && d < 0 && "text-negative")}>
                   {d === null
                     ? `recorded ${formatBRL(a.balanceCents)}`

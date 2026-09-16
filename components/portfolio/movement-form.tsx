@@ -15,7 +15,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useLocalMemory } from "@/lib/client/local-memory";
-import { MOVEMENT_KINDS, movementKindLabel } from "@/lib/domain/assets";
+import { assetLabel, MOVEMENT_KINDS, movementKindLabel } from "@/lib/domain/assets";
 import { formatBRL } from "@/lib/domain/money";
 import type { Account, Asset, AssetMovement, MovementKind } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
@@ -119,7 +119,7 @@ export function MovementForm({
         <NativeSelect id="assetId" name="assetId" value={assetId} onChange={(e) => setAssetId(e.target.value)} required disabled={editing} className="w-full [&>select]:h-11" aria-describedby="assetId-hint">
           {assets.map((a) => (
             <NativeSelectOption key={a.id} value={a.id}>
-              {a.name}
+              {assetLabel(a)}
             </NativeSelectOption>
           ))}
         </NativeSelect>
