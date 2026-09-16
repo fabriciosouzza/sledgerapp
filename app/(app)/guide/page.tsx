@@ -1,109 +1,117 @@
 import { PageHeader } from "@/components/layout/page-header";
 
-type Term = { term: string; meaning: string; pt?: string };
+type Term = { term: string; meaning: string };
 type Section = { title: string; intro?: string; terms: Term[]; example?: string[] };
 
 const slug = (title: string) => title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
-/** The screens are in English (spec §2); the words are not always obvious. Portuguese for the ones that matter. */
-const GLOSSARY: [string, string][] = [
-  ["Settle / Receive", "dar baixa: marcar como pago (ou recebido)"],
-  ["Planned", "previsto, ainda não aconteceu"],
-  ["Overdue", "atrasado: previsto para uma data que já passou"],
-  ["Cash on hand", "dinheiro em caixa: a soma das contas de dinheiro"],
-  ["Due in 7 days", "vence em 7 dias"],
-  ["To receive", "a receber"],
-  ["Leftover", "sobra do mês: receita − despesa − aportes + resgates"],
-  ["Savings rate", "taxa de poupança: quanto do que entrou você não gastou"],
-  ["Earmarked / Ex-earmarked", "verba carimbada (vale-refeição, por exemplo) / sem ela"],
-  ["Fixed cost", "custo fixo: as despesas recorrentes ativas"],
-  ["Recurring / Recurrence", "recorrente: um modelo que vira um lançamento por mês"],
-  ["Generate / Apply", "aplicar as recorrências do mês"],
-  ["Statement", "fatura do cartão"],
-  ["Closes / Due", "fecha / vence"],
-  ["Installments / Parts", "parcelas"],
-  ["Transfer", "transferência entre suas contas"],
-  ["Contribution", "aporte: dinheiro que vira investimento"],
-  ["Allocation / Split", "destino do aporte: em quais ativos, quanto em cada"],
-  ["Redemption / Withdrawal", "resgate: o dinheiro voltando para a conta / saindo do ativo"],
-  ["Yield", "rendimento (juros, dividendos)"],
-  ["Market adjustment", "ajuste de mercado: o que mudou de preço"],
-  ["Contributed / Earned", "aportado / ganho"],
-  ["Net worth", "patrimônio: caixa + investimentos − cartões"],
-  ["Starting point", "saldo inicial de uma conta, na data em que você começou"],
-  ["Cap", "teto mensal de uma categoria"],
-  ["Runway", "quantos meses o caixa cobre o custo fixo"],
-];
-
 const SECTIONS: Section[] = [
   {
-    title: "The weekly routine",
+    title: "The idea",
     intro:
-      "sledger is built for one sitting a week: open Today, settle what was paid, add what is new, glance at the month. Nothing updates itself from a bank — every number comes from what you typed, so the app never pretends to know something it does not.",
+      "sledger is a ledger you keep by hand, once a week: what you spent, what is still due, what you invested, what you own. Nothing arrives from a bank; every number is derived from what you typed. Three rules run through the whole app.",
     terms: [
-      { term: "Today", meaning: "What needs doing now: cash on hand, one sentence about the month, what is due in the next 7 days, your accounts and cards, what is overdue. Tap a number to open the entries behind it; tap an account to see its balance and its entries." },
-      { term: "Review", meaning: "How a month went — or a calendar year, or the last 12 months. Income, expense, contributions, both savings rates, spending against your caps, the recurring entries still to apply, and what is still planned. Every tile opens the matching list in Entries." },
-      { term: "Entries", meaning: "Every entry, a month at a time, with tabs All · Spending · Income · Moves (transfers and contributions), search and more filters. Settle several at once from here." },
-      { term: "Portfolio", meaning: "Your investments as the sum of their movements — no market quotes." },
-      { term: "More", meaning: "Entries, Cards, Recurrences, Net worth, Settings, this guide. On a wide screen they sit in the sidebar." },
+      { term: "Money is never counted twice", meaning: "A card purchase is an expense the day it is made, so paying the statement is a transfer, not a second expense. Money that leaves cash for an investment is a contribution, not spending; what it earns is yield, not income. Each real event is recorded once, in the place it belongs." },
+      { term: "The app never pretends to know", meaning: "A month with no data shows “—”, not zero. A cash balance exists only from the day you set its starting point. Nothing is estimated behind your back." },
+      { term: "Planned is not real yet", meaning: "Bills, installments and applied recurrences are planned entries: visible, due, but counted nowhere until you settle them. Settling — one tap, always with Undo — is the moment a number becomes real." },
+      { term: "The weekly routine", meaning: "Open Today; settle what was paid and received; add what is new (a purchase, a bill, a contribution); glance at Review. At the end of the month, apply next month's recurrences and record what the portfolio earned." },
+    ],
+  },
+  {
+    title: "Screens",
+    terms: [
+      { term: "Today", meaning: "What needs you first — closed card statements to pay, overdue entries — then cash on hand, one sentence about the month, the next 7 days, your accounts and cards, and quick actions. Tap a number to open the entries behind it." },
+      { term: "Add", meaning: "The fast form: amount first, with the numeric keyboard up. Expense, income, transfer or contribution; already paid or planned; installments and repeat monthly behind a disclosure. Enter saves; the confirmation offers Undo and Edit." },
+      { term: "Review", meaning: "How a month went — or a calendar year, or the last 12 months: savings rate, leftover, budget, the recurring entries still to apply, what is still planned, spending by category against the caps, and the charts. Every tile opens the matching list in Entries." },
+      { term: "Entries", meaning: "Everything, a month at a time: tabs All · Spending · Income · Moves (transfers, contributions, redemptions), search, more filters, and Settle several… for a batch." },
+      { term: "Portfolio", meaning: "Your assets as the sum of their movements: balance, contributed versus earned, by class, over time. Record month enters every asset's yield in one pass. It also warns when a contribution has no asset behind it." },
+      { term: "Cards · Recurrences · Net worth · Settings", meaning: "Under More on the phone, in the sidebar on a wide screen. Settings holds accounts, categories with their caps, assets and your profile." },
+    ],
+  },
+  {
+    title: "Accounts and assets",
+    intro:
+      "The two things you own are different in nature. An account's balance moves only when you move money — every change is an entry. An asset's balance moves on its own — it yields, swings, gets charged — with no cash flow behind it. That is why an investment is never modelled as an account: its yield would have to be typed as income, and the savings rate would lie.",
+    terms: [
+      { term: "Checking · Cash", meaning: "Liquid money: the bank account, the notes in your wallet. Their balance is a starting point plus every settled entry since." },
+      { term: "Savings", meaning: "Money set aside but still liquid — a reserve, a box for a goal — with an optional target (“R$ 2.500 of R$ 10.000”). It counts as cash and feeds the runway. Its yield is not tracked here: money you want to see earning is an asset." },
+      { term: "Other", meaning: "Any liquid balance that is not a bank: a payment app, a prepaid card, money someone holds for you." },
+      { term: "Credit card", meaning: "An account with a closing day, a due day and a limit. Its balance is debt through statements, never cash. You can have several." },
+      { term: "Asset", meaning: "Something you invested in: Tesouro Selic, a CDB, Bitcoin. It has a class (fixed income, stocks, REITs, crypto, foreign currency, other), an optional subclass, and the broker where it is held. Two assets may share a name across brokers — a CDB at two banks — so pick lists read “name · broker”. Two CDBs at the same bank with different rates are two assets; the subclass tells them apart." },
+      { term: "Where each balance comes from", meaning: "Cash from accounts and their settled entries. Investments from asset movements. Debt from unpaid card statements. Net worth is the three together, and no number is ever typed twice." },
     ],
   },
   {
     title: "Entries",
-    intro: "An entry is one thing that happens to your money. It has a kind, a date, an amount, an account and a status.",
+    intro: "An entry is one thing that happens to your money: a kind, a date, an amount, an account and a status.",
     terms: [
-      { term: "Expense", meaning: "Money spent on consumption. Counts against you." },
-      { term: "Income", meaning: "Salary, benefit, refund. Counts for you." },
-      { term: "Transfer", meaning: "Money moving between two of your accounts. Neither income nor expense — paying a card statement is a transfer, because the purchases were already expenses when they happened." },
-      { term: "Contribution", meaning: "Cash that leaves an account to become an investment. Not an expense: investing should never lower your savings rate. A planned contribution is just an amount; settling it asks which assets it goes to, and each part becomes a movement on that asset. Nothing is ever left without a destination." },
-      { term: "Redemption", meaning: "The mirror: your own money coming back from an asset into a cash account. Not income. Recorded from the Portfolio as a withdrawal that also records the cash." },
-      { term: "Planned", meaning: "It will happen: a bill to pay, income to receive, a future installment, a recurring entry you applied to the month." },
-      { term: "Settled", meaning: "It happened. Tap the circle to settle it today; for another day, tap Other day in the confirmation or hold the circle; tap the check to undo. A card purchase is settled by paying its statement." },
+      { term: "Expense", meaning: "Money spent on consumption — a purchase, a bill, a donation. Counts against you; needs a category." },
+      { term: "Income", meaning: "Salary, a voucher, a refund. Counts for you; needs a category." },
+      { term: "Transfer", meaning: "Money moving between two of your accounts. Neither income nor expense; neutral for net worth. Paying a card statement is a transfer." },
+      { term: "Contribution", meaning: "Cash leaving an account to become an investment. Not an expense: investing never lowers your savings rate. Its other side is one or more assets, chosen when it is settled (see below)." },
+      { term: "Redemption", meaning: "The mirror of a contribution: your own money coming back from an asset into a cash account. Not income. Recorded from the Portfolio, as a withdrawal that also records the cash." },
+      { term: "Planned · Settled", meaning: "Planned means it will happen: a bill to pay, income to receive, a future installment, an applied recurrence. Settled means it did, on a given day. Tap the circle to settle today; for another day, tap Other day in the confirmation or hold the circle; tap the check to undo." },
+      { term: "Date vs. settled on", meaning: "Date is competence — when it falls due. Settled on is when the money moved. A bill due on the 5th paid on the 7th keeps its date and leaves your balance on the 7th." },
       { term: "Overdue", meaning: "Planned, and its date has passed (for a card purchase, its statement's due date). Shown in red on Today until you settle it, however old it is." },
-      { term: "Date vs. settled on", meaning: "Date is when it falls due; settled on is when the money moved. A bill due on the 5th paid on the 7th keeps its date and gets settled on the 7th — and that is the day it leaves your balance." },
-      { term: "Installments", meaning: "One purchase in N parts creates N planned entries at once, one per month, numbered 1/N … N/N. Editing or deleting asks whether it applies to this part, this and future ones, or all." },
-      { term: "On a card", meaning: "A purchase on a credit card counts the day it is made — you never settle it one by one; you pay the statement. Card installments wait for their statement: they settle when it is paid." },
+      { term: "Categories and caps", meaning: "Every expense and income has a category; sub-categories go one level deep and roll up into their parent. An expense category may have a monthly cap; Review shows the progress bar and says “over by” when it is blown. The caps together are your budget." },
+      { term: "Earmarked money", meaning: "A meal voucher arrives as income and leaves as lunches in the same month: it inflates both sides and makes the savings rate look worse the bigger it is. A category marked earmarked takes both the income and the matching expenses; the second savings rate leaves them out. The test is “could I have kept this money?” — if yes, it is plain income." },
+      { term: "Installments", meaning: "One purchase in N parts creates N planned entries at once, one per month, numbered 1/N … N/N, with the whole commitment visible from day one. A plan already under way starts at part K of N. Editing or deleting asks: this part, this and future ones, or all." },
+      { term: "On a card", meaning: "A purchase on a credit card counts the day it is made and joins the statement of its cycle; you never settle it one by one — you pay the statement. Card installments settle when their statement is paid." },
+    ],
+  },
+  {
+    title: "Contributions, step by step",
+    intro: "A contribution has one side in cash and the other in the portfolio. The amount is decided when you plan; the destination when the money actually moves.",
+    terms: [
+      { term: "1. Plan it", meaning: "From Add (Contribution, “already invested” off) or from a recurrence: R$ 1.000 leaving Conta Corrente on the 6th. No asset yet — it is only an intention." },
+      { term: "2. Settle it with its allocation", meaning: "Tapping the circle opens “Which assets does it go to?”: one row per asset with an amount, and a running “still to place” until the parts add up to the entry. All into fixed income this month, half crypto the next — you decide each time. Settle records one contribution movement per asset, paired to the entry." },
+      { term: "The default split", meaning: "A recurring contribution can carry percentages per asset (70/30). They only pre-fill the sheet; the amounts come out of them so that they always sum exactly, and you can still change them for the month. Saving a contribution with “repeat monthly” learns the split from how you divided it." },
+      { term: "Already invested", meaning: "With “already invested” on, Add asks for the allocation right there. The Portfolio's Contribution movement does the same from the other side: pick the cash account and the entry is created, settled and paired." },
+      { term: "One line per asset", meaning: "Each asset appears once in a split: its part is what matters for the balance. Two purchases of the same asset on one day are one line, or two contributions." },
+      { term: "Editing and undoing", meaning: "Unsettling a contribution removes its movements; settling again asks for the split again. Editing a settled one shows its split, and the amount can change only with a split that adds up. Deleting the entry deletes its movements; a paired movement cannot be deleted or resized from the Portfolio on its own — it is one part of the entry." },
+      { term: "Never left without a destination", meaning: "Bulk settle and “settle all due today” skip contributions, because they need a split. If something still leaves a settled contribution or redemption with parts that do not add up, the Portfolio lists it with a link to fix it." },
     ],
   },
   {
     title: "Recurrences",
-    intro: "A recurrence is a template — rent, a subscription, a salary — not an entry. Each month it becomes entries when you apply it.",
+    intro: "A recurrence is a template — rent, a subscription, a salary, a monthly contribution — not an entry. Each month it becomes entries when you apply it.",
     terms: [
-      { term: "Apply to the month", meaning: "Review shows a card whenever the month still has recurring entries to apply, with each amount editable before it exists. Applying twice creates nothing the second time." },
-      { term: "Variable", meaning: "Water, electricity: the template holds an estimate; you type the real amount when applying, and the template keeps its estimate." },
-      { term: "Due day", meaning: "Day of the month the entry falls on. Day 31 becomes the 28th, 29th or 30th in shorter months." },
-      { term: "Fixed cost", meaning: "The sum of your active expense recurrences: what a month costs before any choice. It sizes the emergency fund." },
-      { term: "Repeat monthly", meaning: "On the add screen: creates the template and this month's entry in one go." },
+      { term: "Apply to the month", meaning: "Review shows a card whenever the month still has recurring entries to apply: each amount is editable before it exists, and a line can be skipped. Applying twice creates nothing the second time; a template recorded by hand in an earlier month is not duplicated either." },
+      { term: "Variable", meaning: "Water, electricity: the template holds an estimate; you type the real amount when applying, and the estimate stays on the template. Variable bills are left out of “settle all due today”." },
+      { term: "Due day", meaning: "Day of the month the entry falls on. Day 31 becomes the 28th, 29th or 30th in shorter months. Starts on and ends on bound which months it applies to." },
+      { term: "Fixed cost", meaning: "The sum of your active expense recurrences: what a month costs before any choice, and the number that sizes the emergency fund. Contributions and income are not in it." },
+      { term: "Repeat monthly", meaning: "On the add screen: creates the template and this month's entry in one go. A template that already ran cannot be deleted, only deactivated — its entries stay." },
     ],
   },
   {
     title: "Cards",
     intro: "A credit card is an account with a closing day and a due day. Its balance is debt, never cash.",
     terms: [
-      { term: "Statement", meaning: "Everything bought on the card in one cycle. A purchase after the closing day lands on the next statement. The cycle that contains today is the open statement." },
-      { term: "Pay statement", meaning: "Once a statement has closed, Pay records a transfer from a cash account into the card for its total and marks it paid. An open statement cannot be paid yet." },
-      { term: "Card debt", meaning: "Everything bought and not yet paid, across every card — open statements included." },
+      { term: "Statement", meaning: "Everything bought on the card in one cycle. The cycle ends on the closing day; a purchase after it lands on the next statement; the due date follows. The cycle that contains today is the open statement." },
+      { term: "Pay statement", meaning: "Once a statement has closed, Pay records a transfer from a cash account into the card for its total, dated the day you paid, and marks it paid — that is what settles the purchases on it. An open statement cannot be paid yet, and a statement is paid whole, from one account." },
+      { term: "Card debt", meaning: "Everything bought and not yet paid, across every card, open statements included. Today shows closed, unpaid statements first, with Pay right there." },
+      { term: "Limit", meaning: "The tile shows the share of the limit in use: the debt plus the installments still to come." },
     ],
   },
   {
     title: "Investments",
-    intro: "An asset's balance is the running sum of its movements. There are no quotes and no average price.",
+    intro: "An asset's balance is the running sum of its movements. There are no quotes and no average price: the dashboard separates what you put in from what it earned.",
     terms: [
-      { term: "Contribution", meaning: "New money in. From the Portfolio it can also record the cash entry leaving your account, so cash flow and portfolio agree. From Add or a recurrence, the split across assets is chosen when the entry is settled." },
-      { term: "Account or asset?", meaning: "An account's balance moves only when you move money. An asset's balance moves on its own — it yields, swings, gets charged. Money you want to see earning is an asset; a savings account is money set aside whose yield you do not track here." },
+      { term: "Contribution", meaning: "New money in. From an entry's allocation (above), or from the Portfolio with the cash account picked, so the entry is created too. An asset added with “already invested” starts from what you put in and what it is worth today, with no cash entry — that money left the bank long ago." },
       { term: "Yield", meaning: "Interest or dividends, entered by hand. Raises net worth; not income for the savings rate." },
-      { term: "Market adjustment", meaning: "The difference between what the broker shows and what sledger has. The only amount that may be negative." },
-      { term: "Withdrawal · Fee/tax", meaning: "Money out and costs. A withdrawal can record the cash arriving in your account as a redemption." },
-      { term: "Contributed vs. earned", meaning: "Contributed = contributions − withdrawals. Earned = yield + adjustments − fees. Balance = contributed + earned." },
+      { term: "Market adjustment", meaning: "Crypto, currency, stocks: type what the broker shows and the difference becomes the adjustment — the only amount in sledger that may be negative." },
+      { term: "Withdrawal · Fee/tax", meaning: "Money out and costs. A withdrawal with a cash account picked records the cash arriving as a redemption, paired." },
+      { term: "Record month", meaning: "One pass over every asset at month end: the yield of each, or the balance at the broker — the difference is recorded, unchanged lines are skipped." },
+      { term: "Contributed vs. earned", meaning: "Contributed = contributions − withdrawals. Earned = yield + adjustments − fees. Balance = contributed + earned. Return on contributions = earned ÷ contributed." },
     ],
   },
   {
     title: "Balances and net worth",
     terms: [
-      { term: "Starting point", meaning: "Each cash account has a balance on the day you start tracking it (Settings → Accounts). From then on, every settled entry moves it: income in, expenses out, transfers between accounts." },
+      { term: "Starting point", meaning: "Each cash account has a balance on the day you start tracking it (Settings → Accounts). From then on, every settled entry moves it: income in, expenses out, transfers between accounts, contributions out, redemptions in." },
       { term: "Account screen", meaning: "Tap an account on Today or on Net worth: balance today, starting point, what changed since, and only that account's entries. If the bank shows a different number, the missing entry is somewhere in that list — or not yet recorded." },
-      { term: "Cash on hand", meaning: "The sum of your cash accounts today, derived from what you recorded." },
-      { term: "Net worth", meaning: "cash + investments − debt, for any month. Months before your first account stay empty, never zero." },
+      { term: "Cash on hand", meaning: "The sum of your cash accounts today, derived from what you recorded. Savings accounts are part of it, shown apart." },
+      { term: "Net worth", meaning: "cash + investments − debt, for any month, each part derived: cash from accounts and entries, investments from movements, debt from unpaid statements. Months before your first account stay empty, never zero." },
     ],
   },
   {
@@ -114,12 +122,12 @@ const SECTIONS: Section[] = [
       { term: "Income · Expense · Contributions", meaning: "Sums of settled entries of each kind. Transfers are never in any of them; a redemption is shown next to contributions, never as income. Planned entries show separately (\"+ R$ 120,00 planned\") and only count once settled. Example: income R$ 5.800, expense R$ 3.200, contributions R$ 1.000." },
       { term: "Leftover", meaning: "income − expense − contributions + redemptions: what stayed in cash after everything, investing included. Example: 5.800 − 3.200 − 1.000 = R$ 1.600. Negative means the month ate into what you had." },
       { term: "Savings rate", meaning: "(income − expense) ÷ income: the share of what came in that you did not consume. Contributions are not subtracted — they are saving, not spending. Example: (5.800 − 3.200) ÷ 5.800 = 44,8%. Irregular income? The month's rate swings with who paid; read the 12-month one in Review." },
-      { term: "Savings rate ex-earmarked", meaning: "The same, but earmarked money (meal voucher, allowances — categories marked as earmarked) is removed from income, because it arrives with its destination set, leaves in the same month and inflates both sides. Example: (5.800 − 3.200) ÷ (5.800 − 800) = 52%. This is the honest one. Money you could have kept is not earmarked: it is plain income." },
-      { term: "Budget", meaning: "The sum of the caps you set on categories; a category without a cap adds nothing. \"Spent R$ 3.200 of R$ 3.500 · 91%\" — within under 80%, at risk between 80% and 100%, over beyond. Sub-categories keep their own caps and roll up into their parent." },
+      { term: "Savings rate ex-earmarked", meaning: "The same, with earmarked income removed from the denominator, because it arrives with its destination set and leaves in the same month. Example: (5.800 − 3.200) ÷ (5.800 − 800) = 52%. This is the honest one." },
+      { term: "Budget", meaning: "The sum of the caps you set on categories; a category without a cap adds nothing. \"Spent R$ 3.200 of R$ 3.500 · 91%\" — within under 80%, at risk between 80% and 100%, over beyond. Spending in categories without a cap is shown beside it, not counted against it." },
       { term: "Fixed cost", meaning: "Σ active expense recurrences, whatever was applied this month. Example: R$ 2.500. Installment parts are shown next to it: committed too, but they end." },
       { term: "Months of runway", meaning: "cash on hand ÷ fixed cost: how long the cash would last with no income at all. Example: 10.000 ÷ 2.500 = 4,0 months." },
-      { term: "vs last month", meaning: "The change in income or expense against the previous month: (this − last) ÷ last. It compares the month so far with a whole month, so early in the month it exaggerates; read it after the 20th." },
-      { term: "The sentence on Today", meaning: "Picks the most useful true statement: spending up or down vs last month when both months have expenses; otherwise the savings rate; otherwise what is still planned. The ring is the savings rate." },
+      { term: "vs last month", meaning: "The change in income or expense against the previous month, up to the same day of the month, so a month in progress is compared fairly — and not at all in its first week." },
+      { term: "The sentence on Today", meaning: "Picks the most useful true statement: a category over its cap first; then spending up or down vs last month when both months have expenses; otherwise the savings rate; otherwise what is still planned." },
       { term: "—", meaning: "Unknown. It appears when a number cannot be computed yet (no cash account, no income this month, no fixed cost). It is never a zero in disguise." },
     ],
   },
@@ -128,30 +136,15 @@ const SECTIONS: Section[] = [
 export default function GuidePage() {
   return (
     <>
-      <PageHeader title="How sledger works" description="The terms you will see, in one place." />
+      <PageHeader title="How sledger works" description="The concepts, the flows and the rules behind every number." />
       <div className="space-y-8">
         <nav aria-label="Sections" className="flex flex-wrap gap-1.5 text-xs">
-          {["Em português", ...SECTIONS.map((s) => s.title), "Starting from a spreadsheet", "Two people, one ledger"].map((title) => (
+          {[...SECTIONS.map((s) => s.title), "Starting from a spreadsheet", "Two people, one ledger"].map((title) => (
             <a key={title} href={`#${slug(title)}`} className="inline-flex min-h-11 items-center rounded-full border border-border px-3 text-muted-foreground hover:text-foreground">
               {title}
             </a>
           ))}
         </nav>
-
-        <section aria-labelledby={slug("Em português")}>
-          <h2 id={slug("Em português")} className="mb-1 text-base font-semibold">
-            Em português
-          </h2>
-          <p className="mb-3 text-sm text-muted-foreground">As telas estão em inglês. As palavras que mais aparecem, traduzidas.</p>
-          <dl className="grid grid-cols-1 divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10 sm:grid-cols-2 sm:divide-y-0">
-            {GLOSSARY.map(([en, pt]) => (
-              <div key={en} className="flex gap-3 px-4 py-2 text-sm">
-                <dt className="w-36 shrink-0 font-medium">{en}</dt>
-                <dd className="text-muted-foreground">{pt}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
 
         {SECTIONS.map((section) => (
           <section key={section.title} aria-labelledby={slug(section.title)}>
@@ -186,10 +179,10 @@ export default function GuidePage() {
               <strong>Installments under way</strong>: add the purchase with “Parts” = the total and “This is part” = the next one to pay. Earlier parts are not created.
             </li>
             <li>
-              <strong>Investments</strong>: when adding the asset, fill “Already invested?” with what you put in and what it is worth today. No cash entry is created.
+              <strong>Investments</strong>: one asset per thing you hold, with its broker; when adding it, fill “Already invested?” with what you put in and what it is worth today. No cash entry is created — that money left the bank long ago.
             </li>
             <li>
-              <strong>Recurrences</strong>: salary, rent, the fixed bills, the monthly transfer to savings. Apply them from Review each month.
+              <strong>Recurrences</strong>: salary, rent, the fixed bills, the monthly transfer to savings, the monthly contribution with its default split. Apply them from Review each month.
             </li>
           </ol>
         </section>
