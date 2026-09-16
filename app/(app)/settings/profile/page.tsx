@@ -13,7 +13,7 @@ export default async function ProfilePage(props: PageProps<"/settings/profile">)
   const { user } = await getContext();
   return (
     <>
-      <PageHeader title="Profile" description={user.email ?? undefined} />
+      <PageHeader back={{ href: "/settings", label: "Settings" }} title="Profile" description={user.email ?? undefined} />
       {sp.reset === "1" && (
         <Alert className="mb-6">
           <AlertDescription>You are signed in through the reset link. Set a new password below.</AlertDescription>

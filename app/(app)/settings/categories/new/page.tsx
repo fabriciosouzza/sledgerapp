@@ -10,7 +10,7 @@ export default async function NewCategoryPage() {
   const parents = (await listCategories(repos, userId)).filter(isTopLevel);
   return (
     <>
-      <PageHeader title="New category" />
+      <PageHeader back={{ href: "/settings/categories", label: "Categories" }} title="New category" />
       <CategoryForm parents={parents} action={createCategoryAction} />
     </>
   );

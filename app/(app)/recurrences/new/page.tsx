@@ -12,7 +12,7 @@ export default async function NewRecurrencePage() {
   const [accounts, categories, assets] = await Promise.all([listAccounts(repos, userId), listCategories(repos, userId), listAssets(repos, userId)]);
   return (
     <>
-      <PageHeader title="New recurrence" />
+      <PageHeader back={{ href: "/recurrences", label: "Recurrences" }} title="New recurrence" />
       <RecurrenceForm accounts={accounts.filter((a) => a.isActive)} categories={categories.filter((c) => c.isActive)} assets={assets.filter((a) => a.isActive)} today={today()} action={createRecurrenceAction} />
     </>
   );

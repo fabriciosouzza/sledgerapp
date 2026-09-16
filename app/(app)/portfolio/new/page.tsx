@@ -16,7 +16,7 @@ export default async function NewMovementPage(props: PageProps<"/portfolio/new">
   if (active.length === 0) {
     return (
       <>
-        <PageHeader title="New movement" />
+        <PageHeader back={{ href: "/portfolio", label: "Portfolio" }} title="New movement" />
         <div className="rounded-xl border border-dashed border-border p-6 text-center">
           <p className="text-sm text-muted-foreground">Add an asset first.</p>
           <Button render={<Link href="/settings/assets/new" />} nativeButton={false} className="mt-4 h-11">
@@ -29,7 +29,7 @@ export default async function NewMovementPage(props: PageProps<"/portfolio/new">
 
   return (
     <>
-      <PageHeader title="New movement" />
+      <PageHeader back={{ href: "/portfolio", label: "Portfolio" }} title="New movement" />
       <MovementForm assets={active} accounts={accounts.filter((a) => a.isActive)} balances={balances} today={today()} defaultAssetId={typeof sp.asset === "string" ? sp.asset : undefined} />
     </>
   );

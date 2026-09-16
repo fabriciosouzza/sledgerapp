@@ -20,7 +20,7 @@ export default async function EditAccountPage(props: PageProps<"/settings/accoun
 
   return (
     <>
-      <PageHeader
+      <PageHeader back={{ href: "/settings/accounts", label: "Accounts" }}
         title={account.name}
         action={
           <ConfirmDialog

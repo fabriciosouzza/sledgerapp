@@ -19,7 +19,7 @@ export default async function EditAssetPage(props: PageProps<"/settings/assets/[
   });
   return (
     <>
-      <PageHeader
+      <PageHeader back={{ href: "/settings/assets", label: "Assets" }}
         title={asset.name}
         action={
           <ConfirmDialog

@@ -16,7 +16,7 @@ export default async function CategoriesPage() {
 
   return (
     <>
-      <PageHeader
+      <PageHeader back={{ href: "/settings", label: "Settings" }}
         title="Categories"
         action={
           <Button

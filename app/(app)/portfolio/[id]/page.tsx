@@ -21,7 +21,7 @@ export default async function AssetPage(props: PageProps<"/portfolio/[id]">) {
 
   return (
     <>
-      <PageHeader
+      <PageHeader back={{ href: "/portfolio", label: "Portfolio" }}
         title={asset.name}
         description={[assetClassLabel(asset.assetClass), asset.subclass, asset.broker].filter(Boolean).join(" · ")}
         action={

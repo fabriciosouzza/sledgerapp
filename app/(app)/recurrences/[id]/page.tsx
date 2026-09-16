@@ -24,7 +24,7 @@ export default async function EditRecurrencePage(props: PageProps<"/recurrences/
 
   return (
     <>
-      <PageHeader
+      <PageHeader back={{ href: "/recurrences", label: "Recurrences" }}
         title={recurrence.description}
         action={
           <ConfirmDialog

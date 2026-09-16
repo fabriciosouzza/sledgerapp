@@ -21,7 +21,7 @@ export default async function EditCategoryPage(props: PageProps<"/settings/categ
 
   return (
     <>
-      <PageHeader
+      <PageHeader back={{ href: "/settings/categories", label: "Categories" }}
         title={category.name}
         action={
           <ConfirmDialog

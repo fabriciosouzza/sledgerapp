@@ -6,7 +6,7 @@ import { createAssetAction } from "../actions";
 export default function NewAssetPage() {
   return (
     <>
-      <PageHeader title="New asset" />
+      <PageHeader back={{ href: "/settings/assets", label: "Assets" }} title="New asset" />
       <AssetForm action={createAssetAction} today={today()} />
     </>
   );

@@ -6,7 +6,7 @@ import { createAccountAction } from "../actions";
 export default function NewAccountPage() {
   return (
     <>
-      <PageHeader title="New account" />
+      <PageHeader back={{ href: "/settings/accounts", label: "Accounts" }} title="New account" />
       <AccountForm action={createAccountAction} today={today()} />
     </>
   );

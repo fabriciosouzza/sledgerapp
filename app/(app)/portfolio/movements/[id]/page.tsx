@@ -18,7 +18,7 @@ export default async function EditMovementPage(props: PageProps<"/portfolio/move
   const [assets, accounts, balances] = await Promise.all([listAssets(repos, userId), listAccounts(repos, userId), assetBalances(repos, userId)]);
   return (
     <>
-      <PageHeader title={movementKindLabel(movement.kind)} description={movement.entryId ? "Paired with a cash entry, which follows the amount and the date." : undefined} />
+      <PageHeader back={{ href: `/portfolio/${movement.assetId}`, label: "Asset" }} title={movementKindLabel(movement.kind)} description={movement.entryId ? "Paired with a cash entry, which follows the amount and the date." : undefined} />
       <MovementForm assets={assets} accounts={accounts.filter((a) => a.isActive)} balances={balances} today={today()} movement={movement} />
     </>
   );
