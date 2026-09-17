@@ -102,7 +102,7 @@ const SECTIONS: Section[] = [
       { term: "Yield", meaning: "Interest or dividends, entered by hand. Raises net worth; not income for the savings rate." },
       { term: "Market adjustment", meaning: "Crypto, currency, stocks: type what the broker shows and the difference becomes the adjustment — the only amount in sledger that may be negative." },
       { term: "Withdrawal · Fee/tax", meaning: "Money out and costs. A withdrawal with a cash account picked records the cash arriving as a redemption, paired." },
-      { term: "Record month", meaning: "One pass over every asset at month end: the yield of each, or the balance at the broker — the difference is recorded, unchanged lines are skipped." },
+      { term: "Record month", meaning: "One pass over every asset at month end: the yield of each, or the balance at the broker — the difference is recorded, unchanged lines are skipped. Each line moves the way its asset does: fixed income as yield, anything with a price as a market adjustment; change a line when it was the other way, and the choice is remembered." },
       { term: "Contributed vs. earned", meaning: "Contributed = contributions − withdrawals. Earned = yield + adjustments − fees. Balance = contributed + earned. Return on contributions = earned ÷ contributed." },
     ],
   },

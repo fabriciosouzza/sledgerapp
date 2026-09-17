@@ -139,6 +139,27 @@ describe("delete", () => {
 });
 
 describe("recordBatch", () => {
+  it("takes each line's own kind, so fixed income yields and crypto is adjusted in the same pass", async () => {
+    const repos = fakeRepositories();
+    const cdb = await createAsset(repos, U, assetInputSchema.parse({ name: "CDB", assetClass: "fixed_income" }));
+    const btc = await createAsset(repos, U, assetInputSchema.parse({ name: "BTC", assetClass: "crypto" }));
+    const created = await recordBatch(repos, U, {
+      kind: "yield",
+      date: "2026-02-01",
+      mode: "amount",
+      values: [
+        { assetId: cdb.id, cents: 1_000, kind: "yield" },
+        { assetId: btc.id, cents: 5_000, kind: "market_adjustment" },
+        { assetId: btc.id, cents: -200 }, // no kind of its own: falls back, and a drop is never a yield anyway
+      ],
+    });
+    expect(created.map((m) => [m.assetId, m.kind, m.amountCents])).toEqual([
+      [cdb.id, "yield", 1_000],
+      [btc.id, "market_adjustment", 5_000],
+      [btc.id, "market_adjustment", -200],
+    ]);
+  });
+
   it("records the difference from the broker balance and skips unchanged lines", async () => {
     const repos = fakeRepositories();
     const a = await createAsset(repos, U, assetInputSchema.parse({ name: "CDB", assetClass: "fixed_income" }));

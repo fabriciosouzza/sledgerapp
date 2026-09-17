@@ -49,12 +49,13 @@ export const movementInputSchema = z
 
 export type MovementInput = z.infer<typeof movementInputSchema>;
 
-/** The batch screen: `amount:<assetId>` fields, blanks skipped. */
+/** The batch screen: `amount:<assetId>` and `kind:<assetId>` fields, blanks skipped; `kind` is the fallback for a line without one. */
 export const batchInputSchema = z.object({
-  kind: z.enum(["yield", "market_adjustment"]),
+  kind: z.enum(["yield", "market_adjustment"]).default("yield"),
   date: isoDateField,
   mode: z.enum(["amount", "balance"]),
 });
+export const batchKindSchema = z.enum(["yield", "market_adjustment"]);
 export type BatchFields = z.infer<typeof batchInputSchema>;
 
 /** An edit keeps the asset and the pairing; only what happened may change. */

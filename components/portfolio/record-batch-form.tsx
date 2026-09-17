@@ -11,30 +11,32 @@ import { FormError } from "@/components/forms/form-error";
 import { Button } from "@/components/ui/button";
 import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { useLocalMemory } from "@/lib/client/local-memory";
-import { assetLabel } from "@/lib/domain/assets";
+import { assetLabel, movementKindForClass } from "@/lib/domain/assets";
 import { formatBRL } from "@/lib/domain/money";
+import type { AssetClass } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 
 type Mode = "amount" | "balance";
 type Kind = "yield" | "market_adjustment";
 
-export function RecordBatchForm({ assets, today }: { assets: { id: string; name: string; broker: string | null; balanceCents: number }[]; today: string }) {
+export function RecordBatchForm({ assets, today }: { assets: { id: string; name: string; broker: string | null; assetClass: AssetClass; balanceCents: number }[]; today: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string>();
   // The way you did it last month is the way you do it this month.
-  const [memory, remember] = useLocalMemory<{ mode?: Mode; kind?: Kind }>("sledger.recordMonth", {});
+  const [memory, remember] = useLocalMemory<{ mode?: Mode; kinds?: Record<string, Kind> }>("sledger.recordMonth", {});
   const [modeChoice, setModeChoice] = useState<Mode | null>(null);
-  const [kindChoice, setKindChoice] = useState<Kind | null>(null);
+  const [kindChoices, setKindChoices] = useState<Record<string, Kind>>({});
   const mode = modeChoice ?? memory.mode ?? "amount";
-  const kind = kindChoice ?? memory.kind ?? "yield";
+  // Each line moves the way its asset does: fixed income yields, a priced asset is adjusted — unless you said otherwise last time.
+  const kindOf = (a: { id: string; assetClass: AssetClass }): Kind => kindChoices[a.id] ?? memory.kinds?.[a.id] ?? movementKindForClass(a.assetClass);
   const setMode = (m: Mode) => {
     setModeChoice(m);
     remember((c) => ({ ...c, mode: m }));
   };
-  const setKind = (k: Kind) => {
-    setKindChoice(k);
-    remember((c) => ({ ...c, kind: k }));
+  const setKind = (id: string, k: Kind) => {
+    setKindChoices((c) => ({ ...c, [id]: k }));
+    remember((c) => ({ ...c, kinds: { ...(c.kinds ?? {}), [id]: k } }));
   };
   const [typed, setTyped] = useState<Record<string, number | null>>({});
 
@@ -44,7 +46,8 @@ export function RecordBatchForm({ assets, today }: { assets: { id: string; name:
     if (v === null || v === undefined) return null;
     return mode === "balance" ? v - a.balanceCents : v;
   };
-  const negatives = filled.filter((a) => (delta(a) ?? 0) < 0).length;
+  // Yield lines that went down: they are recorded as market movement, and the note says so.
+  const negatives = filled.filter((a) => kindOf(a) === "yield" && (delta(a) ?? 0) < 0).length;
   // A "yield" as large as the balance is almost certainly the balance itself.
   const looksLikeBalance = mode === "amount" ? filled.filter((a) => a.balanceCents > 0 && (typed[a.id] ?? 0) >= a.balanceCents).length : 0;
 
@@ -88,23 +91,16 @@ export function RecordBatchForm({ assets, today }: { assets: { id: string; name:
       </div>
       <input type="hidden" name="mode" value={mode} />
 
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Record as" htmlFor="kind" hint={kind === "yield" ? "Interest, dividends. Cannot be negative." : "Price moved; may be negative."}>
-          <NativeSelect id="kind" name="kind" value={kind} onChange={(e) => setKind(e.target.value as Kind)} className="w-full [&>select]:h-11" aria-describedby="kind-hint">
-            <NativeSelectOption value="yield">Yield</NativeSelectOption>
-            <NativeSelectOption value="market_adjustment">Market adjustment</NativeSelectOption>
-          </NativeSelect>
-        </Field>
-        <Field label="Date" htmlFor="date">
-          <DatePicker id="date" name="date" required defaultValue={today} />
-        </Field>
-      </div>
+      <Field label="Date" htmlFor="date" hint="Each line says how its asset moved: fixed income yields; anything with a price is adjusted to what the broker shows. Change a line if it was the other way.">
+        <DatePicker id="date" name="date" required defaultValue={today} />
+      </Field>
 
       <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
         {assets.map((a) => {
           const d = delta(a);
+          const kind = kindOf(a);
           return (
-            <li key={a.id} className="grid grid-cols-[1fr_9rem] items-center gap-3 px-3 py-2">
+            <li key={a.id} className="grid grid-cols-[minmax(0,1fr)_9rem] items-center gap-x-3 gap-y-2 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_11rem_9rem]">
               <label htmlFor={`amount-${a.id}`} className="min-w-0">
                 <span className="block truncate text-sm font-medium">{assetLabel(a)}</span>
                 <span className={cn("block text-xs tabular-nums text-muted-foreground", d !== null && d < 0 && "text-negative")}>
@@ -117,13 +113,23 @@ export function RecordBatchForm({ assets, today }: { assets: { id: string; name:
                         : `${d > 0 ? "+" : "−"}${formatBRL(Math.abs(d))} vs ${formatBRL(a.balanceCents)}${kind === "yield" && d < 0 ? " · recorded as a market adjustment" : ""}`}
                 </span>
               </label>
+              <NativeSelect
+                name={`kind:${a.id}`}
+                value={kind}
+                onChange={(e) => setKind(a.id, e.target.value as Kind)}
+                aria-label={`How ${a.name} moved`}
+                className="order-3 col-span-2 w-full [&>select]:h-11 sm:order-none sm:col-span-1"
+              >
+                <NativeSelectOption value="yield">Yield</NativeSelectOption>
+                <NativeSelectOption value="market_adjustment">Market adjustment</NativeSelectOption>
+              </NativeSelect>
               <CurrencyInput id={`amount-${a.id}`} name={`amount:${a.id}`} onCentsChange={(v) => setTyped((t) => ({ ...t, [a.id]: v }))} className="h-11" />
             </li>
           );
         })}
       </ul>
 
-      {kind === "yield" && negatives > 0 && (
+      {negatives > 0 && (
         <p className="text-sm text-muted-foreground">
           {negatives} {negatives === 1 ? "line goes" : "lines go"} down: {negatives === 1 ? "it is" : "they are"} recorded as a market adjustment, not a negative yield.
         </p>

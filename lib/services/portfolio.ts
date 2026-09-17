@@ -109,22 +109,24 @@ export async function assetBalances(repos: Repositories, userId: string): Promis
 }
 
 export interface BatchInput {
+  /** Fallback for a line that names no kind of its own. */
   kind: "yield" | "market_adjustment";
   date: IsoDate;
   /** `amount`: each value is the movement; `balance`: each value is what the broker shows, the movement is the difference. */
   mode: "amount" | "balance";
-  values: { assetId: string; cents: number }[];
+  /** One line per asset; a fixed-income line yields, a priced one is adjusted — each says which (§5.7). */
+  values: { assetId: string; cents: number; kind?: "yield" | "market_adjustment" }[];
 }
 
 /** One movement per asset in a single pass — the monthly "record every yield" round. */
 export async function recordBatch(repos: Repositories, userId: string, input: BatchInput): Promise<AssetMovement[]> {
   const balances = input.mode === "balance" ? await assetBalances(repos, userId) : {};
   const created: AssetMovement[] = [];
-  for (const { assetId, cents } of input.values) {
+  for (const { assetId, cents, kind: lineKind } of input.values) {
     const amountCents = input.mode === "balance" ? cents - (balances[assetId] ?? 0) : cents;
     if (amountCents === 0) continue;
     // A yield cannot be negative; a line that went down is market movement.
-    const kind = amountCents < 0 ? "market_adjustment" : input.kind;
+    const kind = amountCents < 0 ? "market_adjustment" : (lineKind ?? input.kind);
     const asset = await getAsset(repos, userId, assetId);
     created.push(await repos.movements.insert(userId, { assetId: asset.id, date: input.date, kind, amountCents, entryId: null, notes: null }));
   }

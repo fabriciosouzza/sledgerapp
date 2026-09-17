@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { parseBRL } from "@/lib/domain/money";
-import { batchInputSchema, movementInputSchema, movementUpdateSchema } from "@/lib/schemas/assets";
+import { batchInputSchema, batchKindSchema, movementInputSchema, movementUpdateSchema } from "@/lib/schemas/assets";
 import { firstIssue, formToObject } from "@/lib/schemas/form";
 import { getContext } from "@/lib/services/context";
 import { ServiceError } from "@/lib/services/errors";
@@ -32,12 +32,14 @@ export async function recordBatchAction(formData: FormData): Promise<{ ok: true;
   const { userId, repos } = await getContext();
   const parsed = batchInputSchema.safeParse(formToObject(formData));
   if (!parsed.success) return { ok: false, error: firstIssue(parsed.error) };
-  const values: { assetId: string; cents: number }[] = [];
+  const values: { assetId: string; cents: number; kind?: "yield" | "market_adjustment" }[] = [];
   for (const [key, value] of formData.entries()) {
     if (!key.startsWith("amount:") || typeof value !== "string" || value.trim() === "") continue;
     const cents = parseBRL(value);
     if (cents === null) return { ok: false, error: "Enter amounts like 1.234,56." };
-    values.push({ assetId: key.slice("amount:".length), cents });
+    const assetId = key.slice("amount:".length);
+    const kind = batchKindSchema.safeParse(formData.get(`kind:${assetId}`));
+    values.push({ assetId, cents, kind: kind.success ? kind.data : undefined });
   }
   if (values.length === 0) return { ok: false, error: "Fill in at least one asset." };
   try {

@@ -9,6 +9,11 @@ export const ASSET_CLASSES: { value: AssetClass; label: string }[] = [
   { value: "other", label: "Other" },
 ];
 
+/** How an asset's balance moves on its own: fixed income yields; anything with a price is adjusted to the market (§5.7). */
+export function movementKindForClass(assetClass: AssetClass): "yield" | "market_adjustment" {
+  return assetClass === "fixed_income" ? "yield" : "market_adjustment";
+}
+
 export function assetClassLabel(value: AssetClass): string {
   return ASSET_CLASSES.find((c) => c.value === value)?.label ?? value;
 }
