@@ -10,16 +10,14 @@ import { CategoryTable } from "@/components/month/category-table";
 import { MonthPicker } from "@/components/month/month-picker";
 import { ViewSwitch, type MonthView } from "@/components/month/view-switch";
 import { GenerateMonth } from "@/components/recurrences/generate-month";
-import { ManageMonth } from "@/components/recurrences/manage-month-sheet";
 import { YearView } from "./year-view";
 import { Stat } from "@/components/month/stat";
 import { addMonths, dayOf, isPeriod, parsePeriod, periodOf, today, toPeriodString } from "@/lib/domain/dates";
-import { recurrenceDateIn } from "@/lib/domain/recurrences";
 import { formatBRL, formatBRLWrap, formatPercent } from "@/lib/domain/money";
 import { listAccounts } from "@/lib/services/accounts";
 import { listCategories } from "@/lib/services/categories";
 import { getContext } from "@/lib/services/context";
-import { monthRecurrences, pendingMonths, previewGeneration } from "@/lib/services/recurrences";
+import { pendingMonths, previewGeneration } from "@/lib/services/recurrences";
 import { capsOver, monthSummary, yearSummary } from "@/lib/services/summary";
 import { cn } from "@/lib/utils";
 
@@ -69,13 +67,12 @@ export default async function MonthPage(props: PageProps<"/review">) {
     );
   }
 
-  const [summary, accounts, categories, generation, pendingAll, monthRows] = await Promise.all([
+  const [summary, accounts, categories, generation, pendingAll] = await Promise.all([
     monthSummary(repos, userId, month),
     listAccounts(repos, userId),
     listCategories(repos, userId),
     previewGeneration(repos, userId, month),
     pendingMonths(repos, userId, now),
-    monthRecurrences(repos, userId, month),
   ]);
   const m = summary.metrics;
   const isCurrent = month === periodOf(now);
@@ -148,23 +145,6 @@ export default async function MonthPage(props: PageProps<"/review">) {
             </dl>
           </div>
         </section>
-        {/* A detail of the verdict: where the month's recurring entries stand, and the sheet to change it. */}
-        <ManageMonth
-          className="-mt-4 px-1"
-          period={month}
-          rows={monthRows.map((r) => ({
-            recurrenceId: r.recurrence.id,
-            description: r.recurrence.description,
-            kind: r.recurrence.kind,
-            amountCents: r.entry?.amountCents ?? r.recurrence.amountCents,
-            templateCents: r.recurrence.amountCents,
-            date: r.entry?.date ?? recurrenceDateIn(r.recurrence, month),
-            state: r.state,
-            isVariable: r.recurrence.isVariable,
-            settled: r.entry?.status === "settled",
-          }))}
-        />
-
         <section id="still-planned" className="scroll-mt-4">
           <EntryList
             key={month}

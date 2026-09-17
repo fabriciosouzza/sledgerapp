@@ -5,7 +5,7 @@ import { isCashAccount, isCreditCard } from "@/lib/domain/accounts";
 import { sharesProblem } from "@/lib/domain/allocation";
 import { appliesToKind } from "@/lib/domain/categories";
 import { needsAllocation, needsCategory, needsCounterAccount } from "@/lib/domain/entries";
-import { expandRecurrence, expandRecurrences, isSkippedIn, monthlyFixedCost, recurrenceOccursIn } from "@/lib/domain/recurrences";
+import { expandRecurrences, isSkippedIn, monthlyFixedCost, recurrenceOccursIn } from "@/lib/domain/recurrences";
 import { addMonths, periodEnd, periodOf, periodStart } from "@/lib/domain/dates";
 import type { Entry, IsoDate, NewEntry, Period, Recurrence } from "@/lib/domain/types";
 import type { Repositories } from "@/lib/repositories";
@@ -189,67 +189,8 @@ export async function generateMonth(
   return { period, created: inserted.length, skipped: rows.length - inserted.length };
 }
 
-export type MonthRecurrenceState = "applied" | "pending" | "skipped";
-
-export interface MonthRecurrence {
-  recurrence: Recurrence;
-  state: MonthRecurrenceState;
-  /** The generated entry, when applied. */
-  entry: Entry | null;
-}
-
-/** Every template that occurs in `period`, with where it stands — the month's management sheet. */
-export async function monthRecurrences(repos: Repositories, userId: string, period: Period): Promise<MonthRecurrence[]> {
-  const [recurrences, entries] = await Promise.all([repos.recurrences.list(userId), repos.entries.list(userId, { period })]);
-  const byRecurrence = new Map(entries.filter((e) => e.recurrenceId !== null).map((e) => [e.recurrenceId!, e]));
-  return recurrences
-    .filter((r) => recurrenceOccursIn(r, period))
-    .map((recurrence) => {
-      const entry = byRecurrence.get(recurrence.id) ?? null;
-      const state: MonthRecurrenceState = entry ? "applied" : isSkippedIn(recurrence, period) ? "skipped" : "pending";
-      return { recurrence, state, entry };
-    });
-}
-
 /** A card purchase counts the day it is made, recurring or not (§5.6). */
 async function settleCardRows(repos: Repositories, userId: string, rows: NewEntry[]): Promise<NewEntry[]> {
   const cards = new Set((await repos.accounts.list(userId)).filter(isCreditCard).map((a) => a.id));
   return rows.map((row) => (cards.has(row.accountId) && (row.kind === "expense" || row.kind === "income") ? { ...row, status: "settled" as const, settledOn: row.date } : row));
-}
-
-/**
- * Brings one template into the month in one go: forgets "not this month" and
- * creates its planned entry, with this month's amount when given. Already
- * there, a planned entry takes the new amount; a settled one is left alone.
- */
-export async function includeRecurrenceInMonth(repos: Repositories, userId: string, id: string, period: Period, amountCents: number | null = null): Promise<Entry | null> {
-  const recurrence = await getRecurrence(repos, userId, id);
-  if (!recurrenceOccursIn(recurrence, period)) throw new ServiceError("invalid", "This recurrence does not fall in that month.");
-  if (amountCents !== null && (!Number.isInteger(amountCents) || amountCents <= 0)) throw new ServiceError("invalid", "Amounts must be positive.");
-  const start = periodStart(period);
-  if (recurrence.skippedPeriods.includes(start)) await repos.recurrences.update(userId, id, { skippedPeriods: recurrence.skippedPeriods.filter((p) => p !== start) });
-  const existing = (await repos.entries.list(userId, { recurrenceId: id })).find((e) => e.period === start);
-  if (existing) {
-    if (amountCents !== null && amountCents !== existing.amountCents && existing.status === "planned") return repos.entries.update(userId, existing.id, { amountCents });
-    return existing;
-  }
-  const row = expandRecurrence(recurrence, period);
-  const rows = await settleCardRows(repos, userId, [amountCents === null ? row : { ...row, amountCents }]);
-  const [created] = await repos.entries.insertMany(userId, rows, { ignoreConflicts: true });
-  return created ?? null;
-}
-
-/**
- * Takes one template out of the month: its planned entry goes (a settled one
- * stays — it happened) and the month is remembered as "not this month".
- */
-export async function excludeRecurrenceFromMonth(repos: Repositories, userId: string, id: string, period: Period): Promise<void> {
-  const recurrence = await getRecurrence(repos, userId, id);
-  const existing = (await repos.entries.list(userId, { recurrenceId: id })).find((e) => e.period === periodStart(period));
-  if (existing) {
-    if (existing.status === "settled") throw new ServiceError("invalid", `${recurrence.description} was already settled this month; undo that first.`);
-    await repos.entries.deleteMany(userId, [existing.id]);
-  }
-  const start = periodStart(period);
-  if (!recurrence.skippedPeriods.includes(start)) await repos.recurrences.update(userId, id, { skippedPeriods: [...recurrence.skippedPeriods, start] });
 }

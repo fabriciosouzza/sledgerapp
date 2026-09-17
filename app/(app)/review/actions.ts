@@ -5,7 +5,7 @@ import { isPeriod } from "@/lib/domain/dates";
 import { parseBRL } from "@/lib/domain/money";
 import { getContext } from "@/lib/services/context";
 import { ServiceError } from "@/lib/services/errors";
-import { excludeRecurrenceFromMonth, generateMonth, includeRecurrenceInMonth } from "@/lib/services/recurrences";
+import { generateMonth } from "@/lib/services/recurrences";
 
 export type GenerateResult = { ok: true; created: number; skipped: number } | { ok: false; error: string };
 
@@ -29,22 +29,6 @@ export async function generateMonthWithAmountsAction(formData: FormData): Promis
     const result = await generateMonth(repos, userId, period, amounts, skip);
     for (const path of ["/review", "/", "/entries", "/recurrences"]) revalidatePath(path);
     return { ok: true, created: result.created, skipped: result.skipped };
-  } catch (error) {
-    if (error instanceof ServiceError) return { ok: false, error: error.message };
-    throw error;
-  }
-}
-
-/** The month's management sheet: one template in (its entry created or re-priced, "not this month" forgotten) or out (planned entry removed, month remembered). */
-export async function setRecurrenceMonthAction(id: string, period: string, include: boolean, amountCents: number | null = null): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { userId, repos } = await getContext();
-  if (!isPeriod(period)) return { ok: false, error: "Pick a month." };
-  if (amountCents !== null && (!Number.isInteger(amountCents) || amountCents <= 0)) return { ok: false, error: "Amounts must be positive." };
-  try {
-    if (include) await includeRecurrenceInMonth(repos, userId, id, period, amountCents);
-    else await excludeRecurrenceFromMonth(repos, userId, id, period);
-    for (const path of ["/review", "/", "/entries", "/recurrences"]) revalidatePath(path);
-    return { ok: true };
   } catch (error) {
     if (error instanceof ServiceError) return { ok: false, error: error.message };
     throw error;

@@ -405,20 +405,19 @@ is still open):
   class.
 - **"Not this month" is remembered.** Unticking a line when applying a
   month writes that month on the template (`recurrences.skipped_periods`):
-  the month stops asking for it on Review, Today and Recurrences. With
-  nothing left to apply the card gives way to one muted line ("4 not this
-  month · Manage"); Manage opens a sheet that is the apply card kept
-  reachable: every template of the month with a tick and this month's
-  amount — ticking creates the entry with that amount (and forgets the
-  skip), unticking removes a planned entry and remembers the month, and a
-  planned entry's amount follows the field; a settled one stays. The line
-  sits under the month's verdict as a detail of it. Account pick lists read
-  "name · type", since a bank can be both an account and a card.
-- **Accounts in the nav is the money view** (`/accounts`: each balance
-  today, cards with their debt, one tap into an account's entries); adding
-  and editing accounts stays in Settings, which holds profile, accounts,
-  categories, assets and the theme and took Profile's place at the foot of
-  the sidebar. The starter categories an account
+  the month stops asking for it on Review, Today and Recurrences, and with
+  nothing ticked the button reads "Skip N this month". A recurrence is
+  applied once; whoever skipped one and needs it after all adds the entry
+  by hand — a sheet to manage the month's templates was built and taken
+  out the same day as needless. The starter categories an account lacks
+  are offered as chips on "New category", one tap each — never as a
+  standing button on the list, since a starter category deleted on purpose
+  would keep it there.
+- **Accounts in the nav is the money view** (`/accounts`: each cash
+  account's balance today, one tap into its entries; cards stay on their
+  own screen); adding and editing accounts stays in Settings, which holds
+  profile, accounts, categories, assets and the theme and took Profile's
+  place at the foot of the sidebar. The starter categories an account
   lacks are offered as chips on "New category", one tap each — never as a
   standing button on the list, since a starter category deleted on purpose
   would keep it there.
