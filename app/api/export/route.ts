@@ -27,9 +27,14 @@ export async function GET(request: NextRequest) {
     if (sp.get("format") === "csv") {
       const period = sp.get("period");
       if (period !== null && !isPeriod(period)) return Response.json({ error: "period must look like 2026-11." }, { status: 400 });
-      const [accounts, categories] = await Promise.all([repos.accounts.list(userId), repos.categories.list(userId)]);
+      const [accounts, categories, assets, movements] = await Promise.all([
+        repos.accounts.list(userId),
+        repos.categories.list(userId),
+        repos.assets.list(userId),
+        repos.movements.list(userId),
+      ]);
       const entries = period ? await repos.entries.list(userId, { period }) : await allEntries(repos, userId, accounts);
-      return new Response(entriesCsv(entries, accounts, categories), {
+      return new Response(entriesCsv(entries, accounts, categories, assets, movements), {
         headers: {
           "content-type": "text/csv; charset=utf-8",
           "content-disposition": `attachment; filename="sledger-${period ?? "all"}.csv"`,
