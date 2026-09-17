@@ -62,6 +62,10 @@ export function CategoryForm({
 
       <fieldset className="space-y-2">
         <legend className="text-sm font-medium">Applies to</legend>
+        <p className="text-xs text-muted-foreground">
+          Where the category is offered. Both is for money that comes in and goes out under one name — a meal voucher, a deposit returned — so the two sides
+          stay together.
+        </p>
         <div className="flex gap-6">
           {(["expense", "income"] as const).map((kind) => (
             <label key={kind} className="flex min-h-11 items-center gap-2 text-sm capitalize">

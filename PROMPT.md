@@ -566,7 +566,10 @@ On user creation, seed an editable starting set — **no entries**:
   investments are assets (§5.7), and where they are held is the asset's
   `broker`.
 - Categories: `Moradia`, `Alimentação`, `Transporte`, `Saúde`, `Educação`,
-  `Assinaturas`, `Lazer`, `Dívidas e parcelas`, `Outros` — all with null caps.
+  `Assinaturas`, `Lazer`, `Dívidas e parcelas` (expense); `Salário`,
+  `Extras`, `Reembolso`, `Cashback` (income); `Vale-refeição` (both,
+  earmarked); `Outros` (both) — all with null caps. An existing account can
+  add the starter categories it lacks from Settings.
 
 Seed names are user data, so they are in Portuguese. Credit cards are not
 seeded: the user adds their own, and there will be several.

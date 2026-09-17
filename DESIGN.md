@@ -396,6 +396,13 @@ is still open):
   cash on hand and the tiles agree. An account with entries cannot change
   between card and cash.
 - Net worth counts a movement from its own date, not its month.
+- **The seed has income categories** — Salário, Extras, Reembolso, Cashback,
+  and Vale-refeição (in and out under one name, earmarked). Categories
+  offers older accounts the starter categories they lack, one tap; the
+  form explains that "both" is for money that comes in and goes out under
+  one name.
+- Record month takes each asset's own kind of movement, pre-set from its
+  class.
 
 ## Done
 
