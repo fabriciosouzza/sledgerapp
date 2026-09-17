@@ -25,6 +25,7 @@ import { lastInstallmentPeriod } from "@/lib/domain/installments";
 import { formatBRL } from "@/lib/domain/money";
 import type { Account, AllocationLine, Asset, Category, Entry, EntryKind } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
+import { accountLabel } from "@/lib/domain/accounts";
 
 const MEMORY_KEY = "sledger.lastUsed";
 
@@ -218,7 +219,7 @@ export function EntryForm({
       <NativeSelect id="accountId" name="accountId" value={effectiveAccountId} onChange={(e) => setAccountId(e.target.value)} required className="w-full [&>select]:h-11">
         {accountOptions.map((a) => (
           <NativeSelectOption key={a.id} value={a.id}>
-            {a.name}
+            {accountLabel(a)}
           </NativeSelectOption>
         ))}
       </NativeSelect>
@@ -312,7 +313,7 @@ export function EntryForm({
                 {counterOptions.length === 0 && <NativeSelectOption value="">No other account</NativeSelectOption>}
                 {counterOptions.map((a) => (
                   <NativeSelectOption key={a.id} value={a.id}>
-                    {a.name}
+                    {accountLabel(a)}
                   </NativeSelectOption>
                 ))}
               </NativeSelect>

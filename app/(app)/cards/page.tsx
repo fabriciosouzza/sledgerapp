@@ -14,6 +14,7 @@ import { isCashAccount } from "@/lib/domain/accounts";
 import { addDays, formatDate, formatDayMonth, formatPeriodShort, periodOf, today } from "@/lib/domain/dates";
 import { formatBRL, formatBRLWrap } from "@/lib/domain/money";
 import { listAccounts } from "@/lib/services/accounts";
+import type { Account } from "@/lib/domain/types";
 import { cardsOverview, type StatementView } from "@/lib/services/cards";
 import { listCategories } from "@/lib/services/categories";
 import { getContext } from "@/lib/services/context";
@@ -189,7 +190,7 @@ function ToPayStatement({
 }: {
   view: StatementView;
   cardName: string;
-  cashAccounts: { id: string; name: string }[];
+  cashAccounts: Pick<Account, "id" | "name" | "type">[];
   today: string;
 }) {
   const { statement } = view;
@@ -221,7 +222,7 @@ function PastStatement({
 }: {
   view: StatementView;
   cardName: string;
-  cashAccounts: { id: string; name: string }[];
+  cashAccounts: Pick<Account, "id" | "name" | "type">[];
   today: string;
 }) {
   const { statement } = view;

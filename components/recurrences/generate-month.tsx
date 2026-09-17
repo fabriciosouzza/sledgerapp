@@ -35,7 +35,6 @@ export function GenerateMonth({
   existingCount,
   card = false,
   otherPending = [],
-  manage,
 }: {
   period: Period;
   toCreate: PreviewRow[];
@@ -44,8 +43,6 @@ export function GenerateMonth({
   card?: boolean;
   /** Other recent months with something to apply. */
   otherPending?: { period: Period; count: number }[];
-  /** The month's one-line summary with its management sheet; shown under the card, or alone when there is nothing to apply. */
-  manage?: React.ReactNode;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -86,13 +83,12 @@ export function GenerateMonth({
     });
   }
 
-  // Nothing to apply: no card, just the month's line (and other months still waiting).
+  // Nothing to apply: no card; the month's own line lives under the verdict (ManageMonth), only other months waiting show here.
   if (card && nothing && !done) {
-    if (!manage && otherPending.length === 0) return null;
+    if (otherPending.length === 0) return null;
     return (
-      <div className="space-y-1 px-1">
-        {manage}
-        {otherPending.length > 0 && <OtherPending months={otherPending} />}
+      <div className="px-1">
+        <OtherPending months={otherPending} />
       </div>
     );
   }
@@ -169,7 +165,6 @@ export function GenerateMonth({
           </Button>
         </form>
       )}
-      {manage}
       {otherPending.length > 0 && <OtherPending months={otherPending} />}
     </section>
   );

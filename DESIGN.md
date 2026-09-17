@@ -407,9 +407,13 @@ is still open):
   month writes that month on the template (`recurrences.skipped_periods`):
   the month stops asking for it on Review, Today and Recurrences. With
   nothing left to apply the card gives way to one muted line ("4 not this
-  month · Manage"); Manage opens a sheet with every template of the month
-  and a switch each — on creates the entry (and forgets the skip), off
-  removes a planned entry and remembers the month; a settled one stays.
+  month · Manage"); Manage opens a sheet that is the apply card kept
+  reachable: every template of the month with a tick and this month's
+  amount — ticking creates the entry with that amount (and forgets the
+  skip), unticking removes a planned entry and remembers the month, and a
+  planned entry's amount follows the field; a settled one stays. The line
+  sits under the month's verdict as a detail of it. Account pick lists read
+  "name · type", since a bank can be both an account and a card.
 - Accounts left Settings for the nav (data you visit); Settings holds
   profile, categories, assets and the theme, and took Profile's place at the
   foot of the sidebar. The starter categories an account

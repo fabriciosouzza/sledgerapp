@@ -4,36 +4,44 @@ import { useOptimistic, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { setRecurrenceMonthAction } from "@/app/(app)/review/actions";
+import { CurrencyInput } from "@/components/forms/currency-input";
 import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/responsive-sheet";
-import { Switch } from "@/components/ui/switch";
 import { formatDayMonth, formatPeriodLong } from "@/lib/domain/dates";
 import { formatBRL } from "@/lib/domain/money";
-import type { Period } from "@/lib/domain/types";
+import type { EntryKind, Period } from "@/lib/domain/types";
 import type { MonthRecurrenceState } from "@/lib/services/recurrences";
+import { cn } from "@/lib/utils";
 
 export interface MonthRow {
   recurrenceId: string;
   description: string;
+  kind: EntryKind;
+  /** The entry's amount when applied, the template's otherwise. */
   amountCents: number;
+  templateCents: number;
   date: string;
   state: MonthRecurrenceState;
-  /** An applied entry already settled cannot be taken out from here. */
+  isVariable: boolean;
+  /** An applied entry already settled cannot be changed from here. */
   settled: boolean;
 }
 
 /**
- * One line under the month, and the whole month inside a sheet: every
- * template that falls in it with a switch — on means its entry exists (or
- * is created now), off means "not this month" (a planned entry is removed).
- * Nothing to close and reopen: each flip is saved as it happens.
+ * The month's recurring entries, the way the apply card shows them —
+ * a tick and this month's amount per line — kept reachable after the month
+ * was applied. Ticking creates the entry with the amount typed (and forgets
+ * "not this month"); unticking removes a planned entry and remembers the
+ * month; changing the amount of a planned entry re-prices it. Each change
+ * is saved as it happens.
  */
-export function ManageMonth({ period, rows }: { period: Period; rows: MonthRow[] }) {
+export function ManageMonth({ period, rows, className }: { period: Period; rows: MonthRow[]; className?: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, startTransition] = useTransition();
-  const [optimistic, flip] = useOptimistic(rows, (current: MonthRow[], change: { id: string; state: MonthRecurrenceState }) =>
-    current.map((r) => (r.recurrenceId === change.id ? { ...r, state: change.state } : r)),
+  const [typed, setTyped] = useState<Record<string, number | null>>({});
+  const [optimistic, flip] = useOptimistic(rows, (current: MonthRow[], change: { id: string; state: MonthRecurrenceState; amountCents?: number }) =>
+    current.map((r) => (r.recurrenceId === change.id ? { ...r, state: change.state, amountCents: change.amountCents ?? r.amountCents } : r)),
   );
   if (rows.length === 0) return null;
   const skipped = rows.filter((r) => r.state === "skipped");
@@ -42,23 +50,35 @@ export function ManageMonth({ period, rows }: { period: Period; rows: MonthRow[]
     skipped.length > 0
       ? `${skipped.length} not this month (${skipped.map((r) => r.description).join(", ")})`
       : `${applied} of ${rows.length} recurring ${rows.length === 1 ? "entry" : "entries"} applied`;
+  const amountOf = (row: MonthRow) => typed[row.recurrenceId] ?? row.amountCents;
 
-  function set(row: MonthRow, include: boolean) {
+  function save(row: MonthRow, include: boolean) {
+    const amountCents = amountOf(row);
+    if (include && amountCents <= 0) {
+      toast.error("Enter an amount.");
+      return;
+    }
     startTransition(async () => {
-      flip({ id: row.recurrenceId, state: include ? "applied" : "skipped" });
-      const result = await setRecurrenceMonthAction(row.recurrenceId, period, include);
+      flip({ id: row.recurrenceId, state: include ? "applied" : "skipped", amountCents });
+      const result = await setRecurrenceMonthAction(row.recurrenceId, period, include, include ? amountCents : null);
       if (!result.ok) {
         toast.error(result.error);
         return;
       }
-      toast.success(include ? `${row.description} added to ${formatPeriodLong(period)}` : `${row.description}: not this month`);
+      toast.success(
+        include
+          ? row.state === "applied"
+            ? `${row.description}: ${formatBRL(amountCents)} this month`
+            : `${row.description} added to ${formatPeriodLong(period)} · ${formatBRL(amountCents)}`
+          : `${row.description}: not this month`,
+      );
       router.refresh();
     });
   }
 
   return (
     <>
-      <p className="text-xs text-muted-foreground">
+      <p className={cn("text-xs text-muted-foreground", className)}>
         {summary} ·{" "}
         <button type="button" onClick={() => setOpen(true)} className="-my-3 inline-flex min-h-11 items-center font-medium text-foreground underline-offset-4 hover:underline">
           Manage
@@ -67,26 +87,52 @@ export function ManageMonth({ period, rows }: { period: Period; rows: MonthRow[]
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>{formatPeriodLong(period)}: recurring entries</SheetTitle>
-            <SheetDescription>On, the entry is in the month; off, the month is not asking for it. Amounts are the templates&apos; — edit the entry for this month&apos;s figure.</SheetDescription>
+            <SheetTitle>Recurring entries · {formatPeriodLong(period)}</SheetTitle>
+            <SheetDescription>Tick a line to have it in the month, with this month&apos;s amount; untick it and the month stops asking for it. Saved as you go.</SheetDescription>
           </SheetHeader>
           <SheetBody className="pt-2">
             <ul className="divide-y divide-border" aria-label="Recurring entries this month">
               {optimistic.map((row) => {
                 const on = row.state === "applied";
+                const locked = row.settled;
                 return (
-                  <li key={row.recurrenceId} className="flex min-h-14 items-center justify-between gap-3 py-1">
-                    <label htmlFor={`month-${row.recurrenceId}`} className="min-w-0 flex-1">
+                  <li key={row.recurrenceId} className={cn("flex items-center gap-3 py-2", !on && "opacity-70")}>
+                    <input
+                      type="checkbox"
+                      aria-label={`${row.description} this month`}
+                      checked={on}
+                      disabled={pending || locked}
+                      onChange={(e) => save(row, e.target.checked)}
+                      className="size-5 shrink-0 accent-primary"
+                    />
+                    <label htmlFor={`month-amount-${row.recurrenceId}`} className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
                         <span className="truncate text-sm font-medium">{row.description}</span>
-                        {row.settled && <Badge variant="secondary">settled</Badge>}
-                        {row.state === "skipped" && <Badge variant="outline">not this month</Badge>}
+                        {row.isVariable && <Badge variant="outline">variable</Badge>}
+                        {locked && <Badge variant="secondary">settled</Badge>}
                       </span>
                       <span className="block text-xs text-muted-foreground tabular-nums">
-                        {formatDayMonth(row.date)} · {formatBRL(row.amountCents)}
+                        {formatDayMonth(row.date)} · template {formatBRL(row.templateCents)}
+                        {row.state === "skipped" ? " · not this month" : ""}
                       </span>
                     </label>
-                    <Switch id={`month-${row.recurrenceId}`} checked={on} disabled={pending || row.settled} onCheckedChange={(v) => set(row, v)} aria-label={`${row.description} this month`} />
+                    <div className="w-32 shrink-0">
+                      {locked ? (
+                        <span className="block text-right text-sm font-medium tabular-nums">{formatBRL(row.amountCents)}</span>
+                      ) : (
+                        <CurrencyInput
+                          id={`month-amount-${row.recurrenceId}`}
+                          name={`amount:${row.recurrenceId}`}
+                          defaultCents={row.amountCents}
+                          onCentsChange={(v) => setTyped((t) => ({ ...t, [row.recurrenceId]: v }))}
+                          onBlur={() => {
+                            // A planned entry follows the amount as soon as you leave the field; a line not in the month waits for its tick.
+                            if (on && amountOf(row) !== row.amountCents && amountOf(row) > 0) save(row, true);
+                          }}
+                          className={cn("h-11 text-right", row.kind === "income" ? "text-positive" : "")}
+                        />
+                      )}
+                    </div>
                   </li>
                 );
               })}

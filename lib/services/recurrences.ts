@@ -217,13 +217,24 @@ async function settleCardRows(repos: Repositories, userId: string, rows: NewEntr
   return rows.map((row) => (cards.has(row.accountId) && (row.kind === "expense" || row.kind === "income") ? { ...row, status: "settled" as const, settledOn: row.date } : row));
 }
 
-/** Brings one template into the month in one go: forgets "not this month" and creates its planned entry (a no-op when it is there already). */
-export async function includeRecurrenceInMonth(repos: Repositories, userId: string, id: string, period: Period): Promise<Entry | null> {
+/**
+ * Brings one template into the month in one go: forgets "not this month" and
+ * creates its planned entry, with this month's amount when given. Already
+ * there, a planned entry takes the new amount; a settled one is left alone.
+ */
+export async function includeRecurrenceInMonth(repos: Repositories, userId: string, id: string, period: Period, amountCents: number | null = null): Promise<Entry | null> {
   const recurrence = await getRecurrence(repos, userId, id);
   if (!recurrenceOccursIn(recurrence, period)) throw new ServiceError("invalid", "This recurrence does not fall in that month.");
+  if (amountCents !== null && (!Number.isInteger(amountCents) || amountCents <= 0)) throw new ServiceError("invalid", "Amounts must be positive.");
   const start = periodStart(period);
   if (recurrence.skippedPeriods.includes(start)) await repos.recurrences.update(userId, id, { skippedPeriods: recurrence.skippedPeriods.filter((p) => p !== start) });
-  const rows = await settleCardRows(repos, userId, [expandRecurrence(recurrence, period)]);
+  const existing = (await repos.entries.list(userId, { recurrenceId: id })).find((e) => e.period === start);
+  if (existing) {
+    if (amountCents !== null && amountCents !== existing.amountCents && existing.status === "planned") return repos.entries.update(userId, existing.id, { amountCents });
+    return existing;
+  }
+  const row = expandRecurrence(recurrence, period);
+  const rows = await settleCardRows(repos, userId, [amountCents === null ? row : { ...row, amountCents }]);
   const [created] = await repos.entries.insertMany(userId, rows, { ignoreConflicts: true });
   return created ?? null;
 }

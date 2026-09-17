@@ -16,6 +16,7 @@ import { ENTRY_KINDS, needsAllocation, needsCategory, needsCounterAccount } from
 import type { Account, Asset, Category, EntryKind, Recurrence } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
 import { SplitFields } from "./split-fields";
+import { accountLabel } from "@/lib/domain/accounts";
 
 export function RecurrenceForm({
   recurrence,
@@ -98,7 +99,7 @@ export function RecurrenceForm({
           <NativeSelect id="accountId" name="accountId" value={accountId} onChange={(e) => setAccountId(e.target.value)} required className="w-full [&>select]:h-11">
             {accountOptions.map((a) => (
               <NativeSelectOption key={a.id} value={a.id}>
-                {a.name}
+                {accountLabel(a)}
               </NativeSelectOption>
             ))}
           </NativeSelect>
@@ -108,7 +109,7 @@ export function RecurrenceForm({
             <NativeSelect id="counterAccountId" name="counterAccountId" defaultValue={str("counterAccountId", recurrence?.counterAccountId) || counterOptions[0]?.id} required className="w-full [&>select]:h-11">
               {counterOptions.map((a) => (
                 <NativeSelectOption key={a.id} value={a.id}>
-                  {a.name}
+                  {accountLabel(a)}
                 </NativeSelectOption>
               ))}
             </NativeSelect>

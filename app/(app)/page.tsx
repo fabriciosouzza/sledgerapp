@@ -74,7 +74,7 @@ export default async function TodayPage() {
           <section aria-label="Needs you" className="space-y-3 empty:hidden">
             <StatementsDue
               items={overview.statementsDue}
-              cashAccounts={overview.accounts.filter((b) => b.account.isActive).map((b) => ({ id: b.account.id, name: b.account.name, balanceCents: b.balanceCents }))}
+              cashAccounts={overview.accounts.filter((b) => b.account.isActive).map((b) => ({ id: b.account.id, name: b.account.name, type: b.account.type, balanceCents: b.balanceCents }))}
               today={now}
             />
             <OverdueBlock hasEntries={overview.overdue.length > 0}>

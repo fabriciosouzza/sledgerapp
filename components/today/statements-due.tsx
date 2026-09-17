@@ -19,7 +19,7 @@ export function StatementsDue({
   today,
 }: {
   items: StatementDue[];
-  cashAccounts: (Pick<Account, "id" | "name"> & { balanceCents?: number | null })[];
+  cashAccounts: (Pick<Account, "id" | "name" | "type"> & { balanceCents?: number | null })[];
   today: string;
 }) {
   if (items.length === 0) return null;

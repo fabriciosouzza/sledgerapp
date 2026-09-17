@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/responsive-sheet";
 import { formatBRL } from "@/lib/domain/money";
 import type { Account } from "@/lib/domain/types";
+import { accountLabel } from "@/lib/domain/accounts";
 
 /** "Pay statement": a transfer from a cash account into the card (§5.2, §7 /cards). */
 export function PayStatementDialog({
@@ -36,7 +37,7 @@ export function PayStatementDialog({
   label: string;
   totalCents: number;
   /** With today's balance when known, so "can I pay without touching savings?" is answered in the sheet. */
-  cashAccounts: (Pick<Account, "id" | "name"> & { balanceCents?: number | null })[];
+  cashAccounts: (Pick<Account, "id" | "name" | "type"> & { balanceCents?: number | null })[];
   today: string;
   small?: boolean;
 }) {
@@ -104,7 +105,7 @@ export function PayStatementDialog({
               >
                 {cashAccounts.map((a) => (
                   <NativeSelectOption key={a.id} value={a.id}>
-                    {a.name}
+                    {accountLabel(a)}
                     {a.balanceCents !== undefined && a.balanceCents !== null ? ` · ${formatBRL(a.balanceCents)}` : ""}
                   </NativeSelectOption>
                 ))}

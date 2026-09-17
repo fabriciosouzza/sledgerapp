@@ -35,12 +35,13 @@ export async function generateMonthWithAmountsAction(formData: FormData): Promis
   }
 }
 
-/** The month's management sheet: one template in (its entry created, "not this month" forgotten) or out (planned entry removed, month remembered). */
-export async function setRecurrenceMonthAction(id: string, period: string, include: boolean): Promise<{ ok: true } | { ok: false; error: string }> {
+/** The month's management sheet: one template in (its entry created or re-priced, "not this month" forgotten) or out (planned entry removed, month remembered). */
+export async function setRecurrenceMonthAction(id: string, period: string, include: boolean, amountCents: number | null = null): Promise<{ ok: true } | { ok: false; error: string }> {
   const { userId, repos } = await getContext();
   if (!isPeriod(period)) return { ok: false, error: "Pick a month." };
+  if (amountCents !== null && (!Number.isInteger(amountCents) || amountCents <= 0)) return { ok: false, error: "Amounts must be positive." };
   try {
-    if (include) await includeRecurrenceInMonth(repos, userId, id, period);
+    if (include) await includeRecurrenceInMonth(repos, userId, id, period, amountCents);
     else await excludeRecurrenceFromMonth(repos, userId, id, period);
     for (const path of ["/review", "/", "/entries", "/recurrences"]) revalidatePath(path);
     return { ok: true };

@@ -12,6 +12,7 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Sheet, SheetBody, SheetContent, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/responsive-sheet";
 import type { Account, Category } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
+import { accountLabel } from "@/lib/domain/accounts";
 
 export interface EntryFilterValues {
   month: string;
@@ -39,7 +40,7 @@ export function EntryFilters({
   values: EntryFilterValues;
   /** When set, the list covers this range instead of `values.month`. */
   range?: { from: string; to: string } | null;
-  accounts: Pick<Account, "id" | "name">[];
+  accounts: Pick<Account, "id" | "name" | "type">[];
   categories: Pick<Category, "id" | "name" | "parentId">[];
 }) {
   const form = useRef<HTMLFormElement>(null);
@@ -159,7 +160,7 @@ export function EntryFilters({
                   <NativeSelectOption value="">Any account</NativeSelectOption>
                   {accounts.map((a) => (
                     <NativeSelectOption key={a.id} value={a.id}>
-                      {a.name}
+                      {accountLabel(a)}
                     </NativeSelectOption>
                   ))}
                 </NativeSelect>

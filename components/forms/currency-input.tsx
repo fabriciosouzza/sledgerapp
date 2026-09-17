@@ -17,6 +17,7 @@ export function CurrencyInput({
   autoFocus,
   className,
   onCentsChange,
+  onBlur,
   "aria-describedby": describedBy,
 }: {
   name: string;
@@ -26,6 +27,7 @@ export function CurrencyInput({
   autoFocus?: boolean;
   className?: string;
   onCentsChange?: (cents: number | null) => void;
+  onBlur?: () => void;
   "aria-describedby"?: string;
 }) {
   const [cents, setCents] = useState<number | null>(defaultCents ?? null);
@@ -60,6 +62,7 @@ export function CurrencyInput({
         onChange={(e) => update(e.target.value)}
         onPaste={paste}
         onFocus={(e) => e.target.select()}
+        onBlur={onBlur}
         required={required}
         autoFocus={autoFocus}
         aria-describedby={describedBy}

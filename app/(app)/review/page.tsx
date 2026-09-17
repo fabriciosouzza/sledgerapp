@@ -107,19 +107,6 @@ export default async function MonthPage(props: PageProps<"/review">) {
           }))}
           existingCount={generation.existing.length}
           otherPending={pendingAll.filter((m) => m.period !== month)}
-          manage={
-            <ManageMonth
-              period={month}
-              rows={monthRows.map((r) => ({
-                recurrenceId: r.recurrence.id,
-                description: r.recurrence.description,
-                amountCents: r.entry?.amountCents ?? r.recurrence.amountCents,
-                date: r.entry?.date ?? recurrenceDateIn(r.recurrence, month),
-                state: r.state,
-                settled: r.entry?.status === "settled",
-              }))}
-            />
-          }
         />
 
         {/* The month's verdict first, then what is still to settle; the other numbers and the charts follow. */}
@@ -161,6 +148,22 @@ export default async function MonthPage(props: PageProps<"/review">) {
             </dl>
           </div>
         </section>
+        {/* A detail of the verdict: where the month's recurring entries stand, and the sheet to change it. */}
+        <ManageMonth
+          className="-mt-4 px-1"
+          period={month}
+          rows={monthRows.map((r) => ({
+            recurrenceId: r.recurrence.id,
+            description: r.recurrence.description,
+            kind: r.recurrence.kind,
+            amountCents: r.entry?.amountCents ?? r.recurrence.amountCents,
+            templateCents: r.recurrence.amountCents,
+            date: r.entry?.date ?? recurrenceDateIn(r.recurrence, month),
+            state: r.state,
+            isVariable: r.recurrence.isVariable,
+            settled: r.entry?.status === "settled",
+          }))}
+        />
 
         <section id="still-planned" className="scroll-mt-4">
           <EntryList

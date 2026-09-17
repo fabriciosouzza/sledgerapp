@@ -15,6 +15,11 @@ export function accountTypeLabel(type: AccountType): string {
   return ACCOUNT_TYPES.find((t) => t.value === type)?.label ?? type;
 }
 
+/** "Banco do Brasil · Credit card": a bank can be both an account and a card, so a pick list says which. */
+export function accountLabel(account: Pick<Account, "name" | "type">): string {
+  return `${account.name} · ${accountTypeLabel(account.type)}`;
+}
+
 export function isCreditCard(account: Pick<Account, "type">): boolean {
   return account.type === "credit_card";
 }

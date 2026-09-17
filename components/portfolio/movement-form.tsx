@@ -19,6 +19,7 @@ import { assetLabel, MOVEMENT_KINDS, movementKindLabel } from "@/lib/domain/asse
 import { formatBRL } from "@/lib/domain/money";
 import type { Account, Asset, AssetMovement, MovementKind } from "@/lib/domain/types";
 import { cn } from "@/lib/utils";
+import { accountLabel } from "@/lib/domain/accounts";
 
 const KIND_MEMORY = "sledger.lastMovementKind";
 
@@ -217,7 +218,7 @@ export function MovementForm({
               <NativeSelect id="cashAccountId" name="cashAccountId" defaultValue={cash[0]?.id} className="w-full [&>select]:h-11">
                 {cash.map((a) => (
                   <NativeSelectOption key={a.id} value={a.id}>
-                    {a.name}
+                    {accountLabel(a)}
                   </NativeSelectOption>
                 ))}
               </NativeSelect>

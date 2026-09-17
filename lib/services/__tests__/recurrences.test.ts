@@ -155,7 +155,10 @@ describe("the month's management sheet", () => {
     const created = await includeRecurrenceInMonth(repos, U, voucher.id, "2026-02");
     expect(created).toMatchObject({ recurrenceId: voucher.id, status: "planned", amountCents: 60_000 });
     expect((await repos.recurrences.getById(U, voucher.id))!.skippedPeriods).toEqual([]);
-    expect(await includeRecurrenceInMonth(repos, U, voucher.id, "2026-02")).toBeNull(); // already there
+    expect(await includeRecurrenceInMonth(repos, U, voucher.id, "2026-02")).toMatchObject({ id: created!.id }); // already there
+    // This month's amount, on a planned entry, follows the sheet.
+    expect(await includeRecurrenceInMonth(repos, U, voucher.id, "2026-02", 45_000)).toMatchObject({ id: created!.id, amountCents: 45_000 });
+    await expect(includeRecurrenceInMonth(repos, U, voucher.id, "2026-02", 0)).rejects.toMatchObject({ code: "invalid" });
 
     // On → off: the planned entry goes and the month is remembered.
     await excludeRecurrenceFromMonth(repos, U, rent.id, "2026-02");
