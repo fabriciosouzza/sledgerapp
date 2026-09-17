@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { AlertTriangle, Sparkles } from "lucide-react";
+import { AlertTriangle, Sparkles, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { generateMonthWithAmountsAction, unskipRecurrenceAction } from "@/app/(app)/review/actions";
 import { CurrencyInput } from "@/components/forms/currency-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetBody, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/responsive-sheet";
 import { formatDayMonth, formatPeriodLong } from "@/lib/domain/dates";
 import { formatBRL } from "@/lib/domain/money";
 import type { EntryKind, IsoDate, Period } from "@/lib/domain/types";
@@ -50,10 +51,13 @@ export function GenerateMonth({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string>();
-  const [done, setDone] = useState<{ created: number; skipped: number }>();
+  const [done, setDone] = useState<{ created: number; skipped: number; notThisMonth: number }>();
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
+  const [managing, setManaging] = useState(false);
   const nothing = toCreate.length === 0;
   const keeping = toCreate.length - skipped.size;
+  // Applying with lines unticked records "not this month" for them; with nothing ticked that is all it does.
+  const submitLabel = keeping === 0 ? `Skip ${skipped.size} this month` : skipped.size > 0 ? `Add ${keeping} ${keeping === 1 ? "entry" : "entries"} · skip ${skipped.size}` : `Add ${keeping} ${keeping === 1 ? "entry" : "entries"}`;
 
   function unskip(id: string, description: string) {
     startTransition(async () => {
@@ -86,8 +90,12 @@ export function GenerateMonth({
         setError(result.error);
         return;
       }
-      setDone(result);
-      toast.success(`Added ${result.created} ${result.created === 1 ? "entry" : "entries"} to ${formatPeriodLong(period)}`);
+      setDone({ ...result, notThisMonth: skipped.size });
+      toast.success(
+        result.created === 0
+          ? `${skipped.size} ${skipped.size === 1 ? "line" : "lines"} not this month`
+          : `Added ${result.created} ${result.created === 1 ? "entry" : "entries"} to ${formatPeriodLong(period)}${skipped.size > 0 ? ` · ${skipped.size} not this month` : ""}`,
+      );
       router.refresh();
     });
   }
@@ -103,7 +111,9 @@ export function GenerateMonth({
               ? "Generate month"
               : done
                 ? `Recurring entries added to ${formatPeriodLong(period)}`
-                : `${toCreate.length} recurring ${toCreate.length === 1 ? "entry" : "entries"} not applied to ${formatPeriodLong(period)}`}
+                : nothing
+                  ? `Nothing left to apply to ${formatPeriodLong(period)}`
+                  : `${toCreate.length} recurring ${toCreate.length === 1 ? "entry" : "entries"} not applied to ${formatPeriodLong(period)}`}
           </h2>
           {card && !done && !nothing && (
             <p className="text-xs text-muted-foreground">Check the amounts — variable ones are estimates — then add them as planned entries. Untick a line and this month stops asking for it.</p>
@@ -122,8 +132,9 @@ export function GenerateMonth({
 
       {done ? (
         <p className="text-sm" aria-live="polite">
-          Added {done.created} {done.created === 1 ? "entry" : "entries"}
-          {done.skipped ? `, ${done.skipped} already existed` : ""}.
+          {done.created > 0 || done.notThisMonth === 0 ? `Added ${done.created} ${done.created === 1 ? "entry" : "entries"}` : "Nothing added"}
+          {done.skipped ? `, ${done.skipped} already existed` : ""}
+          {done.notThisMonth ? `, ${done.notThisMonth} not this month` : ""}.
         </p>
       ) : nothing ? (
         skippedThisMonth.length === 0 && <p className="text-sm text-muted-foreground">Nothing to create for {formatPeriodLong(period)}.</p>
@@ -157,26 +168,42 @@ export function GenerateMonth({
             ))}
           </ul>
           {error && <p className="text-sm text-destructive">{error}</p>}
-          <Button type="submit" className="h-11 w-full" disabled={pending || keeping === 0}>
+          <Button type="submit" className="h-11 w-full" variant={keeping === 0 ? "outline" : "default"} disabled={pending || (keeping === 0 && skipped.size === 0)}>
             <Sparkles data-icon="inline-start" aria-hidden />
-            {pending ? "Adding…" : `Add ${keeping} ${keeping === 1 ? "entry" : "entries"}`}
+            {pending ? "Saving…" : submitLabel}
           </Button>
         </form>
       )}
       {skippedThisMonth.length > 0 && (
-        <ul className="divide-y divide-border text-sm" aria-label="Skipped this month">
-          {skippedThisMonth.map((s) => (
-            <li key={s.recurrenceId} className="flex min-h-11 items-center justify-between gap-3">
-              <span className="min-w-0 truncate text-muted-foreground">
-                <span className="font-medium text-foreground">{s.description}</span> · not this month
-              </span>
-              <Button type="button" variant="ghost" size="sm" className="h-11 shrink-0" disabled={pending} onClick={() => unskip(s.recurrenceId, s.description)}>
-                Undo
-              </Button>
-            </li>
-          ))}
-        </ul>
+        <p className="text-xs text-muted-foreground">
+          {skippedThisMonth.length} not this month ({skippedThisMonth.map((s) => s.description).join(", ")}) ·{" "}
+          <button type="button" onClick={() => setManaging(true)} className="-my-3 inline-flex min-h-11 items-center font-medium text-foreground underline-offset-4 hover:underline">
+            Manage
+          </button>
+        </p>
       )}
+      <Sheet open={managing} onOpenChange={setManaging}>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Not this month</SheetTitle>
+            <SheetDescription>Templates that {formatPeriodLong(period)} is not asking for. Bring one back and it is offered again for this month only.</SheetDescription>
+          </SheetHeader>
+          <SheetBody className="pt-2">
+            <ul className="divide-y divide-border text-sm" aria-label="Skipped this month">
+              {skippedThisMonth.map((s) => (
+                <li key={s.recurrenceId} className="flex min-h-12 items-center justify-between gap-3">
+                  <span className="min-w-0 truncate font-medium">{s.description}</span>
+                  <Button type="button" variant="ghost" className="h-11 shrink-0" disabled={pending} onClick={() => unskip(s.recurrenceId, s.description)}>
+                    <Undo2 data-icon="inline-start" aria-hidden />
+                    Bring back
+                  </Button>
+                </li>
+              ))}
+              {skippedThisMonth.length === 0 && <li className="py-3 text-muted-foreground">Nothing skipped this month.</li>}
+            </ul>
+          </SheetBody>
+        </SheetContent>
+      </Sheet>
       {otherPending.length > 0 && (
         <p className="text-xs text-muted-foreground">
           Also not applied:{" "}
