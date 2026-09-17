@@ -40,7 +40,10 @@ function CashTile({ account: { account, balanceCents } }: { account: AccountTile
       href={`/accounts/${account.id}`}
       className="flex h-24 w-36 flex-col rounded-xl bg-card p-3 ring-1 ring-foreground/10 transition-colors hover:bg-muted/60 focus-visible:outline-2 focus-visible:outline-ring"
     >
-      <p className="truncate text-xs text-muted-foreground">{account.name}</p>
+      <p className="truncate text-xs text-muted-foreground">
+        {account.name}
+        {!account.isActive && <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] uppercase">inactive</span>}
+      </p>
       <p className="mt-0.5 text-lg font-semibold tabular-nums">{balanceCents === null ? "—" : formatBRLWrap(balanceCents)}</p>
       <p className="truncate text-xs text-muted-foreground">
         {balanceCents === null ? "not yet open" : goal !== null ? `${Math.round(goal * 100)}% of ${formatBRLWhole(account.targetCents!)}` : "balance"}

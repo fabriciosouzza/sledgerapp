@@ -373,6 +373,30 @@ the three relate (the spec now says this in §5.2, §5.5, §5.7, §5.8):
   liquid balance that is not a bank (Mercado Pago, prepaid card); **credit
   card** is debt through statements.
 
+## Decisions (2026-09-17)
+
+After a read-only review of the whole project (`docs/roadmap.md` holds what
+is still open):
+
+- **A statement and its payment never disagree.** Deleting the payment
+  transfer from Entries undoes the payment (statement open again,
+  installment parts back to planned); the payment may change only its day,
+  which the statement follows. Cards lists any statement marked paid with
+  no payment behind it, or payment pointing at an unpaid statement — the two
+  writes have no transaction (§4.1), so the screen says when one is missing.
+- **Recurring card charges are settled when applied**, like a purchase typed
+  by hand: the month's expense is complete before the statement is paid, and
+  undoing a payment no longer touches them. Editing a card purchase cannot
+  unsettle it.
+- **Cashback and refunds are income** — on the bank account when paid there,
+  on the card (inside the cycle) when credited to the statement. A statement
+  in credit asks nothing; the credit carries into the next unpaid statement
+  and is settled by its payment.
+- **Inactive accounts that still hold money stay on Today** (badged), so
+  cash on hand and the tiles agree. An account with entries cannot change
+  between card and cash.
+- Net worth counts a movement from its own date, not its month.
+
 ## Done
 
 | Item | Commit |

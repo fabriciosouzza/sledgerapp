@@ -235,6 +235,14 @@ queries may assume a single card.
   not cash, and never appears in the cash figure.
 - The UI shows cards side by side, each with its open statement total, due date
   and days remaining. Aggregate card debt sums across all cards.
+- A card purchase is settled the day it is made, whether typed by hand or
+  applied from a recurrence; only installment parts wait for their statement.
+  The payment transfer belongs to its statement: deleting it undoes the
+  payment, and it may change only its day.
+- Refunds and cashback credited to the card are `income` on the card account
+  and reduce the statement. A statement whose credits exceed its purchases
+  asks nothing; the surplus carries into the next unpaid statement, and that
+  statement's payment settles both.
 
 ### 5.7 Investments
 

@@ -135,4 +135,5 @@ lib/domain/         pure TypeScript: every business rule, unit tested
 lib/repositories/   the only code that talks to the database
 lib/auth/, lib/db/  the only Supabase-specific code — see PORTABILITY.md
 supabase/           config and migrations
+docs/               reviews, the tutorial (video + PDF) and roadmap.md — what is still open
 ```

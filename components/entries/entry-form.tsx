@@ -368,7 +368,7 @@ export function EntryForm({
         {!needsCategory(kind) && !needsCounterAccount(kind) && accountField}
 
 
-        {onCard && !editing ? (
+        {onCard ? (
           <div className="space-y-3">
             {dateField}
             <p className="rounded-xl bg-muted/40 p-3 text-xs text-muted-foreground">

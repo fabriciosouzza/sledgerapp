@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { addDays, daysInMonth, toIsoDate } from "../dates";
-import { daysToDue, isStatementOpen, resolveCycle, statementTotal, totalCardDebt } from "../statements";
+import { daysToDue, isStatementOpen, resolveCycle, statementTotal, totalCardDebt, carryCredits } from "../statements";
 import { entry } from "./fixtures";
 
 describe("resolveCycle", () => {
@@ -101,5 +101,33 @@ describe("open statements", () => {
     expect(isStatementOpen(s, "2026-11-21")).toBe(false);
     expect(daysToDue(s, "2026-11-21")).toBe(7);
     expect(daysToDue(s, "2026-11-30")).toBe(-2);
+  });
+});
+
+describe("carryCredits", () => {
+  it("carries a negative statement into the next unpaid one and never asks to pay a credit", () => {
+    const out = carryCredits([
+      { paidOn: "2026-07-05", ownCents: 50_000 },
+      { paidOn: null, ownCents: -12_000 }, // cashback bigger than the purchases
+      { paidOn: null, ownCents: 30_000 },
+      { paidOn: null, ownCents: 10_000 },
+    ]);
+    expect(out).toEqual([
+      { totalCents: 50_000, carriedCents: 0 },
+      { totalCents: 0, carriedCents: 0 },
+      { totalCents: 18_000, carriedCents: -12_000 },
+      { totalCents: 10_000, carriedCents: 0 },
+    ]);
+  });
+
+  it("keeps carrying while the credit is bigger than what follows, and skips paid statements", () => {
+    const out = carryCredits([
+      { paidOn: null, ownCents: -50_000 },
+      { paidOn: "2026-08-05", ownCents: 20_000 }, // paid before the credit was known: untouched
+      { paidOn: null, ownCents: 20_000 },
+      { paidOn: null, ownCents: 40_000 },
+    ]);
+    expect(out.map((o) => o.totalCents)).toEqual([0, 20_000, 0, 10_000]);
+    expect(out.map((o) => o.carriedCents)).toEqual([0, 0, -50_000, -30_000]);
   });
 });

@@ -161,15 +161,17 @@ export async function generateMonth(
   amounts: Record<string, number> = {},
   skip: string[] = [],
 ): Promise<GenerationResult> {
-  const recurrences = await repos.recurrences.list(userId);
+  const [recurrences, accounts] = await Promise.all([repos.recurrences.list(userId), repos.accounts.list(userId)]);
+  const cards = new Set(accounts.filter(isCreditCard).map((a) => a.id));
   const skipped = new Set(skip);
   const rows = expandRecurrences(recurrences, period)
     .filter((row) => row.recurrenceId === null || !skipped.has(row.recurrenceId))
     .map((row) => {
-    const override = row.recurrenceId === null ? undefined : amounts[row.recurrenceId];
-    if (override === undefined) return row;
-    if (!Number.isInteger(override) || override <= 0) throw new ServiceError("invalid", "Amounts must be positive.");
-    return { ...row, amountCents: override };
+      const override = row.recurrenceId === null ? undefined : amounts[row.recurrenceId];
+      if (override !== undefined && (!Number.isInteger(override) || override <= 0)) throw new ServiceError("invalid", "Amounts must be positive.");
+      const amount = override === undefined ? row : { ...row, amountCents: override };
+      // A card purchase counts the day it is made, recurring or not (§5.6): the statement is what gets paid.
+      return cards.has(amount.accountId) && (amount.kind === "expense" || amount.kind === "income") ? { ...amount, status: "settled" as const, settledOn: amount.date } : amount;
     });
   const inserted = await repos.entries.insertMany(userId, rows, { ignoreConflicts: true });
   return { period, created: inserted.length, skipped: rows.length - inserted.length };

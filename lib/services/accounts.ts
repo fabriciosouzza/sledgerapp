@@ -1,6 +1,6 @@
 // Accounts: validate → apply rules → persist → return DTO (PROMPT.md §4.2).
 
-import { normalizeAccountFields } from "@/lib/domain/accounts";
+import { isCreditCard, normalizeAccountFields } from "@/lib/domain/accounts";
 import { today } from "@/lib/domain/dates";
 import type { Account } from "@/lib/domain/types";
 import { RepositoryError, type Repositories } from "@/lib/repositories";
@@ -25,6 +25,10 @@ export async function createAccount(repos: Repositories, userId: string, input: 
 
 export async function updateAccount(repos: Repositories, userId: string, id: string, input: AccountInput): Promise<Account> {
   const current = await getAccount(repos, userId, id);
+  // A card's entries are statements, a cash account's are its balance: once either exists the two do not convert.
+  if (isCreditCard(current) !== isCreditCard(input) && (await repos.entries.existsForAccount(userId, id))) {
+    throw new ServiceError("invalid", "This account has entries, so it cannot change between card and cash. Add a new account instead.");
+  }
   return repos.accounts.update(userId, id, normalizeAccountFields({ ...input, openingOn: input.openingOn ?? current.openingOn, sortOrder: current.sortOrder }));
 }
 

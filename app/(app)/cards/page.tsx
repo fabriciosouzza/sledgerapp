@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronDown } from "lucide-react";
+import { AlertTriangle, ChevronDown } from "lucide-react";
 import { CardTile } from "@/components/cards/card-tile";
 import { PayStatementDialog } from "@/components/cards/pay-statement-dialog";
 import { UnpayButton } from "@/components/cards/unpay-button";
@@ -7,6 +7,7 @@ import { EntryList } from "@/components/entries/entry-list";
 import { buildLookups } from "@/components/entries/lookups";
 import { PageHeader } from "@/components/layout/page-header";
 import { Stat } from "@/components/month/stat";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { isCashAccount } from "@/lib/domain/accounts";
@@ -50,6 +51,19 @@ export default async function CardsPage(props: PageProps<"/cards">) {
     <>
       <PageHeader title="Cards" />
       <div className="space-y-6">
+        {overview.issues.length > 0 && (
+          <Alert variant="destructive">
+            <AlertTriangle aria-hidden />
+            <AlertTitle>{overview.issues.length === 1 ? "One statement and its payment disagree" : `${overview.issues.length} statements and their payments disagree`}</AlertTitle>
+            <AlertDescription>
+              <ul className="space-y-1">
+                {overview.issues.map((issue) => (
+                  <li key={issue}>{issue}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        )}
         <Stat label="Total card debt" cents={overview.totalDebtCents} hint="unpaid statements, all cards" />
 
         <nav aria-label="Card" className="tile-strip">
@@ -189,6 +203,7 @@ function ToPayStatement({
           <p className="text-sm font-medium">{label} statement</p>
           <p className={cn("text-xs", overdue ? "text-negative" : "text-muted-foreground")}>
             {when} · {view.entries.length} {view.entries.length === 1 ? "purchase" : "purchases"}
+            {view.carriedCents < 0 ? ` · ${formatBRL(-view.carriedCents)} credit from earlier statements deducted` : ""}
           </p>
         </div>
         <p className="ml-auto shrink-0 text-lg font-semibold tabular-nums">{formatBRLWrap(view.totalCents)}</p>
@@ -223,11 +238,15 @@ function PastStatement({
             <Badge variant="destructive">overdue</Badge>
           ) : view.totalCents > 0 ? (
             <Badge variant="outline">unpaid</Badge>
+          ) : view.entries.length > 0 ? (
+            <Badge variant="outline">credit</Badge>
           ) : null}
         </span>
         <span className="block truncate text-xs text-muted-foreground">
           {statement.paidOn ? "" : `due ${formatDayMonth(statement.dueDate)} · `}
           {view.entries.length} {view.entries.length === 1 ? "purchase" : "purchases"}
+          {statement.paidOn === null && view.totalCents === 0 && view.entries.length > 0 ? " · nothing to pay; the credit carries forward" : ""}
+          {view.carriedCents < 0 ? ` · ${formatBRL(-view.carriedCents)} credit deducted` : ""}
         </span>
       </span>
       <span className="shrink-0 text-sm font-semibold tabular-nums">{formatBRL(view.totalCents)}</span>

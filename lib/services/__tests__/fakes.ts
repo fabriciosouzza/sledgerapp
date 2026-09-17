@@ -153,6 +153,9 @@ export function fakeRepositories(): FakeRepositories {
       const row = entries.find((e) => e.userId === userId && e.id === id);
       return row ? strip(row) : null;
     },
+    async existsForAccount(userId, accountId) {
+      return entries.some((e) => e.userId === userId && (e.accountId === accountId || e.counterAccountId === accountId));
+    },
     async insert(userId, data) {
       checkEntry(data);
       const row = { ...data, id: nextId(), userId };

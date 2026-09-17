@@ -36,6 +36,8 @@ export interface EntriesRepo {
   /** Always bounded: by period, by date range, or by a group. Never the whole table (§4.5). */
   list(userId: string, filters: EntryFilters): Promise<Entry[]>;
   getById(userId: string, id: string): Promise<Entry | null>;
+  /** Whether any entry touches the account, on either side — one row is enough to know. */
+  existsForAccount(userId: string, accountId: string): Promise<boolean>;
   insert(userId: string, data: NewEntry): Promise<Entry>;
   /** Idempotent generation: rows hitting the (recurrence, period) unique index are skipped; returns those inserted. */
   insertMany(userId: string, data: NewEntry[], options?: { ignoreConflicts?: boolean }): Promise<Entry[]>;
@@ -141,6 +143,12 @@ export function supabaseEntriesRepo(db: DbClient): EntriesRepo {
       const { data, error } = await db.from("entries").select("*").eq("user_id", userId).eq("id", id).maybeSingle();
       if (error) throw fromPostgres(error);
       return data ? toDomainEntry(data) : null;
+    },
+
+    async existsForAccount(userId, accountId) {
+      const { data, error } = await db.from("entries").select("id").eq("user_id", userId).or(`account_id.eq.${accountId},counter_account_id.eq.${accountId}`).limit(1);
+      if (error) throw fromPostgres(error);
+      return data.length > 0;
     },
 
     async insert(userId, data) {

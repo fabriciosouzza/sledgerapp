@@ -62,7 +62,7 @@ export async function netWorthOverview(repos: Repositories, userId: string, toda
   const endOf = (p: Period) => (p === current ? today : periodEnd(p));
   const series = netWorthSeries(periodRange(from, current), {
     cashAt: (p) => cashAt(accounts, entries, endOf(p)),
-    investmentsAt: (p) => investmentsAt(movements, p),
+    investmentsAt: (p) => investmentsAt(movements, endOf(p)),
     debtAt: (p) => debtAt(statements, endOf(p)),
   });
 

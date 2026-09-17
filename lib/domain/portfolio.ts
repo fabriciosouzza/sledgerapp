@@ -3,7 +3,7 @@
 
 import { addMonths, periodOf } from "./dates";
 import { ratio } from "./money";
-import type { Asset, AssetClass, AssetMovement, MovementKind, Period } from "./types";
+import type { Asset, AssetClass, AssetMovement, IsoDate, MovementKind, Period } from "./types";
 
 export function movementSign(kind: MovementKind): 1 | -1 {
   switch (kind) {
@@ -103,7 +103,7 @@ export function portfolioSeries(movements: AssetMovement[], from: Period, to: Pe
   return out;
 }
 
-/** Balance of everything up to and including `period`; what net worth uses. */
-export function investmentsAt(movements: Pick<AssetMovement, "kind" | "amountCents" | "date">[], period: Period): number {
-  return assetBalance(movements.filter((m) => periodOf(m.date) <= period));
+/** Balance of everything dated up to and including `until`; what net worth uses. A movement dated tomorrow is not owned today. */
+export function investmentsAt(movements: Pick<AssetMovement, "kind" | "amountCents" | "date">[], until: IsoDate): number {
+  return assetBalance(movements.filter((m) => m.date <= until));
 }

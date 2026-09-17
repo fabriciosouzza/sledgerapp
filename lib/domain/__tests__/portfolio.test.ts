@@ -81,7 +81,7 @@ describe("series", () => {
   });
 
   it("values investments at a period", () => {
-    expect(investmentsAt(movements, "2026-11")).toBe(1_010);
-    expect(investmentsAt(movements, "2026-08")).toBe(0);
+    expect(investmentsAt(movements, "2026-11-30")).toBe(1_010);
+    expect(investmentsAt(movements, "2026-08-31")).toBe(0);
   });
 });

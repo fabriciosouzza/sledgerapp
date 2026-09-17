@@ -95,8 +95,9 @@ export async function todayOverview(repos: Repositories, userId: string, today: 
       .map(({ id, description, kind, amountCents }) => ({ id, description, kind, amountCents })),
     metrics: summary.metrics,
     insight: monthInsight(summary.metrics, summary.previous, { throughDay: summary.delta.throughDay, rollingRate, capsOver: capsOver(summary.categories) }),
+    // An inactive account still holding money is still cash on hand: shown, not hidden, so the two agree.
     accounts: netWorth.balances
-      .filter((b) => b.account.isActive)
+      .filter((b) => b.account.isActive || (b.balanceCents !== null && b.balanceCents !== 0))
       .sort((a, b) => Number(b.balanceCents !== null && b.balanceCents !== 0) - Number(a.balanceCents !== null && a.balanceCents !== 0)),
     pendingGeneration: generation,
     overdue,

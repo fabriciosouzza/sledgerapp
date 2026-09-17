@@ -11,7 +11,13 @@ import { expandRecurrence } from "@/lib/domain/recurrences";
 import type { Account, AllocationLine, Asset, Entry, EntryKind, IsoDate, NewEntry, Recurrence } from "@/lib/domain/types";
 import type { EntryFilters, Repositories } from "@/lib/repositories";
 import type { EntryInput, EntryUpdate } from "@/lib/schemas/entries";
+import { unpayStatement } from "./cards";
 import { ServiceError } from "./errors";
+
+/** The transfer that paid a card statement: it exists only as the statement's payment (§5.6). */
+function isStatementPayment(entry: Pick<Entry, "kind" | "statementId">): boolean {
+  return entry.kind === "transfer" && entry.statementId !== null;
+}
 
 export interface CreateEntryOptions {
   today: IsoDate;
@@ -303,6 +309,18 @@ export async function updateEntry(repos: Repositories, userId: string, input: En
   const kind = input.kind;
   const categoryId = needsCategory(kind) ? input.categoryId : null;
   const counterAccountId = needsCounterAccount(kind) ? input.counterAccountId : null;
+
+  // A statement payment is the statement's total on the day it was paid: only the day and the notes are its own.
+  if (isStatementPayment(current)) {
+    if (kind !== "transfer" || input.amountCents !== current.amountCents || input.accountId !== current.accountId || counterAccountId !== current.counterAccountId || !input.settled) {
+      throw new ServiceError("invalid", "A statement payment keeps its amount and accounts. To change it, undo the payment from Cards and pay again.");
+    }
+    const paidOn = input.settledOn ?? input.date;
+    const updated = await repos.entries.update(userId, current.id, { date: paidOn, settledOn: paidOn, description: input.description ?? current.description, notes: input.notes });
+    if (paidOn !== current.settledOn) await repos.statements.setPaidOn(userId, current.statementId!, paidOn);
+    return [updated];
+  }
+
   const refs = await checkRefs(repos, userId, { kind, categoryId, accountId: input.accountId, counterAccountId }, { statementPayment: current.statementId !== null });
   // A paired contribution keeps its kind: the movements on the other side are contributions too (§5.2).
   const paired = await repos.movements.listByEntry(userId, current.id);
@@ -325,10 +343,15 @@ export async function updateEntry(repos: Repositories, userId: string, input: En
     counterAccountId,
     notes: input.notes,
   };
+  // A card purchase counts the day it is made and is settled by its statement (§5.6): the form cannot unsettle it,
+  // and a settled one follows its date. Installment parts wait for their statement, so they keep whatever they have.
+  const onCard = isCreditCard(refs.account) && (kind === "expense" || kind === "income");
+  const cardStatus: Pick<NewEntry, "status" | "settledOn"> =
+    current.installmentGroupId !== null ? { status: current.status, settledOn: current.settledOn } : { status: "settled", settledOn: input.date };
   const own: Partial<NewEntry> = {
     ...shared,
     date: input.date,
-    ...settledFields(input.settled, input.settledOn, input.date),
+    ...(onCard ? cardStatus : settledFields(input.settled, input.settledOn, input.date)),
   };
 
   const targets = await scopeOf(repos, userId, current, input.scope);
@@ -342,6 +365,11 @@ export async function updateEntry(repos: Repositories, userId: string, input: En
 
 export async function deleteEntry(repos: Repositories, userId: string, id: string, scope: InstallmentScope = "this"): Promise<number> {
   const entry = await getEntry(repos, userId, id);
+  // Deleting the payment is undoing the payment: the statement opens again and what it settled goes back to planned.
+  if (isStatementPayment(entry)) {
+    await unpayStatement(repos, userId, entry.statementId!);
+    return 1;
+  }
   const targets = await scopeOf(repos, userId, entry, scope);
   // The movements on the portfolio side were this entry's other half (§5.2).
   for (const target of targets) await repos.movements.deleteByEntry(userId, target.id);

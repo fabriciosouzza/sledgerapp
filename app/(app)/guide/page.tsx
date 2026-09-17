@@ -56,7 +56,7 @@ const SECTIONS: Section[] = [
       { term: "Categories and caps", meaning: "Every expense and income has a category; sub-categories go one level deep and roll up into their parent. An expense category may have a monthly cap; Review shows the progress bar and says “over by” when it is blown. The caps together are your budget." },
       { term: "Earmarked money", meaning: "A meal voucher arrives as income and leaves as lunches in the same month: it inflates both sides and makes the savings rate look worse the bigger it is. A category marked earmarked takes both the income and the matching expenses; the second savings rate leaves them out. The test is “could I have kept this money?” — if yes, it is plain income." },
       { term: "Installments", meaning: "One purchase in N parts creates N planned entries at once, one per month, numbered 1/N … N/N, with the whole commitment visible from day one. A plan already under way starts at part K of N. Editing or deleting asks: this part, this and future ones, or all." },
-      { term: "On a card", meaning: "A purchase on a credit card counts the day it is made and joins the statement of its cycle; you never settle it one by one — you pay the statement. Card installments settle when their statement is paid." },
+      { term: "On a card", meaning: "A purchase on a credit card counts the day it is made — typed by hand or applied from a recurrence — and joins the statement of its cycle; you never settle it one by one, and the edit form will not unsettle it. Card installments are the exception: each part settles when its statement is paid." },
     ],
   },
   {
@@ -88,7 +88,8 @@ const SECTIONS: Section[] = [
     intro: "A credit card is an account with a closing day and a due day. Its balance is debt, never cash.",
     terms: [
       { term: "Statement", meaning: "Everything bought on the card in one cycle. The cycle ends on the closing day; a purchase after it lands on the next statement; the due date follows. The cycle that contains today is the open statement." },
-      { term: "Pay statement", meaning: "Once a statement has closed, Pay records a transfer from a cash account into the card for its total, dated the day you paid, and marks it paid — that is what settles the purchases on it. An open statement cannot be paid yet, and a statement is paid whole, from one account." },
+      { term: "Pay statement", meaning: "Once a statement has closed, Pay records a transfer from a cash account into the card for its total, dated the day you paid, and marks it paid — that is what settles the installment parts on it. An open statement cannot be paid yet, and a statement is paid whole, from one account. The payment can only change its day; to change anything else, undo it from Cards and pay again — deleting the payment is the same as undoing it." },
+      { term: "Cashback and refunds", meaning: "Money the card gives back is income, in a category of its own (say Cashback). Paid into your bank account, it is income on that account; credited on the statement, it is income on the card, dated inside the cycle, and the statement to pay shrinks by it. A statement whose credits exceed its purchases asks nothing and carries the surplus into the next unpaid one." },
       { term: "Card debt", meaning: "Everything bought and not yet paid, across every card, open statements included. Today shows closed, unpaid statements first, with Pay right there." },
       { term: "Limit", meaning: "The tile shows the share of the limit in use: the debt plus the installments still to come." },
     ],

@@ -119,3 +119,27 @@ export function debtAt(
     .filter((s) => s.paidOn === null || s.paidOn > until)
     .reduce((sum, s) => sum + statementTotal(s.entries.filter((e) => e.date <= until)), 0);
 }
+
+export interface CreditCarry {
+  paidOn: IsoDate | null;
+  /** The statement's own purchases minus refunds. */
+  ownCents: number;
+}
+
+/**
+ * A statement whose refunds and cashback exceed its purchases is a credit,
+ * not a bill: nothing to pay, and the surplus carries into the next unpaid
+ * statement, as the issuer does. Input oldest first; returns, in the same
+ * order, what each statement is worth to pay (`totalCents`, never below zero)
+ * and the credit it received from earlier ones (`carriedCents`, ≤ 0).
+ */
+export function carryCredits(statements: CreditCarry[]): { totalCents: number; carriedCents: number }[] {
+  let credit = 0;
+  return statements.map((s) => {
+    if (s.paidOn !== null) return { totalCents: s.ownCents, carriedCents: 0 };
+    const carriedCents = credit;
+    const net = s.ownCents + credit;
+    credit = net < 0 ? net : 0;
+    return { totalCents: Math.max(net, 0), carriedCents };
+  });
+}
