@@ -9,10 +9,10 @@ import { Button } from "@/components/ui/button";
 const DESCRIPTIONS: Record<string, string> = {
   "/entries": "Every entry, filter and bulk settle",
   "/cards": "Statements per credit card",
-  "/settings/accounts": "Cash, savings with a goal, cards with closing and due days",
+  "/accounts": "Each account's balance and its entries",
   "/recurrences": "Fixed cost and month generation",
   "/net-worth": "Cash, investments and debt over time",
-  "/settings": "Profile, categories, assets, theme",
+  "/settings": "Profile, accounts, categories, assets, theme",
   "/guide": "The terms and the weekly routine",
 };
 const LINKS = [...MORE_ITEMS, SETTINGS_ITEM].map((item) => ({ ...item, description: DESCRIPTIONS[item.href] ?? "" }));

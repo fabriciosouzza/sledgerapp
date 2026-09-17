@@ -32,7 +32,7 @@ export default async function AccountPage(props: PageProps<"/accounts/[id]">) {
     // Cards live on /cards, statement by statement.
     return (
       <>
-        <PageHeader title={account.name} description={accountTypeLabel(account.type)} />
+        <PageHeader back={{ href: "/accounts", label: "Accounts" }} title={account.name} description={accountTypeLabel(account.type)} />
         <Button render={<Link href={`/cards?card=${account.id}`} />} nativeButton={false} className="h-11">
           Open the card statements
         </Button>
@@ -52,6 +52,7 @@ export default async function AccountPage(props: PageProps<"/accounts/[id]">) {
   return (
     <>
       <PageHeader
+        back={{ href: "/accounts", label: "Accounts" }}
         title={account.name}
         description={[accountTypeLabel(account.type), account.institution].filter(Boolean).join(" · ")}
         action={

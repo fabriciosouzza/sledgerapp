@@ -414,9 +414,11 @@ is still open):
   planned entry's amount follows the field; a settled one stays. The line
   sits under the month's verdict as a detail of it. Account pick lists read
   "name · type", since a bank can be both an account and a card.
-- Accounts left Settings for the nav (data you visit); Settings holds
-  profile, categories, assets and the theme, and took Profile's place at the
-  foot of the sidebar. The starter categories an account
+- **Accounts in the nav is the money view** (`/accounts`: each balance
+  today, cards with their debt, one tap into an account's entries); adding
+  and editing accounts stays in Settings, which holds profile, accounts,
+  categories, assets and the theme and took Profile's place at the foot of
+  the sidebar. The starter categories an account
   lacks are offered as chips on "New category", one tap each — never as a
   standing button on the list, since a starter category deleted on purpose
   would keep it there.

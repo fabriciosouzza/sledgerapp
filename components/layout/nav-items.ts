@@ -15,22 +15,21 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/more", label: "More", icon: MoreHorizontal },
 ];
 
-/** What "More" holds on mobile; the desktop sidebar lists these directly. Accounts are data you visit, not a setting, so they sit here. */
-export const MORE_ITEMS: { href: "/entries" | "/cards" | "/settings/accounts" | "/recurrences" | "/net-worth" | "/guide"; label: string; icon: LucideIcon }[] = [
+/** What "More" holds on mobile; the desktop sidebar lists these directly. Accounts here is the money view (balances, entries); adding and editing accounts is in Settings. */
+export const MORE_ITEMS: { href: "/entries" | "/cards" | "/accounts" | "/recurrences" | "/net-worth" | "/guide"; label: string; icon: LucideIcon }[] = [
   { href: "/entries", label: "Entries", icon: List },
   { href: "/cards", label: "Cards", icon: CreditCard },
-  { href: "/settings/accounts", label: "Accounts", icon: Landmark },
+  { href: "/accounts", label: "Accounts", icon: Landmark },
   { href: "/recurrences", label: "Recurrences", icon: Repeat },
   { href: "/net-worth", label: "Net worth", icon: LineChart },
   { href: "/guide", label: "How it works", icon: BookOpen },
 ];
 
-/** Settings proper — profile, categories, assets, theme — sits at the foot of the sidebar and at the end of More. */
+/** Settings — profile, accounts, categories, assets, theme — sits at the foot of the sidebar and at the end of More. */
 export const SETTINGS_ITEM = { href: "/settings" as const, label: "Settings", icon: Settings };
 
-/** Settings is the current screen only for what it still holds; Accounts has its own item. */
 export function isSettingsActive(pathname: string): boolean {
-  return pathname.startsWith("/settings") && !pathname.startsWith("/settings/accounts");
+  return pathname.startsWith("/settings");
 }
 
 /** Screens reachable from "More" that share its highlighted nav item. */

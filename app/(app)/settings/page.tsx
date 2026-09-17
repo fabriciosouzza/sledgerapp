@@ -1,14 +1,15 @@
 import Link from "next/link";
-import { ChevronRight, Coins, LogOut, Tags, UserRound } from "lucide-react";
+import { ChevronRight, Coins, Landmark, LogOut, Tags, UserRound } from "lucide-react";
 import { signOutAction } from "@/app/(auth)/actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { getContext } from "@/lib/services/context";
 
-// Accounts are data, reached from the nav; what is here is about you and how things are named.
+// Set-up lives here; the money itself (balances, entries) is under Accounts in the nav.
 const SECTIONS = [
   { href: "/settings/profile", label: "Profile", description: "Name, email, password", icon: UserRound },
+  { href: "/settings/accounts", label: "Accounts", description: "Cash, savings with a goal, cards with closing and due days", icon: Landmark },
   { href: "/settings/categories", label: "Categories", description: "Caps, earmarked money, sub-categories", icon: Tags },
   { href: "/settings/assets", label: "Assets", description: "What you invest in", icon: Coins },
 ] as const;

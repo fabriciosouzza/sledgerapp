@@ -15,7 +15,7 @@ export function PageHeader({
   title: string;
   description?: string;
   action?: React.ReactNode;
-  /** The parent screen, for pages the bottom nav does not reach (Accounts → an account). */
+  /** The parent screen, for pages the bottom nav does not reach (Settings → Accounts → an account). */
   back?: BackLink;
 }) {
   return (
