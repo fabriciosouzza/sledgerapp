@@ -25,7 +25,8 @@ const SECTIONS: Section[] = [
       { term: "Review", meaning: "How a month went — or a calendar year, or the last 12 months: savings rate, leftover, budget, the recurring entries still to apply, what is still planned, spending by category against the caps, and the charts. Every tile opens the matching list in Entries." },
       { term: "Entries", meaning: "Everything, a month at a time: tabs All · Spending · Income · Moves (transfers, contributions, redemptions), search, more filters, and Settle several… for a batch." },
       { term: "Portfolio", meaning: "Your assets as the sum of their movements: balance, contributed versus earned, by class, over time. Record month enters every asset's yield in one pass. It also warns when a contribution has no asset behind it." },
-      { term: "Cards · Recurrences · Net worth · Settings", meaning: "Under More on the phone, in the sidebar on a wide screen. Settings holds accounts, categories with their caps, assets and your profile." },
+      { term: "Cards · Accounts · Recurrences · Net worth · Assets", meaning: "Under More on the phone, in the sidebar on a wide screen. Accounts holds your cash accounts and cards (starting balances, closing and due days); Assets what you invest in." },
+      { term: "Settings", meaning: "At the foot of the sidebar, at the end of More: your profile, the categories with their caps, the theme, sign out." },
     ],
   },
   {
@@ -109,7 +110,7 @@ const SECTIONS: Section[] = [
   {
     title: "Balances and net worth",
     terms: [
-      { term: "Starting point", meaning: "Each cash account has a balance on the day you start tracking it (Settings → Accounts). From then on, every settled entry moves it: income in, expenses out, transfers between accounts, contributions out, redemptions in." },
+      { term: "Starting point", meaning: "Each cash account has a balance on the day you start tracking it (Accounts). From then on, every settled entry moves it: income in, expenses out, transfers between accounts, contributions out, redemptions in." },
       { term: "Account screen", meaning: "Tap an account on Today or on Net worth: balance today, starting point, what changed since, and only that account's entries. If the bank shows a different number, the missing entry is somewhere in that list — or not yet recorded." },
       { term: "Cash on hand", meaning: "The sum of your cash accounts today, derived from what you recorded. Savings accounts are part of it, shown apart." },
       { term: "Net worth", meaning: "cash + investments − debt, for any month, each part derived: cash from accounts and entries, investments from movements, debt from unpaid statements. Months before your first account stay empty, never zero." },
@@ -168,7 +169,7 @@ export default function GuidePage() {
           <h2 id={slug("Starting from a spreadsheet")} className="mb-1 text-base font-semibold">
             Starting from a spreadsheet
           </h2>
-          <p className="mb-3 text-sm text-muted-foreground">Your history stays where it is; sledger starts on the day you pick. Five things to set on that day, all in Settings:</p>
+          <p className="mb-3 text-sm text-muted-foreground">Your history stays where it is; sledger starts on the day you pick. Five things to set on that day — Accounts, Assets and Recurrences from the menu, categories in Settings:</p>
           <ol className="list-decimal space-y-2 rounded-xl bg-card px-4 py-3 pl-8 text-sm ring-1 ring-foreground/10">
             <li>
               <strong>Cash accounts</strong>: the balance each one had at the start of that day (“Starting point”). Entries settled before it are ignored.
@@ -203,7 +204,7 @@ export default function GuidePage() {
             </div>
             <div className="px-4 py-3">
               <dt className="text-sm font-medium">A goal</dt>
-              <dd className="text-sm text-muted-foreground">One savings account per goal, with a target (Settings → Accounts): the tile shows how far along it is.</dd>
+              <dd className="text-sm text-muted-foreground">One savings account per goal, with a target (Accounts): the tile shows how far along it is.</dd>
             </div>
             <div className="px-4 py-3">
               <dt className="text-sm font-medium">Sub-categories</dt>

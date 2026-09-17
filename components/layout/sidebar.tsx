@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LogOut, UserRound } from "lucide-react";
-import { MORE_ITEMS, NAV_ITEMS } from "./nav-items";
+import { LogOut } from "lucide-react";
+import { isSettingsActive, MORE_ITEMS, NAV_ITEMS, SETTINGS_ITEM } from "./nav-items";
 import { signOutAction } from "@/app/(auth)/actions";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -48,9 +48,9 @@ export function Sidebar({ email }: { email: string | null }) {
       </nav>
       <div className="space-y-2">
         <ThemeToggle compact />
-        <Link href="/settings/profile" className={cn(linkClass(exact("/settings/profile")), "h-11")} title={email ?? undefined}>
-          <UserRound className="size-4 shrink-0" aria-hidden />
-          <span className="truncate">Profile</span>
+        <Link href={SETTINGS_ITEM.href} className={cn(linkClass(isSettingsActive(pathname)), "h-11")} title={email ?? undefined}>
+          <SETTINGS_ITEM.icon className="size-4 shrink-0" aria-hidden />
+          <span className="truncate">{SETTINGS_ITEM.label}</span>
         </Link>
         <form action={signOutAction}>
           <button type="submit" className={cn(linkClass(false), "w-full")}>

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ChevronRight, LogOut } from "lucide-react";
 import { signOutAction } from "@/app/(auth)/actions";
-import { MORE_ITEMS } from "@/components/layout/nav-items";
+import { MORE_ITEMS, SETTINGS_ITEM } from "@/components/layout/nav-items";
 import { PageHeader } from "@/components/layout/page-header";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -9,12 +9,14 @@ import { Button } from "@/components/ui/button";
 const DESCRIPTIONS: Record<string, string> = {
   "/entries": "Every entry, filter and bulk settle",
   "/cards": "Statements per credit card",
+  "/settings/accounts": "Cash, savings with a goal, cards with closing and due days",
   "/recurrences": "Fixed cost and month generation",
   "/net-worth": "Cash, investments and debt over time",
-  "/settings": "Accounts, categories, assets, profile",
+  "/settings/assets": "What you invest in",
+  "/settings": "Profile, categories, theme",
   "/guide": "The terms and the weekly routine",
 };
-const LINKS = MORE_ITEMS.map((item) => ({ ...item, description: DESCRIPTIONS[item.href] ?? "" }));
+const LINKS = [...MORE_ITEMS, SETTINGS_ITEM].map((item) => ({ ...item, description: DESCRIPTIONS[item.href] ?? "" }));
 
 export default function MorePage() {
   return (

@@ -1,4 +1,4 @@
-import { BookOpen, CalendarDays, CreditCard, Home, LineChart, List, MoreHorizontal, PieChart, Plus, Repeat, Settings, type LucideIcon } from "lucide-react";
+import { BookOpen, CalendarDays, Coins, CreditCard, Home, Landmark, LineChart, List, MoreHorizontal, PieChart, Plus, Repeat, Settings, type LucideIcon } from "lucide-react";
 
 export interface NavItem {
   href: "/" | "/add" | "/review" | "/portfolio" | "/more";
@@ -15,15 +15,24 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/more", label: "More", icon: MoreHorizontal },
 ];
 
-/** What "More" holds on mobile; the desktop sidebar lists these directly. */
-export const MORE_ITEMS: { href: "/entries" | "/cards" | "/recurrences" | "/net-worth" | "/settings" | "/guide"; label: string; icon: LucideIcon }[] = [
+/** What "More" holds on mobile; the desktop sidebar lists these directly. Accounts and assets are data, not settings, so they sit here. */
+export const MORE_ITEMS: { href: "/entries" | "/cards" | "/settings/accounts" | "/recurrences" | "/net-worth" | "/settings/assets" | "/guide"; label: string; icon: LucideIcon }[] = [
   { href: "/entries", label: "Entries", icon: List },
   { href: "/cards", label: "Cards", icon: CreditCard },
+  { href: "/settings/accounts", label: "Accounts", icon: Landmark },
   { href: "/recurrences", label: "Recurrences", icon: Repeat },
   { href: "/net-worth", label: "Net worth", icon: LineChart },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/settings/assets", label: "Assets", icon: Coins },
   { href: "/guide", label: "How it works", icon: BookOpen },
 ];
+
+/** Settings proper — profile, categories, theme — sits with the profile at the foot of the sidebar and at the end of More. */
+export const SETTINGS_ITEM = { href: "/settings" as const, label: "Settings", icon: Settings };
+
+/** Settings is the current screen only for what it still holds; Accounts and Assets have their own items. */
+export function isSettingsActive(pathname: string): boolean {
+  return pathname.startsWith("/settings") && !pathname.startsWith("/settings/accounts") && !pathname.startsWith("/settings/assets");
+}
 
 /** Screens reachable from "More" that share its highlighted nav item. */
 export const MORE_PATHS = ["/more", "/entries", "/cards", "/recurrences", "/net-worth", "/settings", "/guide", "/accounts"];

@@ -12,7 +12,7 @@ export default async function AssetsSettingsPage() {
   const assets = await listAssets(repos, userId);
   return (
     <>
-      <PageHeader back={{ href: "/settings", label: "Settings" }}
+      <PageHeader
         title="Assets"
         action={
           <Button render={<Link href="/settings/assets/new" />} nativeButton={false} size="lg" className="h-11">

@@ -21,7 +21,7 @@ export default async function AccountsPage() {
 
   return (
     <>
-      <PageHeader back={{ href: "/settings", label: "Settings" }}
+      <PageHeader
         title="Accounts"
         action={
           <Button render={<Link href="/settings/accounts/new" />} nativeButton={false} size="lg" className="h-11">

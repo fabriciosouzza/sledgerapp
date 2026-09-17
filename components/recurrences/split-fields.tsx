@@ -36,7 +36,7 @@ export function SplitFields({ assets, initial }: { assets: Asset[]; initial: Rec
   }
 
   if (assets.length === 0) {
-    return <p className="text-sm text-muted-foreground">No asset yet. Add one in Settings → Assets and the split can be set here.</p>;
+    return <p className="text-sm text-muted-foreground">No asset yet. Add one in Assets and the split can be set here.</p>;
   }
 
   return (
