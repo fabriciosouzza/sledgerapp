@@ -246,7 +246,7 @@ export function EntryForm({
         />
       )}
 
-      <form key={formKey} onSubmit={onSubmit} className="space-y-5 md:max-w-2xl">
+      <form key={formKey} onSubmit={onSubmit} className="space-y-5">
         {entry && <input type="hidden" name="id" value={entry.id} />}
         <input type="hidden" name="kind" value={kind} />
 
