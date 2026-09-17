@@ -36,6 +36,8 @@ function toDomain(row: RowWithShares): Recurrence {
     endsOn: row.ends_on,
     isVariable: row.is_variable,
     isActive: row.is_active,
+    // `?? []` only until the 2026-09-17 migration has run everywhere: a row without the column is one with no skips.
+    skippedPeriods: row.skipped_periods ?? [],
   };
 }
 
@@ -52,6 +54,7 @@ function toRow(userId: string, data: Partial<NewRecurrence>): Partial<Insert> & 
   if (data.endsOn !== undefined) row.ends_on = data.endsOn;
   if (data.isVariable !== undefined) row.is_variable = data.isVariable;
   if (data.isActive !== undefined) row.is_active = data.isActive;
+  if (data.skippedPeriods !== undefined) row.skipped_periods = data.skippedPeriods;
   return row;
 }
 

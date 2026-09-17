@@ -17,12 +17,22 @@ export function recurrenceDateIn(recurrence: Pick<Recurrence, "dueDay">, period:
  * `endsOn`. A template that starts on the 20th with due day 5 first occurs on
  * the 5th of the *following* month.
  */
-export function recurrenceAppliesTo(recurrence: Recurrence, period: Period): boolean {
+export function recurrenceOccursIn(recurrence: Recurrence, period: Period): boolean {
   if (!recurrence.isActive) return false;
   const date = recurrenceDateIn(recurrence, period);
   if (date < recurrence.startsOn) return false;
   if (recurrence.endsOn !== null && date > recurrence.endsOn) return false;
   return true;
+}
+
+/** Told "not this month" (§5.5): the template occurs but is not to be applied. */
+export function isSkippedIn(recurrence: Pick<Recurrence, "skippedPeriods">, period: Period): boolean {
+  return recurrence.skippedPeriods.includes(periodStart(period));
+}
+
+/** Occurs in `period` and was not skipped for it: what "apply the month" creates. */
+export function recurrenceAppliesTo(recurrence: Recurrence, period: Period): boolean {
+  return recurrenceOccursIn(recurrence, period) && !isSkippedIn(recurrence, period);
 }
 
 export function expandRecurrence(recurrence: Recurrence, period: Period): NewEntry {

@@ -7,6 +7,8 @@ export interface MonthStatus {
   period: Period;
   applied: number;
   pending: number;
+  /** Told "not this month". */
+  skipped?: number;
 }
 
 /** Where each upcoming month stands; applying happens on Review (DESIGN.md). */
@@ -26,6 +28,7 @@ export function MonthsStatus({ months }: { months: MonthStatus[] }) {
                 <span className="block text-sm font-medium">{formatPeriodLong(m.period)}</span>
                 <span className="block text-xs text-muted-foreground">
                   {total === 0 ? "no recurrences apply" : done ? `${m.applied} of ${total} applied` : `${m.pending} of ${total} still to apply`}
+                  {m.skipped ? ` · ${m.skipped} not this month` : ""}
                 </span>
               </span>
               {done ? (

@@ -212,6 +212,11 @@ the service returns how many rows it created.
 Day-of-month clamping: due day 31 becomes the last day of a short month. Pure
 function, unit tested against February.
 
+A template can be told **"not this month"** while applying (a holiday month
+with no meal voucher): the month is recorded on the template
+(`skipped_periods`), the other lines are created, and that month stops
+asking for it everywhere, with an undo on the Review card.
+
 A recurring contribution may carry a **default split**: percentages per asset
 summing to 100 (`recurrence_allocations`). It is a suggestion, not data: the
 generated entry is planned and unallocated; the split pre-fills the allocation

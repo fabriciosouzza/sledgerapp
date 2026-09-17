@@ -84,9 +84,10 @@ export async function missingSeedCategories(repos: Repositories, userId: string)
   return SEED_CATEGORIES.filter((c) => !have.has(c.name));
 }
 
-/** Adds the starter categories still missing, after the user's own, without touching what exists. */
-export async function seedMissingCategories(repos: Repositories, userId: string): Promise<{ added: number }> {
-  const missing = await missingSeedCategories(repos, userId);
+/** Adds the starter categories still missing (all of them, or the `names` asked for), after the user's own, without touching what exists. */
+export async function seedMissingCategories(repos: Repositories, userId: string, names?: string[]): Promise<{ added: number }> {
+  const wanted = await missingSeedCategories(repos, userId);
+  const missing = names === undefined ? wanted : wanted.filter((c) => names.includes(c.name));
   if (missing.length === 0) return { added: 0 };
   const existing = await repos.categories.list(userId);
   const next = existing.reduce((max, c) => Math.max(max, c.sortOrder), -1) + 1;

@@ -5,9 +5,23 @@ import { isPeriod } from "@/lib/domain/dates";
 import { parseBRL } from "@/lib/domain/money";
 import { getContext } from "@/lib/services/context";
 import { ServiceError } from "@/lib/services/errors";
-import { generateMonth } from "@/lib/services/recurrences";
+import { generateMonth, unskipRecurrence } from "@/lib/services/recurrences";
 
 export type GenerateResult = { ok: true; created: number; skipped: number } | { ok: false; error: string };
+
+/** Takes back "not this month" for one template, so the month offers it again. */
+export async function unskipRecurrenceAction(id: string, period: string): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { userId, repos } = await getContext();
+  if (!isPeriod(period)) return { ok: false, error: "Pick a month." };
+  try {
+    await unskipRecurrence(repos, userId, id, period);
+    for (const path of ["/review", "/", "/recurrences"]) revalidatePath(path);
+    return { ok: true };
+  } catch (error) {
+    if (error instanceof ServiceError) return { ok: false, error: error.message };
+    throw error;
+  }
+}
 
 /** Fields: `period`, `amount:<recurrenceId>` as pt-BR amounts for this month's overrides, `skip:<recurrenceId>` to leave one out. */
 export async function generateMonthWithAmountsAction(formData: FormData): Promise<GenerateResult> {

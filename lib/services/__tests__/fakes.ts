@@ -210,7 +210,7 @@ export function fakeRepositories(): FakeRepositories {
       return row ? strip(row) : null;
     },
     async insert(userId, data: NewRecurrence) {
-      const row = { ...data, allocations: [...data.allocations], id: nextId(), userId };
+      const row = { ...data, allocations: [...data.allocations], skippedPeriods: [...data.skippedPeriods], id: nextId(), userId };
       recurrences.push(row);
       return strip(row);
     },

@@ -5,7 +5,7 @@ import { isCashAccount, isCreditCard } from "@/lib/domain/accounts";
 import { sharesProblem } from "@/lib/domain/allocation";
 import { appliesToKind } from "@/lib/domain/categories";
 import { needsAllocation, needsCategory, needsCounterAccount } from "@/lib/domain/entries";
-import { expandRecurrences, monthlyFixedCost } from "@/lib/domain/recurrences";
+import { expandRecurrences, isSkippedIn, monthlyFixedCost, recurrenceOccursIn } from "@/lib/domain/recurrences";
 import { addMonths, periodEnd, periodOf, periodStart } from "@/lib/domain/dates";
 import type { Entry, IsoDate, NewEntry, Period, Recurrence } from "@/lib/domain/types";
 import type { Repositories } from "@/lib/repositories";
@@ -26,7 +26,8 @@ export async function fixedCost(repos: Repositories, userId: string): Promise<nu
   return monthlyFixedCost(await repos.recurrences.list(userId));
 }
 
-async function fields(repos: Repositories, userId: string, input: RecurrenceInput): Promise<Omit<Recurrence, "id">> {
+/** Everything the form sets; the skipped months belong to the template's history and are never overwritten by an edit. */
+async function fields(repos: Repositories, userId: string, input: RecurrenceInput): Promise<Omit<Recurrence, "id" | "skippedPeriods">> {
   const kind = input.kind;
   const categoryId = needsCategory(kind) ? input.categoryId : null;
   const counterAccountId = needsCounterAccount(kind) ? input.counterAccountId : null;
@@ -70,8 +71,15 @@ async function fields(repos: Repositories, userId: string, input: RecurrenceInpu
   };
 }
 
+/** Takes back "not this month": the template is offered for `period` again. */
+export async function unskipRecurrence(repos: Repositories, userId: string, id: string, period: Period): Promise<Recurrence> {
+  const recurrence = await getRecurrence(repos, userId, id);
+  const start = periodStart(period);
+  return repos.recurrences.update(userId, id, { skippedPeriods: recurrence.skippedPeriods.filter((p) => p !== start) });
+}
+
 export async function createRecurrence(repos: Repositories, userId: string, input: RecurrenceInput): Promise<Recurrence> {
-  return repos.recurrences.insert(userId, await fields(repos, userId, input));
+  return repos.recurrences.insert(userId, { ...(await fields(repos, userId, input)), skippedPeriods: [] });
 }
 
 export async function updateRecurrence(repos: Repositories, userId: string, id: string, input: RecurrenceInput): Promise<Recurrence> {
@@ -100,6 +108,8 @@ export interface GenerationPreview {
   toCreate: (NewEntry & { recurrence: Recurrence })[];
   /** Already present for this period, from an earlier run. */
   existing: Entry[];
+  /** Told "not this month" and not generated: offered again only on undo. */
+  skipped: Recurrence[];
 }
 
 export async function previewGeneration(repos: Repositories, userId: string, period: Period): Promise<GenerationPreview> {
@@ -115,7 +125,8 @@ function previewFrom(recurrences: Recurrence[], entries: Entry[], period: Period
   const toCreate = expandRecurrences(recurrences, period)
     .filter((row) => !done.has(row.recurrenceId))
     .map((row) => ({ ...row, recurrence: byId.get(row.recurrenceId!)! }));
-  return { period, toCreate, existing };
+  const skipped = recurrences.filter((r) => recurrenceOccursIn(r, period) && isSkippedIn(r, period) && !done.has(r.id));
+  return { period, toCreate, existing, skipped };
 }
 
 export interface PendingMonth {
@@ -153,6 +164,7 @@ export interface GenerationResult {
  * Idempotent (§5.5): the unique index on (recurrence_id, period) makes a second
  * run a no-op. `amounts` overrides a template's amount for this month only —
  * the water bill is never the same twice; the template keeps its estimate.
+ * `skip` is remembered on each template: that month stops asking to be applied.
  */
 export async function generateMonth(
   repos: Repositories,
@@ -174,5 +186,11 @@ export async function generateMonth(
       return cards.has(amount.accountId) && (amount.kind === "expense" || amount.kind === "income") ? { ...amount, status: "settled" as const, settledOn: amount.date } : amount;
     });
   const inserted = await repos.entries.insertMany(userId, rows, { ignoreConflicts: true });
+  const start = periodStart(period);
+  for (const r of recurrences) {
+    if (skipped.has(r.id) && recurrenceOccursIn(r, period) && !r.skippedPeriods.includes(start)) {
+      await repos.recurrences.update(userId, r.id, { skippedPeriods: [...r.skippedPeriods, start] });
+    }
+  }
   return { period, created: inserted.length, skipped: rows.length - inserted.length };
 }

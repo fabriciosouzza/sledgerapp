@@ -104,6 +104,7 @@ export default async function MonthPage(props: PageProps<"/review">) {
           }))}
           existingCount={generation.existing.length}
           otherPending={pendingAll.filter((m) => m.period !== month)}
+          skippedThisMonth={generation.skipped.map((r) => ({ recurrenceId: r.id, description: r.description }))}
         />
 
         {/* The month's verdict first, then what is still to settle; the other numbers and the charts follow. */}

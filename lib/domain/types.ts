@@ -83,6 +83,8 @@ export interface Recurrence {
   isActive: boolean;
   /** Empty unless the recurrence is a contribution with a default split. */
   allocations: RecurrenceShare[];
+  /** Months (first day, ISO) the template was told not to apply to — a holiday month with no voucher. */
+  skippedPeriods: IsoDate[];
 }
 
 export interface Entry {

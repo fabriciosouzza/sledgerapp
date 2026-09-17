@@ -403,6 +403,13 @@ is still open):
   one name.
 - Record month takes each asset's own kind of movement, pre-set from its
   class.
+- **"Not this month" is remembered.** Unticking a line when applying a
+  month writes that month on the template (`recurrences.skipped_periods`):
+  the month stops asking for it on Review, Today and Recurrences; the Review
+  card lists what was skipped, with Undo. The starter categories an account
+  lacks are offered as chips on "New category", one tap each — never as a
+  standing button on the list, since a starter category deleted on purpose
+  would keep it there.
 
 ## Done
 

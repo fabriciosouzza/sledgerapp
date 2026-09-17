@@ -401,6 +401,7 @@ export type Database = {
           is_active: boolean
           is_variable: boolean
           kind: Database["public"]["Enums"]["entry_kind"]
+          skipped_periods: string[]
           starts_on: string
           updated_at: string
           user_id: string
@@ -418,6 +419,7 @@ export type Database = {
           is_active?: boolean
           is_variable?: boolean
           kind: Database["public"]["Enums"]["entry_kind"]
+          skipped_periods?: string[]
           starts_on: string
           updated_at?: string
           user_id: string
@@ -435,6 +437,7 @@ export type Database = {
           is_active?: boolean
           is_variable?: boolean
           kind?: Database["public"]["Enums"]["entry_kind"]
+          skipped_periods?: string[]
           starts_on?: string
           updated_at?: string
           user_id?: string

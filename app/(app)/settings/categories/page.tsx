@@ -3,18 +3,16 @@ import { ChevronRight, CornerDownRight, Plus } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { SeedButton } from "@/components/settings/seed-button";
-import { SeedMissingButton } from "@/components/settings/seed-missing-button";
 import { Button } from "@/components/ui/button";
 import { formatBRL } from "@/lib/domain/money";
 import { listCategories } from "@/lib/services/categories";
 import { MoveButtons } from "@/components/settings/move-buttons";
 import { moveCategoryAction } from "./actions";
 import { getContext } from "@/lib/services/context";
-import { missingSeedCategories } from "@/lib/services/seed";
 
 export default async function CategoriesPage() {
   const { userId, repos } = await getContext();
-  const [categories, missing] = await Promise.all([listCategories(repos, userId), missingSeedCategories(repos, userId)]);
+  const categories = await listCategories(repos, userId);
 
   return (
     <>
@@ -49,13 +47,6 @@ export default async function CategoriesPage() {
           </div>
         </div>
       ) : (
-        <>
-        {/* The starter set grew (income categories on 2026-09-17): older accounts get the new ones with one tap. */}
-        {missing.length > 0 && (
-          <div className="mb-4">
-            <SeedMissingButton names={missing.map((c) => c.name)} />
-          </div>
-        )}
         <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
           {categories.map((c) => {
             const siblings = categories.filter(
@@ -108,7 +99,6 @@ export default async function CategoriesPage() {
             );
           })}
         </ul>
-        </>
       )}
     </>
   );

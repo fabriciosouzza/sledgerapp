@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { AlertTriangle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { generateMonthWithAmountsAction } from "@/app/(app)/review/actions";
+import { generateMonthWithAmountsAction, unskipRecurrenceAction } from "@/app/(app)/review/actions";
 import { CurrencyInput } from "@/components/forms/currency-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +35,7 @@ export function GenerateMonth({
   existingCount,
   card = false,
   otherPending = [],
+  skippedThisMonth = [],
 }: {
   period: Period;
   toCreate: PreviewRow[];
@@ -43,6 +44,8 @@ export function GenerateMonth({
   card?: boolean;
   /** Other recent months with something to apply. */
   otherPending?: { period: Period; count: number }[];
+  /** Templates told "not this month" (§5.5), each with an undo. */
+  skippedThisMonth?: { recurrenceId: string; description: string }[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -51,6 +54,18 @@ export function GenerateMonth({
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
   const nothing = toCreate.length === 0;
   const keeping = toCreate.length - skipped.size;
+
+  function unskip(id: string, description: string) {
+    startTransition(async () => {
+      const result = await unskipRecurrenceAction(id, period);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(`${description} is back for ${formatPeriodLong(period)}`);
+      router.refresh();
+    });
+  }
 
   function toggle(id: string) {
     setSkipped((prev) => {
@@ -77,7 +92,7 @@ export function GenerateMonth({
     });
   }
 
-  if (card && nothing && !done && otherPending.length === 0) return null;
+  if (card && nothing && !done && otherPending.length === 0 && skippedThisMonth.length === 0) return null;
 
   return (
     <section className={cn("space-y-3 rounded-xl bg-card p-4 ring-1", card ? "ring-primary/30" : "ring-foreground/10")}>
@@ -90,7 +105,9 @@ export function GenerateMonth({
                 ? `Recurring entries added to ${formatPeriodLong(period)}`
                 : `${toCreate.length} recurring ${toCreate.length === 1 ? "entry" : "entries"} not applied to ${formatPeriodLong(period)}`}
           </h2>
-          {card && !done && <p className="text-xs text-muted-foreground">Check the amounts — variable ones are estimates — then add them as planned entries.</p>}
+          {card && !done && !nothing && (
+            <p className="text-xs text-muted-foreground">Check the amounts — variable ones are estimates — then add them as planned entries. Untick a line and this month stops asking for it.</p>
+          )}
         </div>
       </div>
 
@@ -109,7 +126,7 @@ export function GenerateMonth({
           {done.skipped ? `, ${done.skipped} already existed` : ""}.
         </p>
       ) : nothing ? (
-        <p className="text-sm text-muted-foreground">Nothing to create for {formatPeriodLong(period)}.</p>
+        skippedThisMonth.length === 0 && <p className="text-sm text-muted-foreground">Nothing to create for {formatPeriodLong(period)}.</p>
       ) : (
         <form onSubmit={onSubmit} className="space-y-3">
           <input type="hidden" name="period" value={period} />
@@ -145,6 +162,20 @@ export function GenerateMonth({
             {pending ? "Adding…" : `Add ${keeping} ${keeping === 1 ? "entry" : "entries"}`}
           </Button>
         </form>
+      )}
+      {skippedThisMonth.length > 0 && (
+        <ul className="divide-y divide-border text-sm" aria-label="Skipped this month">
+          {skippedThisMonth.map((s) => (
+            <li key={s.recurrenceId} className="flex min-h-11 items-center justify-between gap-3">
+              <span className="min-w-0 truncate text-muted-foreground">
+                <span className="font-medium text-foreground">{s.description}</span> · not this month
+              </span>
+              <Button type="button" variant="ghost" size="sm" className="h-11 shrink-0" disabled={pending} onClick={() => unskip(s.recurrenceId, s.description)}>
+                Undo
+              </Button>
+            </li>
+          ))}
+        </ul>
       )}
       {otherPending.length > 0 && (
         <p className="text-xs text-muted-foreground">

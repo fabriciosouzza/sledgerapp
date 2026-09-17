@@ -193,6 +193,7 @@ export async function createEntry(
       isActive: true,
       // How this one was split becomes the template's default (§5.5).
       allocations: allocation === null ? [] : sharesFromLines(allocation),
+      skippedPeriods: [],
     });
     const first: NewEntry = {
       ...expandRecurrence(recurrence, periodOf(input.date)),

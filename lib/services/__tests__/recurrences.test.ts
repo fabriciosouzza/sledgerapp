@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { recurrenceInputSchema } from "@/lib/schemas/recurrences";
-import { createRecurrence, deleteRecurrence, fixedCost, generateMonth, pendingMonths, previewGeneration } from "../recurrences";
+import { createRecurrence, deleteRecurrence, fixedCost, generateMonth, pendingMonths, previewGeneration, unskipRecurrence } from "../recurrences";
 import { seedUserIfEmpty } from "../seed";
 import { fakeRepositories, type FakeRepositories } from "./fakes";
 
@@ -116,5 +116,29 @@ describe("recurrences", () => {
     await expect(deleteRecurrence(repos, U, rent.id)).rejects.toMatchObject({ code: "in_use" });
     await deleteRecurrence(repos, U, unused.id);
     await expect(deleteRecurrence(repos, U, unused.id)).rejects.toMatchObject({ code: "not_found" });
+  });
+});
+
+describe("not this month", () => {
+  it("remembers a skipped line: the month stops asking for it, the others are created, and undo brings it back", async () => {
+    const rent = await createRecurrence(repos, U, input({}));
+    const voucher = await createRecurrence(repos, U, input({ description: "Vale-refeição", kind: "income", categoryId: (await repos.categories.list(U)).find((c) => c.name === "Outros")!.id, amountCents: "600,00", dueDay: "1" }));
+    // On holiday in February: no voucher, but the rent still applies.
+    expect(await generateMonth(repos, U, "2026-02", {}, [voucher.id])).toEqual({ period: "2026-02", created: 1, skipped: 0 });
+    expect((await repos.recurrences.getById(U, voucher.id))!.skippedPeriods).toEqual(["2026-02-01"]);
+
+    const preview = await previewGeneration(repos, U, "2026-02");
+    expect(preview.toCreate).toEqual([]);
+    expect(preview.skipped.map((r) => r.id)).toEqual([voucher.id]);
+    expect((await pendingMonths(repos, U, "2026-02-15", 1)).map((m) => m.period)).toEqual(["2026-01"]); // January was never applied; February no longer asks
+    // March is untouched.
+    expect((await previewGeneration(repos, U, "2026-03")).toCreate).toHaveLength(2);
+
+    await unskipRecurrence(repos, U, voucher.id, "2026-02");
+    expect((await previewGeneration(repos, U, "2026-02")).toCreate.map((r) => r.recurrenceId)).toEqual([voucher.id]);
+    expect((await previewGeneration(repos, U, "2026-02")).skipped).toEqual([]);
+    expect(await generateMonth(repos, U, "2026-02", {}, [voucher.id])).toEqual({ period: "2026-02", created: 0, skipped: 1 }); // the rent already existed
+    expect((await repos.recurrences.getById(U, voucher.id))!.skippedPeriods).toEqual(["2026-02-01"]);
+    void rent;
   });
 });

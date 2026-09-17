@@ -24,7 +24,7 @@ export default async function RecurrencesPage() {
     previewGeneration(repos, userId, current),
     previewGeneration(repos, userId, addMonths(current, 1)),
   ]);
-  const months = previews.map((p) => ({ period: p.period, applied: p.existing.length, pending: p.toCreate.length }));
+  const months = previews.map((p) => ({ period: p.period, applied: p.existing.length, pending: p.toCreate.length, skipped: p.skipped.length }));
   // Earlier months with something still to apply — a forgotten month, or a template recorded by hand.
   const earlier = pending.filter((m) => m.period !== current).map((m) => ({ period: m.period, applied: m.applied, pending: m.count }));
   const fixed = monthlyFixedCost(recurrences);
@@ -54,7 +54,7 @@ export default async function RecurrencesPage() {
           <section>
             <h2 className="mb-1 text-sm font-semibold">Earlier months not applied</h2>
             <p className="mb-2 text-xs text-muted-foreground">
-              Last {EARLIER_MONTHS} months. A month you skipped — or a template you recorded by hand that month; skip those lines in Review.
+              Last {EARLIER_MONTHS} months. A month you forgot — or a template you recorded by hand that month; untick those lines in Review and the month stops asking.
             </p>
             <MonthsStatus months={earlier} />
           </section>

@@ -13,9 +13,9 @@ export async function seedStartingSetAction(): Promise<{ seeded: boolean }> {
 }
 
 /** The starter categories added since this account was created (or removed by hand and wanted back). */
-export async function seedMissingCategoriesAction(): Promise<{ added: number }> {
+export async function seedMissingCategoriesAction(names?: string[]): Promise<{ added: number }> {
   const { userId, repos } = await getContext();
-  const result = await seedMissingCategories(repos, userId);
+  const result = await seedMissingCategories(repos, userId, names);
   for (const path of ["/settings/categories", "/add", "/review"]) revalidatePath(path);
   return result;
 }
