@@ -1,15 +1,16 @@
 import Link from "next/link";
-import { ChevronRight, LogOut, Tags, UserRound } from "lucide-react";
+import { ChevronRight, Coins, LogOut, Tags, UserRound } from "lucide-react";
 import { signOutAction } from "@/app/(auth)/actions";
 import { PageHeader } from "@/components/layout/page-header";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { getContext } from "@/lib/services/context";
 
-// Accounts and assets are data, reached from the nav; what is left here is about you and how things are named.
+// Accounts are data, reached from the nav; what is here is about you and how things are named.
 const SECTIONS = [
   { href: "/settings/profile", label: "Profile", description: "Name, email, password", icon: UserRound },
   { href: "/settings/categories", label: "Categories", description: "Caps, earmarked money, sub-categories", icon: Tags },
+  { href: "/settings/assets", label: "Assets", description: "What you invest in", icon: Coins },
 ] as const;
 
 export default async function SettingsPage() {

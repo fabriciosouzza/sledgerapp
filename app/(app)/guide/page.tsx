@@ -25,8 +25,8 @@ const SECTIONS: Section[] = [
       { term: "Review", meaning: "How a month went — or a calendar year, or the last 12 months: savings rate, leftover, budget, the recurring entries still to apply, what is still planned, spending by category against the caps, and the charts. Every tile opens the matching list in Entries." },
       { term: "Entries", meaning: "Everything, a month at a time: tabs All · Spending · Income · Moves (transfers, contributions, redemptions), search, more filters, and Settle several… for a batch." },
       { term: "Portfolio", meaning: "Your assets as the sum of their movements: balance, contributed versus earned, by class, over time. Record month enters every asset's yield in one pass. It also warns when a contribution has no asset behind it." },
-      { term: "Cards · Accounts · Recurrences · Net worth · Assets", meaning: "Under More on the phone, in the sidebar on a wide screen. Accounts holds your cash accounts and cards (starting balances, closing and due days); Assets what you invest in." },
-      { term: "Settings", meaning: "At the foot of the sidebar, at the end of More: your profile, the categories with their caps, the theme, sign out." },
+      { term: "Cards · Accounts · Recurrences · Net worth", meaning: "Under More on the phone, in the sidebar on a wide screen. Accounts holds your cash accounts and cards: starting balances, closing and due days, goals." },
+      { term: "Settings", meaning: "At the foot of the sidebar, at the end of More: your profile, the categories with their caps, the assets you invest in, the theme, sign out." },
     ],
   },
   {
@@ -169,7 +169,7 @@ export default function GuidePage() {
           <h2 id={slug("Starting from a spreadsheet")} className="mb-1 text-base font-semibold">
             Starting from a spreadsheet
           </h2>
-          <p className="mb-3 text-sm text-muted-foreground">Your history stays where it is; sledger starts on the day you pick. Five things to set on that day — Accounts, Assets and Recurrences from the menu, categories in Settings:</p>
+          <p className="mb-3 text-sm text-muted-foreground">Your history stays where it is; sledger starts on the day you pick. Five things to set on that day — Accounts and Recurrences from the menu, categories and assets in Settings:</p>
           <ol className="list-decimal space-y-2 rounded-xl bg-card px-4 py-3 pl-8 text-sm ring-1 ring-foreground/10">
             <li>
               <strong>Cash accounts</strong>: the balance each one had at the start of that day (“Starting point”). Entries settled before it are ignored.

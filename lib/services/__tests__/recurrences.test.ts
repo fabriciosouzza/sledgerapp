@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { recurrenceInputSchema } from "@/lib/schemas/recurrences";
-import { createRecurrence, deleteRecurrence, fixedCost, generateMonth, pendingMonths, previewGeneration, unskipRecurrence } from "../recurrences";
+import { createRecurrence, deleteRecurrence, excludeRecurrenceFromMonth, fixedCost, generateMonth, includeRecurrenceInMonth, monthRecurrences, pendingMonths, previewGeneration } from "../recurrences";
 import { seedUserIfEmpty } from "../seed";
 import { fakeRepositories, type FakeRepositories } from "./fakes";
 
@@ -134,11 +134,39 @@ describe("not this month", () => {
     // March is untouched.
     expect((await previewGeneration(repos, U, "2026-03")).toCreate).toHaveLength(2);
 
-    await unskipRecurrence(repos, U, voucher.id, "2026-02");
-    expect((await previewGeneration(repos, U, "2026-02")).toCreate.map((r) => r.recurrenceId)).toEqual([voucher.id]);
-    expect((await previewGeneration(repos, U, "2026-02")).skipped).toEqual([]);
+    // Applying with the line ticked again does not forget the skip by itself: the sheet's include does (tested below).
     expect(await generateMonth(repos, U, "2026-02", {}, [voucher.id])).toEqual({ period: "2026-02", created: 0, skipped: 1 }); // the rent already existed
     expect((await repos.recurrences.getById(U, voucher.id))!.skippedPeriods).toEqual(["2026-02-01"]);
     void rent;
+  });
+});
+
+describe("the month's management sheet", () => {
+  it("lists every template of the month with its state, and flips one in or out in one step", async () => {
+    const rent = await createRecurrence(repos, U, input({}));
+    const voucher = await createRecurrence(repos, U, input({ description: "Vale-refeição", kind: "income", categoryId: (await repos.categories.list(U)).find((c) => c.name === "Outros")!.id, amountCents: "600,00", dueDay: "1" }));
+    await generateMonth(repos, U, "2026-02", {}, [voucher.id]);
+    let rows = await monthRecurrences(repos, U, "2026-02");
+    const state = (id: string) => rows.filter((r) => r.recurrence.id === id).map((r) => [r.state, r.entry !== null])[0];
+    expect(state(voucher.id)).toEqual(["skipped", false]);
+    expect(state(rent.id)).toEqual(["applied", true]);
+
+    // Off → on: forgets "not this month" and creates the entry, in one go.
+    const created = await includeRecurrenceInMonth(repos, U, voucher.id, "2026-02");
+    expect(created).toMatchObject({ recurrenceId: voucher.id, status: "planned", amountCents: 60_000 });
+    expect((await repos.recurrences.getById(U, voucher.id))!.skippedPeriods).toEqual([]);
+    expect(await includeRecurrenceInMonth(repos, U, voucher.id, "2026-02")).toBeNull(); // already there
+
+    // On → off: the planned entry goes and the month is remembered.
+    await excludeRecurrenceFromMonth(repos, U, rent.id, "2026-02");
+    rows = await monthRecurrences(repos, U, "2026-02");
+    expect(rows.find((r) => r.recurrence.id === rent.id)).toMatchObject({ state: "skipped", entry: null });
+    expect((await repos.entries.list(U, { period: "2026-02" })).map((e) => e.recurrenceId)).toEqual([voucher.id]);
+
+    // A settled entry stays: the money moved.
+    const [entry] = await repos.entries.list(U, { period: "2026-02" });
+    await repos.entries.update(U, entry.id, { status: "settled", settledOn: "2026-02-01" });
+    await expect(excludeRecurrenceFromMonth(repos, U, voucher.id, "2026-02")).rejects.toMatchObject({ code: "invalid" });
+    await expect(includeRecurrenceInMonth(repos, U, rent.id, "2025-06")).rejects.toMatchObject({ code: "invalid" }); // before it starts
   });
 });

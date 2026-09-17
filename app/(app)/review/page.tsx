@@ -10,14 +10,16 @@ import { CategoryTable } from "@/components/month/category-table";
 import { MonthPicker } from "@/components/month/month-picker";
 import { ViewSwitch, type MonthView } from "@/components/month/view-switch";
 import { GenerateMonth } from "@/components/recurrences/generate-month";
+import { ManageMonth } from "@/components/recurrences/manage-month-sheet";
 import { YearView } from "./year-view";
 import { Stat } from "@/components/month/stat";
 import { addMonths, dayOf, isPeriod, parsePeriod, periodOf, today, toPeriodString } from "@/lib/domain/dates";
+import { recurrenceDateIn } from "@/lib/domain/recurrences";
 import { formatBRL, formatBRLWrap, formatPercent } from "@/lib/domain/money";
 import { listAccounts } from "@/lib/services/accounts";
 import { listCategories } from "@/lib/services/categories";
 import { getContext } from "@/lib/services/context";
-import { pendingMonths, previewGeneration } from "@/lib/services/recurrences";
+import { monthRecurrences, pendingMonths, previewGeneration } from "@/lib/services/recurrences";
 import { capsOver, monthSummary, yearSummary } from "@/lib/services/summary";
 import { cn } from "@/lib/utils";
 
@@ -67,12 +69,13 @@ export default async function MonthPage(props: PageProps<"/review">) {
     );
   }
 
-  const [summary, accounts, categories, generation, pendingAll] = await Promise.all([
+  const [summary, accounts, categories, generation, pendingAll, monthRows] = await Promise.all([
     monthSummary(repos, userId, month),
     listAccounts(repos, userId),
     listCategories(repos, userId),
     previewGeneration(repos, userId, month),
     pendingMonths(repos, userId, now),
+    monthRecurrences(repos, userId, month),
   ]);
   const m = summary.metrics;
   const isCurrent = month === periodOf(now);
@@ -104,7 +107,19 @@ export default async function MonthPage(props: PageProps<"/review">) {
           }))}
           existingCount={generation.existing.length}
           otherPending={pendingAll.filter((m) => m.period !== month)}
-          skippedThisMonth={generation.skipped.map((r) => ({ recurrenceId: r.id, description: r.description }))}
+          manage={
+            <ManageMonth
+              period={month}
+              rows={monthRows.map((r) => ({
+                recurrenceId: r.recurrence.id,
+                description: r.recurrence.description,
+                amountCents: r.entry?.amountCents ?? r.recurrence.amountCents,
+                date: r.entry?.date ?? recurrenceDateIn(r.recurrence, month),
+                state: r.state,
+                settled: r.entry?.status === "settled",
+              }))}
+            />
+          }
         />
 
         {/* The month's verdict first, then what is still to settle; the other numbers and the charts follow. */}

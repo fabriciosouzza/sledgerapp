@@ -12,8 +12,7 @@ const DESCRIPTIONS: Record<string, string> = {
   "/settings/accounts": "Cash, savings with a goal, cards with closing and due days",
   "/recurrences": "Fixed cost and month generation",
   "/net-worth": "Cash, investments and debt over time",
-  "/settings/assets": "What you invest in",
-  "/settings": "Profile, categories, theme",
+  "/settings": "Profile, categories, assets, theme",
   "/guide": "The terms and the weekly routine",
 };
 const LINKS = [...MORE_ITEMS, SETTINGS_ITEM].map((item) => ({ ...item, description: DESCRIPTIONS[item.href] ?? "" }));

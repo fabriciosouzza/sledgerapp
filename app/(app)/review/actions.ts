@@ -5,23 +5,9 @@ import { isPeriod } from "@/lib/domain/dates";
 import { parseBRL } from "@/lib/domain/money";
 import { getContext } from "@/lib/services/context";
 import { ServiceError } from "@/lib/services/errors";
-import { generateMonth, unskipRecurrence } from "@/lib/services/recurrences";
+import { excludeRecurrenceFromMonth, generateMonth, includeRecurrenceInMonth } from "@/lib/services/recurrences";
 
 export type GenerateResult = { ok: true; created: number; skipped: number } | { ok: false; error: string };
-
-/** Takes back "not this month" for one template, so the month offers it again. */
-export async function unskipRecurrenceAction(id: string, period: string): Promise<{ ok: true } | { ok: false; error: string }> {
-  const { userId, repos } = await getContext();
-  if (!isPeriod(period)) return { ok: false, error: "Pick a month." };
-  try {
-    await unskipRecurrence(repos, userId, id, period);
-    for (const path of ["/review", "/", "/recurrences"]) revalidatePath(path);
-    return { ok: true };
-  } catch (error) {
-    if (error instanceof ServiceError) return { ok: false, error: error.message };
-    throw error;
-  }
-}
 
 /** Fields: `period`, `amount:<recurrenceId>` as pt-BR amounts for this month's overrides, `skip:<recurrenceId>` to leave one out. */
 export async function generateMonthWithAmountsAction(formData: FormData): Promise<GenerateResult> {
@@ -43,6 +29,21 @@ export async function generateMonthWithAmountsAction(formData: FormData): Promis
     const result = await generateMonth(repos, userId, period, amounts, skip);
     for (const path of ["/review", "/", "/entries", "/recurrences"]) revalidatePath(path);
     return { ok: true, created: result.created, skipped: result.skipped };
+  } catch (error) {
+    if (error instanceof ServiceError) return { ok: false, error: error.message };
+    throw error;
+  }
+}
+
+/** The month's management sheet: one template in (its entry created, "not this month" forgotten) or out (planned entry removed, month remembered). */
+export async function setRecurrenceMonthAction(id: string, period: string, include: boolean): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { userId, repos } = await getContext();
+  if (!isPeriod(period)) return { ok: false, error: "Pick a month." };
+  try {
+    if (include) await includeRecurrenceInMonth(repos, userId, id, period);
+    else await excludeRecurrenceFromMonth(repos, userId, id, period);
+    for (const path of ["/review", "/", "/entries", "/recurrences"]) revalidatePath(path);
+    return { ok: true };
   } catch (error) {
     if (error instanceof ServiceError) return { ok: false, error: error.message };
     throw error;

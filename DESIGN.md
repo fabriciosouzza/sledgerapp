@@ -405,8 +405,14 @@ is still open):
   class.
 - **"Not this month" is remembered.** Unticking a line when applying a
   month writes that month on the template (`recurrences.skipped_periods`):
-  the month stops asking for it on Review, Today and Recurrences; the Review
-  card lists what was skipped, with Undo. The starter categories an account
+  the month stops asking for it on Review, Today and Recurrences. With
+  nothing left to apply the card gives way to one muted line ("4 not this
+  month · Manage"); Manage opens a sheet with every template of the month
+  and a switch each — on creates the entry (and forgets the skip), off
+  removes a planned entry and remembers the month; a settled one stays.
+- Accounts left Settings for the nav (data you visit); Settings holds
+  profile, categories, assets and the theme, and took Profile's place at the
+  foot of the sidebar. The starter categories an account
   lacks are offered as chips on "New category", one tap each — never as a
   standing button on the list, since a starter category deleted on purpose
   would keep it there.

@@ -81,7 +81,7 @@ export function AllocationFields({
   }
 
   if (assets.length === 0) {
-    return <p className="text-sm text-muted-foreground">No asset to put it in yet. Add one in Assets first.</p>;
+    return <p className="text-sm text-muted-foreground">No asset to put it in yet. Add one in Settings → Assets first.</p>;
   }
 
   return (

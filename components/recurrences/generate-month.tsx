@@ -3,14 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { AlertTriangle, Sparkles, Undo2 } from "lucide-react";
+import { AlertTriangle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { generateMonthWithAmountsAction, unskipRecurrenceAction } from "@/app/(app)/review/actions";
+import { generateMonthWithAmountsAction } from "@/app/(app)/review/actions";
 import { CurrencyInput } from "@/components/forms/currency-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetBody, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/responsive-sheet";
 import { formatDayMonth, formatPeriodLong } from "@/lib/domain/dates";
 import { formatBRL } from "@/lib/domain/money";
 import type { EntryKind, IsoDate, Period } from "@/lib/domain/types";
@@ -36,7 +35,7 @@ export function GenerateMonth({
   existingCount,
   card = false,
   otherPending = [],
-  skippedThisMonth = [],
+  manage,
 }: {
   period: Period;
   toCreate: PreviewRow[];
@@ -45,31 +44,18 @@ export function GenerateMonth({
   card?: boolean;
   /** Other recent months with something to apply. */
   otherPending?: { period: Period; count: number }[];
-  /** Templates told "not this month" (§5.5), each with an undo. */
-  skippedThisMonth?: { recurrenceId: string; description: string }[];
+  /** The month's one-line summary with its management sheet; shown under the card, or alone when there is nothing to apply. */
+  manage?: React.ReactNode;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string>();
   const [done, setDone] = useState<{ created: number; skipped: number; notThisMonth: number }>();
   const [skipped, setSkipped] = useState<Set<string>>(new Set());
-  const [managing, setManaging] = useState(false);
   const nothing = toCreate.length === 0;
   const keeping = toCreate.length - skipped.size;
   // Applying with lines unticked records "not this month" for them; with nothing ticked that is all it does.
   const submitLabel = keeping === 0 ? `Skip ${skipped.size} this month` : skipped.size > 0 ? `Add ${keeping} ${keeping === 1 ? "entry" : "entries"} · skip ${skipped.size}` : `Add ${keeping} ${keeping === 1 ? "entry" : "entries"}`;
-
-  function unskip(id: string, description: string) {
-    startTransition(async () => {
-      const result = await unskipRecurrenceAction(id, period);
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
-      }
-      toast.success(`${description} is back for ${formatPeriodLong(period)}`);
-      router.refresh();
-    });
-  }
 
   function toggle(id: string) {
     setSkipped((prev) => {
@@ -100,7 +86,16 @@ export function GenerateMonth({
     });
   }
 
-  if (card && nothing && !done && otherPending.length === 0 && skippedThisMonth.length === 0) return null;
+  // Nothing to apply: no card, just the month's line (and other months still waiting).
+  if (card && nothing && !done) {
+    if (!manage && otherPending.length === 0) return null;
+    return (
+      <div className="space-y-1 px-1">
+        {manage}
+        {otherPending.length > 0 && <OtherPending months={otherPending} />}
+      </div>
+    );
+  }
 
   return (
     <section className={cn("space-y-3 rounded-xl bg-card p-4 ring-1", card ? "ring-primary/30" : "ring-foreground/10")}>
@@ -137,7 +132,7 @@ export function GenerateMonth({
           {done.notThisMonth ? `, ${done.notThisMonth} not this month` : ""}.
         </p>
       ) : nothing ? (
-        skippedThisMonth.length === 0 && <p className="text-sm text-muted-foreground">Nothing to create for {formatPeriodLong(period)}.</p>
+        <p className="text-sm text-muted-foreground">Nothing to create for {formatPeriodLong(period)}.</p>
       ) : (
         <form onSubmit={onSubmit} className="space-y-3">
           <input type="hidden" name="period" value={period} />
@@ -174,49 +169,24 @@ export function GenerateMonth({
           </Button>
         </form>
       )}
-      {skippedThisMonth.length > 0 && (
-        <p className="text-xs text-muted-foreground">
-          {skippedThisMonth.length} not this month ({skippedThisMonth.map((s) => s.description).join(", ")}) ·{" "}
-          <button type="button" onClick={() => setManaging(true)} className="-my-3 inline-flex min-h-11 items-center font-medium text-foreground underline-offset-4 hover:underline">
-            Manage
-          </button>
-        </p>
-      )}
-      <Sheet open={managing} onOpenChange={setManaging}>
-        <SheetContent>
-          <SheetHeader>
-            <SheetTitle>Not this month</SheetTitle>
-            <SheetDescription>Templates that {formatPeriodLong(period)} is not asking for. Bring one back and it is offered again for this month only.</SheetDescription>
-          </SheetHeader>
-          <SheetBody className="pt-2">
-            <ul className="divide-y divide-border text-sm" aria-label="Skipped this month">
-              {skippedThisMonth.map((s) => (
-                <li key={s.recurrenceId} className="flex min-h-12 items-center justify-between gap-3">
-                  <span className="min-w-0 truncate font-medium">{s.description}</span>
-                  <Button type="button" variant="ghost" className="h-11 shrink-0" disabled={pending} onClick={() => unskip(s.recurrenceId, s.description)}>
-                    <Undo2 data-icon="inline-start" aria-hidden />
-                    Bring back
-                  </Button>
-                </li>
-              ))}
-              {skippedThisMonth.length === 0 && <li className="py-3 text-muted-foreground">Nothing skipped this month.</li>}
-            </ul>
-          </SheetBody>
-        </SheetContent>
-      </Sheet>
-      {otherPending.length > 0 && (
-        <p className="text-xs text-muted-foreground">
-          Also not applied:{" "}
-          {otherPending.map((m, i) => (
-            <span key={m.period}>
-              {i > 0 && ", "}
-              <Link href={`/review?month=${m.period}`} className="underline-offset-4 hover:underline">
-                {formatPeriodLong(m.period)} · {m.count}
-              </Link>
-            </span>
-          ))}
-        </p>
-      )}
+      {manage}
+      {otherPending.length > 0 && <OtherPending months={otherPending} />}
     </section>
+  );
+}
+
+function OtherPending({ months }: { months: { period: Period; count: number }[] }) {
+  return (
+    <p className="text-xs text-muted-foreground">
+      Also not applied:{" "}
+      {months.map((m, i) => (
+        <span key={m.period}>
+          {i > 0 && ", "}
+          <Link href={`/review?month=${m.period}`} className="underline-offset-4 hover:underline">
+            {formatPeriodLong(m.period)} · {m.count}
+          </Link>
+        </span>
+      ))}
+    </p>
   );
 }
