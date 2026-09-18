@@ -16,7 +16,7 @@ const paySchema = z.object({
 });
 
 function revalidate() {
-  for (const path of ["/cards", "/", "/year", "/entries", "/net-worth", "/accounts/[id]"]) revalidatePath(path, "page");
+  for (const path of ["/cards", "/", "/entries", "/net-worth", "/accounts/[id]"]) revalidatePath(path, "page");
 }
 
 export async function payStatementAction(formData: FormData): Promise<{ error?: string }> {

@@ -215,7 +215,7 @@ function, unit tested against February.
 A template can be told **"not this month"** while applying (a holiday month
 with no meal voucher): the month is recorded on the template
 (`skipped_periods`), the other lines are created, and that month stops
-asking for it everywhere, with an undo on the Review card.
+asking for it everywhere, with an undo on the Home card.
 
 A recurring contribution may carry a **default split**: percentages per asset
 summing to 100 (`recurrence_allocations`). It is a suggestion, not data: the
@@ -464,13 +464,10 @@ the recurrence's default split, so it is never left without a
 destination); what was already settled this month, newest first, the
 first ten with a link to the rest; spending through the month against
 last month; per-category table with cap progress bars, red on overflow.
-Only the month: the month picker's arrows are bare, no box.
-
-### `/year`
-Under More. A calendar year or the last 12 months: totals, month by
-month, the budget month by month (capped spending against the caps,
-within / at risk / over — discipline over months is a question about the
-year), and the categories.
+Only the month: the month picker's arrows are bare, no box. On the
+current month, planned entries left behind by earlier months are listed
+in red above "Still planned", however old. (Year and 12-month views
+existed until 2026-09-18 and were removed for now.)
 
 ### `/add`
 Fast entry form. Opens focused on the amount, numeric keyboard, kind as a
@@ -548,8 +545,8 @@ broker they are held at), profile, sign out.
 app/
   (auth)/login/
   (app)/
-    page.tsx                      # Today
-    add/ entries/ month/ portfolio/ net-worth/ cards/ recurrences/ settings/
+    page.tsx                      # Home: the month
+    add/ entries/ portfolio/ net-worth/ cards/ recurrences/ settings/
     layout.tsx
   api/
     entries/ recurrences/ summary/ statements/
@@ -604,12 +601,12 @@ reveal it at the end.
 3. Auth (login, callback, middleware, sign out) plus the app shell and nav.
 4. Repositories and services for accounts and categories, `/settings`, seed.
 5. `/add` and `/entries`, including installments and settling.
-6. `/month` on top of `domain/metrics.ts`.
+6. The month screen (now `/`) on top of `domain/metrics.ts`.
 7. `/recurrences` and month generation.
 8. `/cards`: multi-card, statement cycles, pay-statement action.
 9. Assets, movements, `/portfolio`.
 10. Snapshots, `/net-worth`.
-11. `/` (Today).
+11. `/` (Today — later folded into the month screen, see §7).
 12. `app/api/` handlers over the existing services.
 13. Polish: dark mode, empty states, skeletons, 360px pass, `PORTABILITY.md`.
 

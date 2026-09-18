@@ -7,7 +7,7 @@ export default function NotFound() {
       <h1 className="text-lg font-semibold">Not here</h1>
       <p className="text-sm text-muted-foreground">That page does not exist, or the entry it pointed at is gone.</p>
       <Button className="h-11" render={<Link href="/" />} nativeButton={false}>
-        Go to Today
+        Go home
       </Button>
     </div>
   );

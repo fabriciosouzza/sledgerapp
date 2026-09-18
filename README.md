@@ -5,9 +5,10 @@ specification this project was created from is [PROMPT.md](PROMPT.md); read it
 before changing anything.
 
 **Status:** every stage of [PROMPT.md §11](PROMPT.md#11-build-order) plus the
-UI iteration in [DESIGN.md](DESIGN.md). Two deliberate deviations from the
-spec, both recorded there: balances are derived from entries (no snapshots),
-and the month screen is Review at `/review`.
+UI iteration in [DESIGN.md](DESIGN.md). Deliberate deviations from the
+spec are recorded there — among them: balances are derived from entries (no
+snapshots), and the month is the home screen at `/` (there is no separate
+Today).
 
 ## Run it locally
 

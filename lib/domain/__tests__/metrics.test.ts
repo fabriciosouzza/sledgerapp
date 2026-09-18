@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { budgetFromCaps, budgetStatus, cappedExpenseCents, committedCents, computeMetrics, dailyCumulativeExpense, entryTiming, spendingByCategory } from "../metrics";
+import { budgetFromCaps, budgetStatus, cappedExpenseCents, computeMetrics, dailyCumulativeExpense, entryTiming, spendingByCategory } from "../metrics";
 import { entry, recurrence, settled } from "./fixtures";
 
 const categories = [
@@ -110,22 +110,6 @@ describe("computeMetrics", () => {
 
     const noCash = computeMetrics({ ...base, entries: [], recurrences: [recurrence()], cashCents: null });
     expect(noCash.monthsOfRunway).toBeNull();
-  });
-});
-
-describe("committedCents", () => {
-  it("sums future planned installment parts", () => {
-    const committed = committedCents(
-      [
-        entry({ amountCents: 100, installmentGroupId: "g", installmentNo: 2, installmentTotal: 3, date: "2026-11-05" }),
-        entry({ amountCents: 200, installmentGroupId: "g", installmentNo: 3, installmentTotal: 3, date: "2026-12-05" }),
-        settled({ amountCents: 400, installmentGroupId: "g", installmentNo: 1, installmentTotal: 3, date: "2026-10-05" }),
-        entry({ amountCents: 800, installmentGroupId: "g2", installmentNo: 1, installmentTotal: 2, date: "2026-11-04" }),
-        entry({ amountCents: 1600, date: "2026-12-05" }),
-      ],
-      "2026-11-05",
-    );
-    expect(committed).toBe(300);
   });
 });
 

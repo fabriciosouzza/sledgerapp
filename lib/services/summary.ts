@@ -2,7 +2,8 @@
 // from one period's rows. Cash is the derived balance at the period's end;
 // with no cash account yet, runway is unknown, not zero.
 
-import { addMonths, parseIsoDate, periodEnd, periodOf, periodRange, periodStart, today as todayInSaoPaulo } from "@/lib/domain/dates";
+import { isCreditCard } from "@/lib/domain/accounts";
+import { addDays, addMonths, parseIsoDate, periodOf, periodStart, today as todayInSaoPaulo } from "@/lib/domain/dates";
 import {
   budgetFromCaps,
   budgetStatus,
@@ -26,17 +27,6 @@ export interface CategoryLine extends Omit<CategorySpending, "children"> {
   children: CategoryLine[];
 }
 
-export interface BudgetMonth {
-  period: Period;
-  /** Settled expense, all of it. */
-  expenseCents: number;
-  /** The part in capped categories: what the budget measures. */
-  spentCents: number;
-  budgetCents: number | null;
-  /** From `spentCents`: spending without a cap has no budget to exceed. */
-  status: BudgetStatus | null;
-}
-
 export interface MonthSummary {
   period: Period;
   metrics: PeriodMetrics;
@@ -58,8 +48,20 @@ export interface MonthSummary {
    * a half month is not compared with a whole one.
    */
   delta: { income: number | null; expense: number | null; throughDay: number | null };
-  /** Last month's metrics, cut the same way. `null` when it has no entries. */
-  previous: PeriodMetrics | null;
+}
+
+/**
+ * Planned cash entries dated before `period`, oldest first: what earlier
+ * months left unsettled, which the month's own list would never show. Card
+ * purchases are left out — they are paid through their statement (§5.6).
+ */
+export async function leftBehind(repos: Repositories, userId: string, period: Period): Promise<Entry[]> {
+  const [rows, accounts] = await Promise.all([
+    repos.entries.list(userId, { status: "planned", to: addDays(periodStart(period), -1) }),
+    repos.accounts.list(userId),
+  ]);
+  const cardIds = new Set(accounts.filter(isCreditCard).map((a) => a.id));
+  return rows.filter((e) => !cardIds.has(e.accountId)).sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
 /** Capped categories past their cap, sub-categories included: the month's actionable news. */
@@ -129,70 +131,5 @@ export async function monthSummary(
       expense: previous && previous.expenseCents > 0 ? (metrics.expenseCents - previous.expenseCents) / previous.expenseCents : null,
       throughDay,
     },
-    previous,
-  };
-}
-
-export interface YearMonth {
-  period: Period;
-  metrics: PeriodMetrics;
-}
-
-export interface YearSummary {
-  from: Period;
-  to: Period;
-  months: YearMonth[];
-  /** Totals over the range, computed from every row at once. */
-  totals: PeriodMetrics;
-  categories: CategoryLine[];
-  /** Each month's capped spending against today's caps (caps have no history), oldest first. */
-  budget: BudgetMonth[];
-}
-
-/**
- * A run of months (a calendar year or a rolling twelve, DESIGN.md §4): one
- * bounded fetch, split by month in TypeScript. Twelve months of a personal
- * ledger stay well under the §4.5 ceiling.
- */
-export async function yearSummary(repos: Repositories, userId: string, from: Period, to: Period): Promise<YearSummary> {
-  const [entries, categories] = await Promise.all([
-    repos.entries.list(userId, { from: periodStart(from), to: periodEnd(to) }),
-    repos.categories.list(userId),
-  ]);
-  const byPeriod = new Map<Period, Entry[]>();
-  for (const e of entries) byPeriod.set(periodOf(e.date), [...(byPeriod.get(periodOf(e.date)) ?? []), e]);
-  const months = periodRange(from, to).map((period) => ({
-    period,
-    metrics: computeMetrics({ entries: byPeriod.get(period) ?? [], categories, recurrences: [], cashCents: null }),
-  }));
-  const budgetCents = budgetFromCaps(categories);
-  const budget: BudgetMonth[] = periodRange(from, to).map((period) => {
-    const rows = byPeriod.get(period) ?? [];
-    const expenseCents = rows.filter((e) => e.kind === "expense" && e.status === "settled").reduce((sum, e) => sum + e.amountCents, 0);
-    const spentCents = cappedExpenseCents(rows, categories);
-    return { period, expenseCents, spentCents, budgetCents, status: budgetStatus(spentCents, budgetCents) };
-  });
-  const byId = new Map<string, Category>(categories.map((c) => [c.id, c]));
-  const bySize = (a: CategoryLine, b: CategoryLine) => b.settledCents + b.plannedCents - (a.settledCents + a.plannedCents);
-  const named = (line: CategorySpending): CategoryLine => {
-    const category = byId.get(line.categoryId);
-    return {
-      ...line,
-      name: category?.name ?? "?",
-      isActive: category?.isActive ?? true,
-      icon: category?.icon ?? null,
-      color: category?.color ?? null,
-      children: line.children.map(named).sort(bySize),
-      capCents: null,
-      capUsage: null,
-    };
-  };
-  return {
-    from,
-    to,
-    months,
-    totals: computeMetrics({ entries, categories, recurrences: [], cashCents: null }),
-    categories: spendingByCategory(entries, categories).map(named).sort(bySize),
-    budget,
   };
 }

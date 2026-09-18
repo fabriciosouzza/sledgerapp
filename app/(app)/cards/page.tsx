@@ -181,7 +181,7 @@ export default async function CardsPage(props: PageProps<"/cards">) {
   );
 }
 
-/** A closed statement waiting to be paid, in the same shape as the bills on Today: amount, how late, and a Pay you can hit. */
+/** A closed statement waiting to be paid: amount, how late, and a Pay you can hit. */
 function ToPayStatement({
   view,
   cardName,

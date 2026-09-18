@@ -14,7 +14,7 @@ import { ServiceError } from "@/lib/services/errors";
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
 function revalidate() {
-  for (const path of ["/", "/year", "/entries", "/cards", "/net-worth", "/accounts/[id]", "/portfolio", "/portfolio/[id]"]) revalidatePath(path, "page");
+  for (const path of ["/", "/entries", "/cards", "/net-worth", "/accounts/[id]", "/portfolio", "/portfolio/[id]"]) revalidatePath(path, "page");
 }
 
 async function run(fn: () => Promise<unknown>): Promise<ActionResult> {

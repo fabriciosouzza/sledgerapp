@@ -16,7 +16,7 @@ export default async function NetWorthPage() {
   const [overview, fixedCostCents] = await Promise.all([netWorthOverview(repos, userId, now), fixedCost(repos, userId)]);
   const current = overview.current;
   const active = overview.balances.filter((b) => b.account.isActive);
-  // Runway is a stock-side number (cash ÷ fixed cost), so it sits with the cash, not on Review (§5.10).
+  // Runway is a stock-side number (cash ÷ fixed cost), so it sits with the cash, not on the month (§5.10).
   const runway = current.cashCents === null ? null : ratio(current.cashCents, fixedCostCents);
 
   return (

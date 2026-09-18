@@ -16,6 +16,6 @@ export async function seedStartingSetAction(): Promise<{ seeded: boolean }> {
 export async function seedMissingCategoriesAction(names?: string[]): Promise<{ added: number }> {
   const { userId, repos } = await getContext();
   const result = await seedMissingCategories(repos, userId, names);
-  for (const path of ["/settings/categories", "/add", "/", "/year"]) revalidatePath(path);
+  for (const path of ["/settings/categories", "/add", "/"]) revalidatePath(path);
   return result;
 }

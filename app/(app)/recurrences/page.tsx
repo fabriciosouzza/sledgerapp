@@ -54,7 +54,7 @@ export default async function RecurrencesPage() {
           <section>
             <h2 className="mb-1 text-sm font-semibold">Earlier months not applied</h2>
             <p className="mb-2 text-xs text-muted-foreground">
-              Last {EARLIER_MONTHS} months. A month you forgot — or a template you recorded by hand that month; untick those lines in Review and the month stops asking.
+              Last {EARLIER_MONTHS} months. A month you forgot — or a template you recorded by hand that month; untick those lines on Home and the month stops asking.
             </p>
             <MonthsStatus months={earlier} />
           </section>

@@ -50,7 +50,7 @@ export default async function EntriesPage(props: PageProps<"/entries">) {
     search: values.q || undefined,
   };
   const entries = await listEntries(repos, userId, range ? { ...filters, ...range } : { ...filters, period: month });
-  // Settled and planned apart, the way Review shows them, so one month never shows two different "out".
+  // Settled and planned apart, the way Home shows them, so one month never shows two different "out".
   const sumOf = (match: (e: Entry) => boolean): [number, number] => [
     entries.filter((e) => match(e) && e.status === "settled").reduce((s, e) => s + e.amountCents, 0),
     entries.filter((e) => match(e) && e.status === "planned").reduce((s, e) => s + e.amountCents, 0),
@@ -76,7 +76,7 @@ export default async function EntriesPage(props: PageProps<"/entries">) {
       <div className="mb-4">
         <EntryFilters values={values} accounts={accounts} categories={categories} range={range} />
       </div>
-      {/* In, out and moved side by side, each settled with what is still planned under it, as on Review. */}
+      {/* In, out and moved side by side, each settled with what is still planned under it, as on Home. */}
       {totals.count > 0 && (
         <div className="@container mb-4">
           <dl className="grid grid-cols-1 gap-2 text-xs tabular-nums @min-[20rem]:grid-cols-3">

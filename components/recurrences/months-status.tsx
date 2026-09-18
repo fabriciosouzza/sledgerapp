@@ -11,7 +11,7 @@ export interface MonthStatus {
   skipped?: number;
 }
 
-/** Where each upcoming month stands; applying happens on Review (DESIGN.md). */
+/** Where each upcoming month stands; applying happens on Home (DESIGN.md). */
 export function MonthsStatus({ months }: { months: MonthStatus[] }) {
   return (
     <ul className="divide-y divide-border overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
@@ -35,7 +35,7 @@ export function MonthsStatus({ months }: { months: MonthStatus[] }) {
                 <Check className="size-4 text-positive" aria-label="All applied" />
               ) : (
                 <span className="flex items-center gap-1 text-xs font-medium text-primary">
-                  Apply in Review <ArrowRight className="size-3" aria-hidden />
+                  Apply on Home <ArrowRight className="size-3" aria-hidden />
                 </span>
               )}
             </Link>

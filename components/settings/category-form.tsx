@@ -118,7 +118,7 @@ export function CategoryForm({
       </fieldset>
 
       {forExpense && (
-        <Field label="Monthly cap" htmlFor="monthlyCapCents" hint="Optional. Review shows progress against it; the caps together are your budget.">
+        <Field label="Monthly cap" htmlFor="monthlyCapCents" hint="Optional. Home shows progress against it; the caps together are your budget.">
           <CurrencyInput id="monthlyCapCents" name="monthlyCapCents" defaultCents={category?.monthlyCapCents ?? null} className="h-11" aria-describedby="monthlyCapCents-hint" />
         </Field>
       )}

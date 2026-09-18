@@ -21,7 +21,7 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
           Try again
         </Button>
         <Button variant="outline" className="h-11" render={<Link href="/" />} nativeButton={false}>
-          Go to Today
+          Go home
         </Button>
       </div>
     </div>

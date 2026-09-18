@@ -67,6 +67,9 @@ export async function updateName(name: string): Promise<AuthResult> {
   const supabase = await createClient();
   const { data, error } = await supabase.auth.updateUser({ data: { full_name: name } });
   if (error) return { ok: false, error: error.message };
+  // The app reads the name from the token's claims, and updateUser leaves the token as it was:
+  // without a refresh the old name would greet for up to an hour. Mint one with the new metadata now.
+  await supabase.auth.refreshSession();
   return { ok: true, userId: data.user.id };
 }
 

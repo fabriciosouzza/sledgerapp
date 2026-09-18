@@ -4,7 +4,7 @@
 // UI renders as `—`.
 
 import { dayOf, daysInMonth, parsePeriod, periodOf } from "./dates";
-import { ratio, sumCents } from "./money";
+import { ratio } from "./money";
 import { monthlyFixedCost } from "./recurrences";
 import type { Category, Entry, IsoDate, Period, Recurrence } from "./types";
 
@@ -87,25 +87,6 @@ export function computeMetrics(input: MetricsInput): PeriodMetrics {
     plannedIncomeCents: plannedIncome,
     plannedExpenseCents: plannedExpense,
   };
-}
-
-/**
- * `committed`: what is already signed for and still to come — planned
- * installment parts due today or later. Feed it the future planned entries,
- * not one period's worth.
- */
-export function committedCents(entries: Entry[], today: IsoDate): number {
-  return sumCents(
-    entries
-      .filter(
-        (e) =>
-          e.status === "planned" &&
-          e.kind === "expense" &&
-          e.installmentGroupId !== null &&
-          e.date >= today,
-      )
-      .map((e) => e.amountCents),
-  );
 }
 
 export type EntryTiming = "settled" | "overdue" | "upcoming";

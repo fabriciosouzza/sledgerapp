@@ -534,9 +534,21 @@ each of the other two as a way in, never as a second home. What did change:
   most used screen after it), leaving More with Cards, Accounts,
   Recurrences, Portfolio and the guide.
 - **Home is only the month.** The Month · Year · 12 months switch went;
-  the year views moved to `/year` under More (calendar year or last 12
-  months, a two-way switch there). The month and year arrows lost their
-  box: bare ghost circles beside the title.
+  the year views moved to `/year` under More for an hour and were then
+  removed for now (commit `ccc3593` has them, with the budget month by
+  month; `yearSummary` went with them). The month arrows lost their box:
+  bare ghost circles beside the title.
+- **What earlier months left behind is on Home.** With Today gone, a
+  planned entry from a past month had no screen: the month's "Still
+  planned" is the month's. On the current month, `leftBehind` lists
+  planned cash entries dated before it, in the red block above "Still
+  planned". Closed unpaid statements stay on Cards only.
+- After the removals: "Go to Today" reads "Go home"; Recurrences and the
+  category form say Home, not Review; the name saved on Profile greets
+  at once (`updateName` refreshes the session, since the name is read
+  from the token's claims); `committedCents`, `MonthSummary.previous` and
+  the sparkline's `compact` mode went as dead code; README, roadmap and
+  the spec's structure and build order say Home.
 - **The phone's bar has four flat tabs: Home · Add · Net worth · More.**
   Entries stays in the sidebar and leads the More screen on the phone.
   The raised "+" is gone: Add is a tab like the others (it still opens

@@ -68,7 +68,7 @@ const MONTHS_BACK = 12;
 const FUTURE_MONTHS = 36;
 
 export interface CardsOptions {
-  /** "open": create only the open statement row (Today); "all": every cycle with entries (/cards). */
+  /** "open": create only the open statement row; "all": every cycle with entries (/cards). */
   ensure?: "open" | "all";
 }
 
@@ -102,7 +102,7 @@ async function buildCard(repos: Repositories, userId: string, card: Account, tod
   for (const group of groups) {
     let statement = known.get(group.cycle.cycleStart);
     if (!statement) {
-      // Cycles that are closed and never paid are due: they get a row even on Today.
+      // Cycles that are closed and never paid are due: they get a row even with "open".
       const closedWithTotal = group.cycle.cycleEnd < today && group.totalCents > 0;
       if (ensure === "open" && group.cycle.cycleStart !== current.cycleStart && !closedWithTotal) {
         views.push({ statement: { id: "", accountId: card.id, ...group.cycle, paidOn: null }, entries: group.entries, totalCents: group.totalCents, carriedCents: 0, isOpen: false, daysToDue: daysToDue(group.cycle, today) });

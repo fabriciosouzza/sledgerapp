@@ -15,7 +15,7 @@ import { listAccounts } from "@/lib/services/accounts";
 import { listCategories } from "@/lib/services/categories";
 import { getContext } from "@/lib/services/context";
 import { pendingMonths, previewGeneration } from "@/lib/services/recurrences";
-import { capsOver, monthSummary } from "@/lib/services/summary";
+import { capsOver, leftBehind, monthSummary } from "@/lib/services/summary";
 import { cn } from "@/lib/utils";
 
 /** How many settled rows the month shows before pointing at Entries. */
@@ -37,9 +37,9 @@ function deltaHint(delta: number | null, plannedCents: number, throughDay: numbe
 
 /**
  * Home is the month, and only the month (DESIGN.md 2026-09-18): the
- * recurring entries still to apply, the month in numbers, what is planned
- * and what already happened, then the charts. A year or the last twelve
- * months live on /year, under More.
+ * recurring entries still to apply, the month in numbers, what earlier
+ * months left unsettled, what is planned and what already happened, then
+ * the charts.
  */
 export default async function HomePage(props: PageProps<"/">) {
   const sp = await props.searchParams;
@@ -49,12 +49,14 @@ export default async function HomePage(props: PageProps<"/">) {
   const { user, userId, repos } = await getContext();
 
   const isCurrent = month === current;
-  const [summary, accounts, categories, generation, pendingAll] = await Promise.all([
+  const [summary, accounts, categories, generation, pendingAll, earlier] = await Promise.all([
     monthSummary(repos, userId, month),
     listAccounts(repos, userId),
     listCategories(repos, userId),
     previewGeneration(repos, userId, month),
     pendingMonths(repos, userId, now),
+    // Only the current month asks what earlier months left behind: a month being looked back on has its own list.
+    isCurrent ? leftBehind(repos, userId, month) : Promise.resolve([]),
   ]);
   const lookups = buildLookups(accounts, categories);
   const m = summary.metrics;
@@ -116,6 +118,27 @@ export default async function HomePage(props: PageProps<"/">) {
             How each number is worked out <ArrowRight className="size-3" aria-hidden />
           </Link>
         </section>
+
+        {/* Planned rows from earlier months, however old: they stay in red here until settled or deleted. */}
+        {earlier.length > 0 && (
+          <section aria-label="Left behind" className="rounded-4xl border border-negative/40 bg-negative/5 p-3 [&_h2]:text-negative">
+            <EntryList
+              key={`earlier-${month}`}
+              title="Overdue from earlier months"
+              initial={earlier}
+              period={month}
+              filters={{ status: "planned" }}
+              lookups={lookups}
+              today={now}
+              infinite={false}
+              selectable={false}
+              settleHint={false}
+              ascending
+              summary
+              emptyMessage="All settled."
+            />
+          </section>
+        )}
 
         <section id="still-planned" className="scroll-mt-4">
           <EntryList
