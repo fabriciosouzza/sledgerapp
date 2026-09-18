@@ -112,7 +112,7 @@ export function EntryFilters({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        <div role="tablist" aria-label="Kind" className="flex flex-1 gap-1 rounded-lg bg-muted p-1 @max-[20rem]:basis-full @max-[20rem]:flex-wrap">
+        <div role="tablist" aria-label="Kind" className="flex flex-1 gap-1 rounded-xl bg-muted p-1 @max-[20rem]:basis-full @max-[20rem]:flex-wrap">
           {TABS.map((tab) => (
             <button
               key={tab.value}
@@ -124,7 +124,7 @@ export function EntryFilters({
                 submitSoon();
               }}
               className={cn(
-                "h-11 flex-1 rounded-md px-1 text-xs @max-[20rem]:flex-auto @max-[20rem]:px-2 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring sm:text-sm",
+                "h-11 flex-1 rounded-lg px-1 text-xs @max-[20rem]:flex-auto @max-[20rem]:px-2 font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring sm:text-sm",
                 kind === tab.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
               )}
             >

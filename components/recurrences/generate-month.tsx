@@ -135,13 +135,16 @@ export function GenerateMonth({
           <ul className="divide-y divide-border text-sm">
             {toCreate.map((row) => (
               <li key={row.recurrenceId} className={cn("flex items-center justify-between gap-3 py-2", skipped.has(row.recurrenceId) && "opacity-50")}>
-                <input
-                  type="checkbox"
-                  aria-label={`Include ${row.description}`}
-                  checked={!skipped.has(row.recurrenceId)}
-                  onChange={() => toggle(row.recurrenceId)}
-                  className="size-5 shrink-0 accent-primary"
-                />
+                {/* A 44px label around the 20px box: the whole square toggles the line, not just the box. */}
+                <label className="-ml-3 flex size-11 shrink-0 cursor-pointer items-center justify-center">
+                  <input
+                    type="checkbox"
+                    aria-label={`Include ${row.description}`}
+                    checked={!skipped.has(row.recurrenceId)}
+                    onChange={() => toggle(row.recurrenceId)}
+                    className="size-5 shrink-0 accent-primary"
+                  />
+                </label>
                 {skipped.has(row.recurrenceId) && <input type="hidden" name={`skip:${row.recurrenceId}`} value="1" />}
                 <label htmlFor={`amount-${row.recurrenceId}`} className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">

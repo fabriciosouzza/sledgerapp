@@ -504,6 +504,23 @@ each of the other two as a way in, never as a second home. What did change:
   fixed cost it divides by): cash ÷ fixed cost is about what you hold, not
   about one month. Investments and Debt there link to Portfolio and Cards.
 
+Interface-polish pass (the `make-interfaces-feel-better` guide, full
+review, 2 medium + 7 low findings, all applied the same day):
+reduced motion is honoured globally (every state change already has a
+static cue, so movement just goes); titles `text-wrap: balance`, short
+prose `pretty`; both bulk checkboxes sit in a 44px `<label>` (Base UI
+wires the label to its hidden input); dialog and popover open and close
+with transitions on `data-starting-style` / `data-ending-style` like the
+drawer, so a close mid-open retargets instead of restarting — which left
+`tw-animate-css` unused, so it went; `transition-all` on Button and Switch
+names its properties; segmented controls are concentric (`rounded-xl`
+outside, `rounded-lg` inside, 4px padding) and the overdue block wraps the
+14px list at 26px (`rounded-4xl`); the FAB presses to 0.96; the currency
+input types in tabular digits. Considered and left: press-scale on every
+Button (the translate-y convention stays), layered shadows on cards (flat
+rings by decision), 1.5px icon strokes beside small text (one stroke per
+surface), filled icons for the active nav item (lucide has none).
+
 Raised and left open: Net worth and Accounts both list the cash accounts
 with their balances — one screen for "what do I hold" (net worth headline,
 line, cash accounts, investments → Portfolio, debt → Cards) would remove

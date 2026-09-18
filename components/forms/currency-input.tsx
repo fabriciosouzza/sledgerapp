@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { digitsToCents, formatBRL, parseBRL } from "@/lib/domain/money";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 /**
  * The currency mask (PROMPT.md §8): every digit typed is one more cent, shown
@@ -63,7 +64,7 @@ export function CurrencyInput({
         required={required}
         autoFocus={autoFocus}
         aria-describedby={describedBy}
-        className={className}
+        className={cn("tabular-nums", className)}
       />
       <input type="hidden" name={name} value={submitted} />
     </>

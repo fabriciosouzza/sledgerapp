@@ -526,10 +526,11 @@ function EntryRow({
         onTouchEnd={onTouchEnd}
         onTouchCancel={resetSwipe}
       >
+        {/* A label, not a span: the whole 44px square toggles the box (a button is labelable), not only its 40×32 own hit area. */}
         {selecting && (
-          <span className="flex size-11 items-center justify-center">
+          <label className="flex size-11 cursor-pointer items-center justify-center">
             <Checkbox checked={selected} onCheckedChange={onToggle} aria-label={`Select ${entry.description}`} disabled={entry.status === "settled" || cycle !== null || needsAllocation(entry.kind)} />
-          </span>
+          </label>
         )}
         {!selecting && (
           <CategoryIcon

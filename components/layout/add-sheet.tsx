@@ -41,7 +41,7 @@ export function AddSheet({ flat = false, current = false }: { flat?: boolean; cu
             <button
               type="button"
               aria-label="Add"
-              className="flex size-[56px] -translate-y-[16px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-4 ring-background transition-transform active:scale-95 focus-visible:outline-2 focus-visible:outline-ring"
+              className="flex size-[56px] -translate-y-[16px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-4 ring-background transition-transform active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-ring"
             />
           )
         }

@@ -15,7 +15,7 @@ export function OverdueBlock({ children, hasEntries }: { children: React.ReactNo
   if (hasEntries && !shown) setShown(true);
   if (!shown) return null;
   return (
-    <section aria-label="Overdue" className="rounded-xl border border-negative/40 bg-negative/5 p-3 [&_h2]:text-negative">
+    <section aria-label="Overdue" className="rounded-4xl border border-negative/40 bg-negative/5 p-3 [&_h2]:text-negative">
       {children}
     </section>
   );

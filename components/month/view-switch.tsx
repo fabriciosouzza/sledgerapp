@@ -11,14 +11,14 @@ export function ViewSwitch({ view, hrefs }: { view: MonthView; hrefs: Record<Mon
     { value: "rolling", label: "12 months" },
   ];
   return (
-    <nav aria-label="Range" className="grid grid-cols-3 gap-1 rounded-lg bg-muted p-1">
+    <nav aria-label="Range" className="grid grid-cols-3 gap-1 rounded-xl bg-muted p-1">
       {items.map((item) => (
         <Link
           key={item.value}
           href={hrefs[item.value]}
           aria-current={view === item.value ? "page" : undefined}
           className={cn(
-            "flex h-11 items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
+            "flex h-11 items-center justify-center rounded-lg text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
             view === item.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
           )}
         >

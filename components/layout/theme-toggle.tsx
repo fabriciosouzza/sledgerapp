@@ -23,7 +23,7 @@ export function ThemeToggle() {
   const current = mounted ? (theme ?? "system") : "system";
 
   return (
-    <div role="radiogroup" aria-label="Theme" className="grid w-full grid-cols-3 gap-1 rounded-lg bg-muted p-1 md:max-w-xs">
+    <div role="radiogroup" aria-label="Theme" className="grid w-full grid-cols-3 gap-1 rounded-xl bg-muted p-1 md:max-w-xs">
       {OPTIONS.map(({ value, label, icon: Icon }) => (
         <button
           key={value}
@@ -32,7 +32,7 @@ export function ThemeToggle() {
           aria-checked={current === value}
           onClick={() => setTheme(value)}
           className={cn(
-            "flex h-9 items-center justify-center gap-1.5 rounded-md text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
+            "flex h-9 items-center justify-center gap-1.5 rounded-lg text-xs font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
             current === value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
           )}
         >
