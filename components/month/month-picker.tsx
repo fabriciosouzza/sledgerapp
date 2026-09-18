@@ -72,7 +72,8 @@ export function MonthPicker({
           );
         })}
       </div>
-      <Button variant="ghost" className="h-11 w-full" onClick={() => go(current)} disabled={period === current}>
+      {/* Outlined, so it reads as a button and not as a caption under the grid. */}
+      <Button variant="outline" className="h-11 w-full" onClick={() => go(current)} disabled={period === current}>
         This month
       </Button>
     </div>

@@ -77,11 +77,11 @@ function DayGrid({ value, onPick, clearable }: { value: IsoDate | null; onPick: 
         })}
       </div>
       <div className="flex gap-1">
-        <Button variant="ghost" className="h-11 flex-1" onClick={() => onPick(now)} disabled={value === now}>
+        <Button variant="outline" className="h-11 flex-1" onClick={() => onPick(now)} disabled={value === now}>
           Today
         </Button>
         {clearable && (
-          <Button variant="ghost" className="h-11 flex-1" onClick={() => onPick(null)} disabled={!value}>
+          <Button variant="outline" className="h-11 flex-1" onClick={() => onPick(null)} disabled={!value}>
             Clear
           </Button>
         )}
