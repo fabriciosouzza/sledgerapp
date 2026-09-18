@@ -8,16 +8,14 @@ import { PageHeader } from "@/components/layout/page-header";
 import { CategoryTable } from "@/components/month/category-table";
 import { MonthPicker } from "@/components/month/month-picker";
 import { Stat } from "@/components/month/stat";
-import { ViewSwitch, type MonthView } from "@/components/month/view-switch";
-import { YearView } from "@/components/month/year-view";
 import { GenerateMonth } from "@/components/recurrences/generate-month";
-import { addMonths, dayOf, isPeriod, parsePeriod, periodOf, today, toPeriodString } from "@/lib/domain/dates";
+import { dayOf, isPeriod, periodOf, today } from "@/lib/domain/dates";
 import { formatBRL, formatPercent } from "@/lib/domain/money";
 import { listAccounts } from "@/lib/services/accounts";
 import { listCategories } from "@/lib/services/categories";
 import { getContext } from "@/lib/services/context";
 import { pendingMonths, previewGeneration } from "@/lib/services/recurrences";
-import { capsOver, monthSummary, yearSummary } from "@/lib/services/summary";
+import { capsOver, monthSummary } from "@/lib/services/summary";
 import { cn } from "@/lib/utils";
 
 /** How many settled rows the month shows before pointing at Entries. */
@@ -32,41 +30,17 @@ function deltaHint(delta: number | null, plannedCents: number, throughDay: numbe
 }
 
 /**
- * Home is the month (DESIGN.md 2026-09-18): the recurring entries still to
- * apply, the month in numbers, what is planned and what already happened,
- * then the charts. A year or the last twelve months are one switch away.
+ * Home is the month, and only the month (DESIGN.md 2026-09-18): the
+ * recurring entries still to apply, the month in numbers, what is planned
+ * and what already happened, then the charts. A year or the last twelve
+ * months live on /year, under More.
  */
 export default async function HomePage(props: PageProps<"/">) {
   const sp = await props.searchParams;
   const now = today();
   const current = periodOf(now);
   const month = typeof sp.month === "string" && isPeriod(sp.month) ? sp.month : current;
-  const view: MonthView = sp.view === "year" || sp.view === "rolling" ? sp.view : "month";
-  const { year } = parsePeriod(month);
-  const hrefs = { month: `/?month=${month}`, year: `/?view=year&month=${month}`, rolling: `/?view=rolling&month=${month}` };
-
   const { userId, repos } = await getContext();
-
-  if (view !== "month") {
-    // "12 months" is always the current month and the eleven before it.
-    const from = view === "year" ? toPeriodString(year, 1) : addMonths(current, -11);
-    const to = view === "year" ? toPeriodString(year, 12) : current;
-    const summary = await yearSummary(repos, userId, from, to);
-    return (
-      <>
-        <PageHeader title="Home" />
-        <div className="space-y-6">
-          <ViewSwitch view={view} hrefs={hrefs} />
-          <YearView
-            summary={summary}
-            title={view === "year" ? String(year) : "Last 12 months"}
-            prevHref={view === "year" ? `/?view=year&month=${toPeriodString(year - 1, 1)}` : undefined}
-            nextHref={view === "year" ? `/?view=year&month=${toPeriodString(year + 1, 1)}` : undefined}
-          />
-        </div>
-      </>
-    );
-  }
 
   const isCurrent = month === current;
   const [summary, accounts, categories, generation, pendingAll] = await Promise.all([
@@ -89,7 +63,6 @@ export default async function HomePage(props: PageProps<"/">) {
     <>
       <PageHeader title="Home" />
       <div className="space-y-6">
-        <ViewSwitch view={view} hrefs={hrefs} />
         <MonthPicker period={month} basePath="/" />
 
         <GenerateMonth

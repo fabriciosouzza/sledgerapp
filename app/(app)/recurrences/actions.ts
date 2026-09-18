@@ -18,7 +18,7 @@ const LIST = "/recurrences";
 
 function revalidate() {
   // Net worth shows the runway, which the fixed cost sizes.
-  for (const path of [LIST, "/recurrences/[id]", "/", "/entries", "/net-worth"]) revalidatePath(path, "page");
+  for (const path of [LIST, "/recurrences/[id]", "/", "/year", "/entries", "/net-worth"]) revalidatePath(path, "page");
 }
 
 export async function createRecurrenceAction(_prev: RecurrenceFormState, formData: FormData): Promise<RecurrenceFormState> {

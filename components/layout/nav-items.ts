@@ -1,4 +1,4 @@
-import { BookOpen, CreditCard, Home, Landmark, LineChart, List, MoreHorizontal, PieChart, Plus, Repeat, Settings, type LucideIcon } from "lucide-react";
+import { BookOpen, CalendarRange, CreditCard, Home, Landmark, LineChart, List, MoreHorizontal, PieChart, Plus, Repeat, Settings, type LucideIcon } from "lucide-react";
 
 export interface NavItem {
   href: "/" | "/entries" | "/add" | "/net-worth" | "/more";
@@ -16,9 +16,10 @@ export const NAV_ITEMS: NavItem[] = [
 ];
 
 /** What "More" holds on mobile; the desktop sidebar lists these directly. Accounts here is the money view (balances, entries); adding and editing accounts is in Settings. */
-export const MORE_ITEMS: { href: "/cards" | "/accounts" | "/recurrences" | "/portfolio" | "/guide"; label: string; icon: LucideIcon }[] = [
+export const MORE_ITEMS: { href: "/cards" | "/accounts" | "/year" | "/recurrences" | "/portfolio" | "/guide"; label: string; icon: LucideIcon }[] = [
   { href: "/cards", label: "Cards", icon: CreditCard },
   { href: "/accounts", label: "Accounts", icon: Landmark },
+  { href: "/year", label: "Year", icon: CalendarRange },
   { href: "/recurrences", label: "Recurrences", icon: Repeat },
   { href: "/portfolio", label: "Portfolio", icon: PieChart },
   { href: "/guide", label: "How it works", icon: BookOpen },
@@ -32,7 +33,7 @@ export function isSettingsActive(pathname: string): boolean {
 }
 
 /** Screens reachable from "More" that share its highlighted nav item. */
-export const MORE_PATHS = ["/more", "/cards", "/recurrences", "/portfolio", "/settings", "/guide", "/accounts"];
+export const MORE_PATHS = ["/more", "/cards", "/recurrences", "/portfolio", "/settings", "/guide", "/accounts", "/year"];
 
 /** Screens whose form pins its Save bar above the nav: the raised "+" would sit on it, so it lies flat there. */
 export function isFormScreen(pathname: string): boolean {

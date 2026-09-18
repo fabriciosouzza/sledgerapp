@@ -462,10 +462,13 @@ the recurrence's default split, so it is never left without a
 destination); what was already settled this month, newest first, the
 first ten with a link to the rest; spending through the month against
 last month; per-category table with cap progress bars, red on overflow.
-A switch opens a calendar year or the last 12 months instead: totals,
-month by month, the budget month by month (capped spending against the
-caps, within / at risk / over — discipline over months is a question
-about the year), and the categories.
+Only the month: the month picker's arrows are bare, no box.
+
+### `/year`
+Under More. A calendar year or the last 12 months: totals, month by
+month, the budget month by month (capped spending against the caps,
+within / at risk / over — discipline over months is a question about the
+year), and the categories.
 
 ### `/add`
 Fast entry form. Opens focused on the amount, numeric keyboard, kind as a

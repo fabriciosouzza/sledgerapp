@@ -17,7 +17,7 @@ export function YearView({ summary, title, prevHref, nextHref }: { summary: Year
     <div className="space-y-6">
       <div className={prevHref || nextHref ? "flex items-center justify-between gap-2" : "text-center"}>
         {prevHref ? (
-          <Button variant="outline" size="icon-lg" className="size-[44px] shrink-0" aria-label="Previous year" render={<Link href={prevHref} />} nativeButton={false}>
+          <Button variant="ghost" size="icon-lg" className="size-[44px] shrink-0 rounded-full" aria-label="Previous year" render={<Link href={prevHref} />} nativeButton={false}>
             <ChevronLeft aria-hidden />
           </Button>
         ) : prevHref === undefined && nextHref === undefined ? null : (
@@ -30,7 +30,7 @@ export function YearView({ summary, title, prevHref, nextHref }: { summary: Year
           </p>
         </div>
         {nextHref ? (
-          <Button variant="outline" size="icon-lg" className="size-[44px] shrink-0" aria-label="Next year" render={<Link href={nextHref} />} nativeButton={false}>
+          <Button variant="ghost" size="icon-lg" className="size-[44px] shrink-0 rounded-full" aria-label="Next year" render={<Link href={nextHref} />} nativeButton={false}>
             <ChevronRight aria-hidden />
           </Button>
         ) : prevHref === undefined && nextHref === undefined ? null : (

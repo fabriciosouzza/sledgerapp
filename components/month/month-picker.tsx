@@ -101,13 +101,13 @@ export function MonthPicker({
 
   return (
     <div className="flex items-center justify-between gap-2">
-      <Button variant="outline" size="icon-lg" className="size-[44px] shrink-0" aria-label="Previous month" onClick={() => go(addMonths(period, -1))}>
+      <Button variant="ghost" size="icon-lg" className="size-[44px] shrink-0 rounded-full" aria-label="Previous month" onClick={() => go(addMonths(period, -1))}>
         <ChevronLeft aria-hidden />
       </Button>
       <PickerShell open={open} onOpenChange={(o) => { setOpen(o); if (o) setYear(parsePeriod(period).year); }} trigger={trigger} title="Month">
         {grid}
       </PickerShell>
-      <Button variant="outline" size="icon-lg" className="size-[44px] shrink-0" aria-label="Next month" onClick={() => go(addMonths(period, 1))}>
+      <Button variant="ghost" size="icon-lg" className="size-[44px] shrink-0 rounded-full" aria-label="Next month" onClick={() => go(addMonths(period, 1))}>
         <ChevronRight aria-hidden />
       </Button>
     </div>

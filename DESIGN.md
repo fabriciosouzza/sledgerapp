@@ -533,6 +533,10 @@ each of the other two as a way in, never as a second home. What did change:
   took the second slot in the nav (the list the month is made of, and the
   most used screen after it), leaving More with Cards, Accounts,
   Recurrences, Portfolio and the guide.
+- **Home is only the month.** The Month · Year · 12 months switch went;
+  the year views moved to `/year` under More (calendar year or last 12
+  months, a two-way switch there). The month and year arrows lost their
+  box: bare ghost circles beside the title.
 
 Interface-polish pass (the `make-interfaces-feel-better` guide, full
 review, 2 medium + 7 low findings, all applied the same day):

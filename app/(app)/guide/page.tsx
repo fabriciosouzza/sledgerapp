@@ -20,7 +20,7 @@ const SECTIONS: Section[] = [
   {
     title: "Screens",
     terms: [
-      { term: "Home", meaning: "The month, and the screen the app opens on: the recurring entries still to apply, the month in numbers (income, expense, contributions, fixed cost; savings rate, leftover, budget), what is still planned, what was already settled, spending through the month, and spending by category against the caps. Every tile opens the matching list in Entries. One switch away: a calendar year or the last 12 months, with the budget month by month." },
+      { term: "Home", meaning: "The month, and the screen the app opens on: the recurring entries still to apply, the month in numbers (income, expense, contributions, fixed cost; savings rate, leftover, budget), what is still planned, what was already settled, spending through the month, and spending by category against the caps. Every tile opens the matching list in Entries. Year, under More, shows a calendar year or the last 12 months, with the budget month by month." },
       { term: "Add", meaning: "The fast form: amount first, with the numeric keyboard up. Expense, income, transfer or contribution; already paid or planned; installments and repeat monthly behind a disclosure. Enter saves; the confirmation offers Undo and Edit." },
       { term: "Entries", meaning: "Everything, a month at a time: tabs All · Spending · Income · Moves (transfers, contributions, redemptions), search, more filters, and Settle several… for a batch." },
       { term: "Portfolio", meaning: "Your assets as the sum of their movements: balance, contributed versus earned, by class, over time. Record month enters every asset's yield in one pass. It also warns when a contribution has no asset behind it." },
