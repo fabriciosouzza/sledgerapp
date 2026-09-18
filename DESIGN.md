@@ -549,6 +549,14 @@ each of the other two as a way in, never as a second home. What did change:
   react-day-picker (its dropdown caption read "set." from the browser's
   locale, and its box sat inside the sheet). `data-day="dd/MM/yyyy"` stays
   on every day. The greeting ends with "!" ("Hi, Ana!", "Hello!").
+- **The `contribution` kind reads "Investment"** everywhere the user
+  reads: Add, the kind sheet, Entries, Home's card ("Invested"), the
+  Portfolio ("Invested", "Invested vs earned", "Return on what you
+  invested"), the movement kind, the guide. To a lay reader "contribution"
+  is charity; the word stays `contribution` in code, database, API and
+  CSV (no migration, no API break). "Redemption" stays.
+- **The date picker always draws six rows**, so the sheet keeps one height
+  from month to month and the buttons under it never move.
 - After the removals: "Go to Today" reads "Go home"; Recurrences and the
   category form say Home, not Review; the name saved on Profile greets
   at once (`updateName` refreshes the session, since the name is read

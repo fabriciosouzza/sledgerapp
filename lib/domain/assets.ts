@@ -19,7 +19,7 @@ export function assetClassLabel(value: AssetClass): string {
 }
 
 export const MOVEMENT_KINDS: { value: MovementKind; label: string; hint: string }[] = [
-  { value: "contribution", label: "Contribution", hint: "New money in. Can record the cash leaving your account too." },
+  { value: "contribution", label: "Investment", hint: "New money in. Can record the cash leaving your account too." },
   { value: "yield", label: "Yield", hint: "Interest or dividends, entered by hand. Not income." },
   { value: "market_adjustment", label: "Market adjustment", hint: "Broker balance minus recorded balance; may be negative." },
   { value: "withdrawal", label: "Withdrawal", hint: "Money out. Can record the cash reaching your account (a redemption)." },

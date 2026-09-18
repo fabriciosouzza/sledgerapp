@@ -206,7 +206,7 @@ export function MovementForm({
               <p className="text-xs text-muted-foreground">
                 {kind === "contribution"
                   ? hasHistory
-                    ? "A contribution entry leaving your cash account, paired with this movement."
+                    ? "An investment entry leaving your cash account, paired with this movement."
                     : "First movement of this asset. Leave it off if this is a balance you already hold — that money left the bank long ago."
                   : "A redemption entry reaching your cash account, paired with this movement."}
               </p>

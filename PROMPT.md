@@ -145,7 +145,9 @@ movement, which may be negative.
 | `transfer` | money moving between accounts | no | no | neutral |
 
 **A contribution is not an expense.** If it were, the savings rate would punish
-the user for investing. **A redemption is not income.** It is the user's own
+the user for investing. (In the UI the kind reads **Investment** — decided
+2026-09-18, "contribution" reads as charity to a lay reader; the word stays
+`contribution` in code, database, API and CSV.) **A redemption is not income.** It is the user's own
 money coming back; counting it would inflate the savings rate.
 
 A contribution has **one side in cash** (the source account) and its other

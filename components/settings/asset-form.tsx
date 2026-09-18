@@ -48,10 +48,10 @@ export function AssetForm({ asset, action, today }: { asset?: Asset; action: (pr
           <legend className="px-1 text-sm font-medium">Already invested?</legend>
           <p className="text-xs text-muted-foreground">Start from where it stands. No cash entry is created — that money left your account long ago.</p>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Contributed so far" htmlFor="openingContributedCents">
+            <Field label="Invested so far" htmlFor="openingContributedCents">
               <CurrencyInput id="openingContributedCents" name="openingContributedCents" className="h-11" />
             </Field>
-            <Field label="Balance today" htmlFor="openingBalanceCents" hint="Blank = same as contributed.">
+            <Field label="Balance today" htmlFor="openingBalanceCents" hint="Blank = same as invested.">
               <CurrencyInput id="openingBalanceCents" name="openingBalanceCents" className="h-11" aria-describedby="openingBalanceCents-hint" />
             </Field>
           </div>

@@ -94,7 +94,7 @@ export default async function HomePage(props: PageProps<"/">) {
           <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
             <Stat label="Income" cents={m.incomeCents} hint={deltaHint(summary.delta.throughDay === null ? summary.delta.income : null, m.plannedIncomeCents, summary.delta.throughDay)} href={`/entries?month=${month}&kind=income`} />
             <Stat label="Expense" cents={m.expenseCents} hint={deltaHint(summary.delta.expense, m.plannedExpenseCents, summary.delta.throughDay)} href={`/entries?month=${month}&kind=expense`} />
-            <Stat label="Contributions" cents={m.contributionsCents} hint={m.redemptionsCents > 0 ? `− ${formatBRL(m.redemptionsCents)} redeemed` : undefined} href={`/entries?month=${month}&kind=moves`} />
+            <Stat label="Invested" cents={m.contributionsCents} hint={m.redemptionsCents > 0 ? `− ${formatBRL(m.redemptionsCents)} redeemed` : undefined} href={`/entries?month=${month}&kind=moves`} />
             <Stat label="Fixed cost" cents={m.fixedCostCents} hint={summary.installmentsCents > 0 ? `+ ${formatBRL(summary.installmentsCents)} in installments this month` : undefined} />
             <Stat
               label="Savings rate"

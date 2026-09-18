@@ -12,7 +12,7 @@ import { formatPeriodShort } from "@/lib/domain/dates";
 import { formatBRL } from "@/lib/domain/money";
 import type { PortfolioPoint } from "@/lib/domain/portfolio";
 
-/** Contributed vs earned over time, stacked (§7 /portfolio). */
+/** Invested vs earned over time, stacked (§7 /portfolio). */
 export function PortfolioArea({ data }: { data: PortfolioPoint[] }) {
   const rows = data.map((p) => ({
     period: formatPeriodShort(p.period),
@@ -24,7 +24,7 @@ export function PortfolioArea({ data }: { data: PortfolioPoint[] }) {
       <div
         className="h-48 w-full"
         role="img"
-        aria-label="Contributed versus earned over time"
+        aria-label="Invested versus earned over time"
       >
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
@@ -42,7 +42,7 @@ export function PortfolioArea({ data }: { data: PortfolioPoint[] }) {
             <Tooltip
               formatter={(v, name) => [
                 formatBRL(Math.round(Number(v) * 100)),
-                name === "contributed" ? "Contributed" : "Earned",
+                name === "contributed" ? "Invested" : "Earned",
               ]}
               contentStyle={{
                 background: "var(--popover)",
@@ -80,7 +80,7 @@ export function PortfolioArea({ data }: { data: PortfolioPoint[] }) {
             style={{ background: "var(--chart-2)" }}
             aria-hidden
           />{" "}
-          contributed
+          invested
         </li>
         <li className="flex items-center gap-1">
           <span

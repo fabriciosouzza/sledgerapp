@@ -2,12 +2,12 @@
 
 import type { Entry, EntryKind, IsoDate } from "./types";
 
-/** The kinds the add form and the + sheet offer. A redemption is recorded from the Portfolio (a withdrawal that also records the cash). */
+/** The kinds the add form and the + sheet offer. A redemption is recorded from the Portfolio (a withdrawal that also records the cash). The `contribution` kind reads "Investment" (DESIGN.md 2026-09-18); the code, the database, the API and the CSV keep the word. */
 export const ENTRY_KINDS: { value: EntryKind; label: string }[] = [
   { value: "expense", label: "Expense" },
   { value: "income", label: "Income" },
   { value: "transfer", label: "Transfer" },
-  { value: "contribution", label: "Contribution" },
+  { value: "contribution", label: "Investment" },
 ];
 
 export function entryKindLabel(kind: EntryKind): string {

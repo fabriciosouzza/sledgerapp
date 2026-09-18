@@ -10,13 +10,16 @@ import { cn } from "@/lib/utils";
 
 const WEEKDAYS = ["S", "M", "T", "W", "T", "F", "S"];
 
-/** The month's days in a Sunday-first grid, padded with the neighbouring months' days so every row has seven. */
+/** Always six rows of seven, Sunday first, padded with the neighbouring months' days. */
+const ROWS = 6;
+
+/** The month's days in a fixed 6×7 grid: the sheet keeps one height from month to month, so the buttons under it never move. */
 function gridOf(period: Period): { date: IsoDate; inside: boolean }[] {
   const { year, month } = parsePeriod(period);
   const first = new Date(year, month - 1, 1).getDay();
   const count = daysInMonth(year, month);
   const cells: { date: IsoDate; inside: boolean }[] = [];
-  for (let i = -first; i < count + ((7 - ((first + count) % 7)) % 7); i++) {
+  for (let i = -first; i < ROWS * 7 - first; i++) {
     const d = new Date(year, month - 1, 1 + i);
     cells.push({ date: toIsoDate(d.getFullYear(), d.getMonth() + 1, d.getDate()), inside: i >= 0 && i < count });
   }

@@ -121,7 +121,7 @@ export function RecurrenceForm({
         <div className="space-y-2 rounded-xl bg-muted/40 p-4">
           <p className="text-sm font-medium">Default split</p>
           <p className="text-xs text-muted-foreground">
-            How each month&apos;s contribution is usually divided. It pre-fills the allocation when the month is settled, where it can still be changed — all
+            How each month&apos;s investment is usually divided. It pre-fills the allocation when the month is settled, where it can still be changed — all
             into fixed income one month, half crypto the next.
           </p>
           <SplitFields key={kind} assets={assets} initial={recurrence?.allocations ?? []} />

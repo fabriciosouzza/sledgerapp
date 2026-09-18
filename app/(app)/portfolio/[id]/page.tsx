@@ -33,7 +33,7 @@ export default async function AssetPage(props: PageProps<"/portfolio/[id]">) {
       <div className="space-y-6">
         <section className="grid grid-cols-2 gap-2">
           <Stat label="Balance" cents={summary.balanceCents} className="col-span-2" />
-          <Stat label="Contributed" cents={summary.contributedCents} />
+          <Stat label="Invested" cents={summary.contributedCents} />
           <Stat label="Earned" cents={summary.earnedCents} tone="signed" />
         </section>
         <Button render={<Link href={`/portfolio/new?asset=${asset.id}`} />} nativeButton={false} className="h-11 w-full">

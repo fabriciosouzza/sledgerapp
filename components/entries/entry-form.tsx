@@ -169,7 +169,7 @@ export function EntryForm({
     const categoryName = kindCategories.find((c) => c.id === effectiveCategoryId)?.name;
     const accountName = accounts.find((a) => a.id === effectiveAccountId)?.name;
     const counterName = needsCounterAccount(kind) ? accounts.find((a) => a.id === effectiveCounterId)?.name : undefined;
-    if (showAllocation && assets.length === 0) return setError("Add an asset first: a contribution is never settled without a destination.");
+    if (showAllocation && assets.length === 0) return setError("Add an asset first: an investment is never settled without a destination.");
     const where = [needsCategory(kind) ? categoryName : null, counterName ? `${accountName} → ${counterName}` : accountName].filter(Boolean).join(" · ");
     startTransition(async () => {
       if (editing) {

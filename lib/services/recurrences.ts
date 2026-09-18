@@ -34,7 +34,7 @@ async function fields(repos: Repositories, userId: string, input: RecurrenceInpu
 
   const account = await repos.accounts.getById(userId, input.accountId);
   if (!account) throw new ServiceError("invalid", "Account not found.");
-  if (needsAllocation(kind) && !isCashAccount(account)) throw new ServiceError("invalid", "A contribution leaves a cash account.");
+  if (needsAllocation(kind) && !isCashAccount(account)) throw new ServiceError("invalid", "An investment leaves a cash account.");
   if (counterAccountId !== null) {
     const counter = await repos.accounts.getById(userId, counterAccountId);
     if (!counter) throw new ServiceError("invalid", "Destination account not found.");

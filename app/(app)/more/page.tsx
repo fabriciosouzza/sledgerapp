@@ -10,7 +10,7 @@ const DESCRIPTIONS: Record<string, string> = {
   "/cards": "Statements per credit card",
   "/accounts": "Each account's balance and its entries",
   "/recurrences": "Fixed cost and month generation",
-  "/portfolio": "Assets, contributions and yield",
+  "/portfolio": "Assets, investments and yield",
   "/settings": "Profile, accounts, categories, assets, theme",
   "/guide": "The terms and the weekly routine",
 };

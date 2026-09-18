@@ -11,7 +11,7 @@ const KINDS: { kind: EntryKind; label: string; hint: string; icon: typeof Plus; 
   { kind: "expense", label: "Expense", hint: "Something you paid or will pay", icon: ArrowUpRight, tone: "text-foreground" },
   { kind: "income", label: "Income", hint: "Salary, refund, benefit", icon: ArrowDownLeft, tone: "text-positive" },
   { kind: "transfer", label: "Transfer", hint: "Between your own accounts", icon: ArrowLeftRight, tone: "text-foreground" },
-  { kind: "contribution", label: "Contribution", hint: "Cash that becomes an investment", icon: PiggyBank, tone: "text-foreground" },
+  { kind: "contribution", label: "Investment", hint: "Cash that goes into an asset", icon: PiggyBank, tone: "text-foreground" },
 ];
 
 /** The "Add" tab in the bottom nav, a plain tab like the others: a sheet with the four kinds, then /add pre-set (DESIGN.md §1, 2026-09-18). */

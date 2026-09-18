@@ -25,7 +25,7 @@ function UnallocatedAlert({ rows }: { rows: Unallocated[] }) {
         {formatBRL(missing)} in {rows.length} {rows.length === 1 ? "entry has" : "entries have"} no asset behind it
       </AlertTitle>
       <AlertDescription>
-        <p>Settled contributions and redemptions whose split does not add up. Open each one and say where the money went.</p>
+        <p>Settled investments and redemptions whose split does not add up. Open each one and say where the money went.</p>
         <ul className="mt-1 space-y-1">
           {rows.map(({ entry, allocatedCents }) => (
             <li key={entry.id}>
@@ -56,7 +56,7 @@ export default async function PortfolioPage() {
           <UnallocatedAlert rows={overview.unallocated} />
         </div>
         <div className="rounded-xl border border-dashed border-border p-6 text-center">
-          <p className="text-sm text-muted-foreground">No assets yet. Add what you invest in, then record contributions and yield.</p>
+          <p className="text-sm text-muted-foreground">No assets yet. Add what you invest in, then record investments and yield.</p>
           <Button render={<Link href="/settings/assets/new" />} nativeButton={false} className="mt-4 h-11">
             Add asset
           </Button>
@@ -86,9 +86,9 @@ export default async function PortfolioPage() {
         <UnallocatedAlert rows={overview.unallocated} />
         <section className="grid grid-cols-2 gap-2 md:grid-cols-3" aria-label="Totals">
           <Stat label="Total balance" cents={t.balanceCents} className="col-span-2" />
-          <Stat label="Contributed" cents={t.contributedCents} hint="contributions − withdrawals" />
+          <Stat label="Invested" cents={t.contributedCents} hint="investments − withdrawals" />
           <Stat label="Earned" cents={t.earnedCents} tone="signed" hint="yield + adjustments − fees" />
-          <Stat label="Return on contributions" rate={t.returnRate} tone="signed" className="col-span-2" />
+          <Stat label="Return on what you invested" rate={t.returnRate} tone="signed" className="col-span-2" />
         </section>
 
         {overview.byClass.length > 0 && (
@@ -99,7 +99,7 @@ export default async function PortfolioPage() {
         )}
 
         <section className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-          <h2 className="mb-1 text-sm font-semibold">Contributed vs earned, accumulated</h2>
+          <h2 className="mb-1 text-sm font-semibold">Invested vs earned, accumulated</h2>
           <p className="mb-2 text-xs text-muted-foreground">Each month shows everything up to then: your money in, and what it made on top.</p>
           <PortfolioArea data={overview.series} />
         </section>

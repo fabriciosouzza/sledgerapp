@@ -204,7 +204,7 @@ export async function updateMovement(repos: Repositories, userId: string, input:
     // One entry split across assets: its amount is the sum of its parts, so a part is re-allocated from the entry, not here.
     const siblings = await repos.movements.listByEntry(userId, current.entryId);
     if (siblings.length > 1 && input.amountCents !== current.amountCents) {
-      throw new ServiceError("invalid", "This is one part of a contribution split across assets; change the split from the entry.");
+      throw new ServiceError("invalid", "This is one part of an investment split across assets; change the split from the entry.");
     }
     await repos.entries.update(userId, current.entryId, { amountCents: input.amountCents, date: input.date, settledOn: input.date, notes: input.notes });
   }
@@ -217,7 +217,7 @@ export async function deleteMovement(repos: Repositories, userId: string, id: st
   if (!movement) throw new ServiceError("not_found", "Movement not found.");
   if (movement.entryId !== null) {
     const siblings = await repos.movements.listByEntry(userId, movement.entryId);
-    if (siblings.length > 1) throw new ServiceError("invalid", "This is one part of a contribution split across assets; change the split from the entry.");
+    if (siblings.length > 1) throw new ServiceError("invalid", "This is one part of an investment split across assets; change the split from the entry.");
   }
   await repos.movements.delete(userId, id);
   if (movement.entryId !== null) await repos.entries.deleteMany(userId, [movement.entryId]);

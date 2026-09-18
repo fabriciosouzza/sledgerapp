@@ -99,7 +99,7 @@ function AllocateBody({
             <Link href="/settings/assets/new" className="text-primary hover:underline">
               Add one
             </Link>{" "}
-            first — a contribution is never settled without a destination.
+            first — an investment is never settled without a destination.
           </p>
         )}
         {suggestion !== null && suggestion.assets.length > 0 && (
