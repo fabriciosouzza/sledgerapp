@@ -30,5 +30,5 @@ export async function createEntryAction(formData: FormData): Promise<CreateEntry
 }
 
 export async function revalidateEntries(): Promise<void> {
-  for (const path of ["/", "/entries", "/review", "/cards", "/recurrences", "/net-worth", "/accounts/[id]", "/portfolio", "/portfolio/[id]"]) revalidatePath(path, "page");
+  for (const path of ["/", "/entries", "/cards", "/recurrences", "/net-worth", "/accounts/[id]", "/portfolio", "/portfolio/[id]"]) revalidatePath(path, "page");
 }

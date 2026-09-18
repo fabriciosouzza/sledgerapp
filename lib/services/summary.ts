@@ -1,4 +1,4 @@
-// Month summary (PROMPT.md §5.10, §7 /review): metrics computed in TypeScript
+// Month summary (PROMPT.md §5.10, §7 / — the home): metrics computed in TypeScript
 // from one period's rows. Cash is the derived balance at the period's end;
 // with no cash account yet, runway is unknown, not zero.
 

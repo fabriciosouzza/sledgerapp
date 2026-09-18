@@ -17,8 +17,11 @@ const nextConfig: NextConfig = {
     ];
   },
   async redirects() {
-    // The review screen was /month until 2026-09-13.
-    return [{ source: "/month", destination: "/review", permanent: true }];
+    // The month screen was /month until 2026-09-13 and /review until 2026-09-18; it is the home now.
+    return [
+      { source: "/month", destination: "/", permanent: true },
+      { source: "/review", destination: "/", permanent: true },
+    ];
   },
 };
 

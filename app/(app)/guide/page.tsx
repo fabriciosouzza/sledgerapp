@@ -14,15 +14,14 @@ const SECTIONS: Section[] = [
       { term: "Money is never counted twice", meaning: "A card purchase is an expense the day it is made, so paying the statement is a transfer, not a second expense. Money that leaves cash for an investment is a contribution, not spending; what it earns is yield, not income. Each real event is recorded once, in the place it belongs." },
       { term: "The app never pretends to know", meaning: "A month with no data shows “—”, not zero. A cash balance exists only from the day you set its starting point. Nothing is estimated behind your back." },
       { term: "Planned is not real yet", meaning: "Bills, installments and applied recurrences are planned entries: visible, due, but counted nowhere until you settle them. Settling — one tap, always with Undo — is the moment a number becomes real." },
-      { term: "The weekly routine", meaning: "Open Today; settle what was paid and received; add what is new (a purchase, a bill, a contribution); glance at Review. At the end of the month, apply next month's recurrences and record what the portfolio earned." },
+      { term: "The weekly routine", meaning: "Open the app on the month; settle what was paid and received; add what is new (a purchase, a bill, a contribution); glance at the numbers. At the end of the month, apply next month's recurrences and record what the portfolio earned." },
     ],
   },
   {
     title: "Screens",
     terms: [
-      { term: "Today", meaning: "The agenda. What needs you first — closed card statements to pay, overdue entries — then cash on hand (the money it comes out of), what is due within 7 days and what is still to receive, the next 7 days one by one, and the actions they call for. Tap a number to open the entries behind it; the month is on Review, the accounts on Accounts." },
+      { term: "Home", meaning: "The month, and the screen the app opens on: the recurring entries still to apply, the month in numbers (income, expense, contributions, fixed cost; savings rate, leftover, budget), what is still planned, what was already settled, spending through the month, and spending by category against the caps. Every tile opens the matching list in Entries. One switch away: a calendar year or the last 12 months, with the budget month by month." },
       { term: "Add", meaning: "The fast form: amount first, with the numeric keyboard up. Expense, income, transfer or contribution; already paid or planned; installments and repeat monthly behind a disclosure. Enter saves; the confirmation offers Undo and Edit." },
-      { term: "Review", meaning: "How a month went — or a calendar year, or the last 12 months: savings rate, leftover, budget, the recurring entries still to apply, what is still planned, spending by category against the caps, and the charts. The year views add the budget month by month. Every tile opens the matching list in Entries." },
       { term: "Entries", meaning: "Everything, a month at a time: tabs All · Spending · Income · Moves (transfers, contributions, redemptions), search, more filters, and Settle several… for a batch." },
       { term: "Portfolio", meaning: "Your assets as the sum of their movements: balance, contributed versus earned, by class, over time. Record month enters every asset's yield in one pass. It also warns when a contribution has no asset behind it." },
       { term: "Net worth · Cards · Accounts · Recurrences · Portfolio", meaning: "Net worth sits in the bottom nav; the rest is under More on the phone, in the sidebar on a wide screen. Accounts is your money by account — each balance today and, one tap in, the entries behind it." },
@@ -53,8 +52,8 @@ const SECTIONS: Section[] = [
       { term: "Redemption", meaning: "The mirror of a contribution: your own money coming back from an asset into a cash account. Not income. Recorded from the Portfolio, as a withdrawal that also records the cash." },
       { term: "Planned · Settled", meaning: "Planned means it will happen: a bill to pay, income to receive, a future installment, an applied recurrence. Settled means it did, on a given day. Tap the circle to settle today; for another day, tap Other day in the confirmation or hold the circle; tap the check to undo." },
       { term: "Date vs. settled on", meaning: "Date is competence — when it falls due. Settled on is when the money moved. A bill due on the 5th paid on the 7th keeps its date and leaves your balance on the 7th." },
-      { term: "Overdue", meaning: "Planned, and its date has passed (for a card purchase, its statement's due date). Shown in red on Today until you settle it, however old it is." },
-      { term: "Categories and caps", meaning: "Every expense and income has a category; sub-categories go one level deep and roll up into their parent. An expense category may have a monthly cap; Review shows the progress bar and says “over by” when it is blown. The caps together are your budget." },
+      { term: "Overdue", meaning: "Planned, and its date has passed (for a card purchase, its statement's due date). Shown in red until you settle it, however old it is: on Home when it belongs to the month, on Entries otherwise." },
+      { term: "Categories and caps", meaning: "Every expense and income has a category; sub-categories go one level deep and roll up into their parent. An expense category may have a monthly cap; Home shows the progress bar and says “over by” when it is blown. The caps together are your budget." },
       { term: "Earmarked money", meaning: "A meal voucher arrives as income and leaves as lunches in the same month: it inflates both sides and makes the savings rate look worse the bigger it is. A category marked earmarked takes both the income and the matching expenses; the second savings rate leaves them out. The test is “could I have kept this money?” — if yes, it is plain income." },
       { term: "Installments", meaning: "One purchase in N parts creates N planned entries at once, one per month, numbered 1/N … N/N, with the whole commitment visible from day one. A plan already under way starts at part K of N. Editing or deleting asks: this part, this and future ones, or all." },
       { term: "On a card", meaning: "A purchase on a credit card counts the day it is made — typed by hand or applied from a recurrence — and joins the statement of its cycle; you never settle it one by one, and the edit form will not unsettle it. Card installments are the exception: each part settles when its statement is paid." },
@@ -77,7 +76,7 @@ const SECTIONS: Section[] = [
     title: "Recurrences",
     intro: "A recurrence is a template — rent, a subscription, a salary, a monthly contribution — not an entry. Each month it becomes entries when you apply it.",
     terms: [
-      { term: "Apply to the month", meaning: "Review shows a card whenever the month still has recurring entries to apply: each amount is editable before it exists, and a line can be skipped. Applying twice creates nothing the second time; a template recorded by hand in an earlier month is not duplicated either." },
+      { term: "Apply to the month", meaning: "Home shows a card whenever the month still has recurring entries to apply: each amount is editable before it exists, and a line can be skipped. Applying twice creates nothing the second time; a template recorded by hand in an earlier month is not duplicated either." },
       { term: "Variable", meaning: "Water, electricity: the template holds an estimate; you type the real amount when applying, and the estimate stays on the template. Variable bills are left out of “settle all due today”." },
       { term: "Due day", meaning: "Day of the month the entry falls on. Day 31 becomes the 28th, 29th or 30th in shorter months. Starts on and ends on bound which months it applies to." },
       { term: "Fixed cost", meaning: "The sum of your active expense recurrences: what a month costs before any choice, and the number that sizes the emergency fund. Contributions and income are not in it." },
@@ -91,7 +90,7 @@ const SECTIONS: Section[] = [
       { term: "Statement", meaning: "Everything bought on the card in one cycle. The cycle ends on the closing day; a purchase after it lands on the next statement; the due date follows. The cycle that contains today is the open statement." },
       { term: "Pay statement", meaning: "Once a statement has closed, Pay records a transfer from a cash account into the card for its total, dated the day you paid, and marks it paid — that is what settles the installment parts on it. An open statement cannot be paid yet, and a statement is paid whole, from one account. The payment can only change its day; to change anything else, undo it from Cards and pay again — deleting the payment is the same as undoing it." },
       { term: "Cashback and refunds", meaning: "Money the card gives back is income, in a category of its own (say Cashback). Paid into your bank account, it is income on that account; credited on the statement, it is income on the card, dated inside the cycle, and the statement to pay shrinks by it. A statement whose credits exceed its purchases asks nothing and carries the surplus into the next unpaid one." },
-      { term: "Card debt", meaning: "Everything bought and not yet paid, across every card, open statements included. Today shows closed, unpaid statements first, with Pay right there." },
+      { term: "Card debt", meaning: "Everything bought and not yet paid, across every card, open statements included. Cards shows closed, unpaid statements first, with Pay right there." },
       { term: "Limit", meaning: "The tile shows the share of the limit in use: the debt plus the installments still to come." },
     ],
   },
@@ -123,7 +122,7 @@ const SECTIONS: Section[] = [
     terms: [
       { term: "Income · Expense · Contributions", meaning: "Sums of settled entries of each kind. Transfers are never in any of them; a redemption is shown next to contributions, never as income. Planned entries show separately (\"+ R$ 120,00 planned\") and only count once settled. Example: income R$ 5.800, expense R$ 3.200, contributions R$ 1.000." },
       { term: "Leftover", meaning: "income − expense − contributions + redemptions: what stayed in cash after everything, investing included. Example: 5.800 − 3.200 − 1.000 = R$ 1.600. Negative means the month ate into what you had." },
-      { term: "Savings rate", meaning: "(income − expense) ÷ income: the share of what came in that you did not consume. Contributions are not subtracted — they are saving, not spending. Example: (5.800 − 3.200) ÷ 5.800 = 44,8%. Irregular income? The month's rate swings with who paid; read the 12-month one in Review." },
+      { term: "Savings rate", meaning: "(income − expense) ÷ income: the share of what came in that you did not consume. Contributions are not subtracted — they are saving, not spending. Example: (5.800 − 3.200) ÷ 5.800 = 44,8%. Irregular income? The month's rate swings with who paid; read the 12-month one on Home." },
       { term: "Savings rate ex-earmarked", meaning: "The same, with earmarked income removed from the denominator, because it arrives with its destination set and leaves in the same month. Example: (5.800 − 3.200) ÷ (5.800 − 800) = 52%. This is the honest one." },
       { term: "Budget", meaning: "The sum of the caps you set on categories; a category without a cap adds nothing. \"Spent R$ 3.200 of R$ 3.500 · 91%\" — within under 80%, at risk between 80% and 100%, over beyond. Spending in categories without a cap is shown beside it, not counted against it." },
       { term: "Fixed cost", meaning: "Σ active expense recurrences, whatever was applied this month. Example: R$ 2.500. Installment parts are shown next to it: committed too, but they end." },
@@ -183,7 +182,7 @@ export default function GuidePage() {
               <strong>Investments</strong>: one asset per thing you hold, with its broker; when adding it, fill “Already invested?” with what you put in and what it is worth today. No cash entry is created — that money left the bank long ago.
             </li>
             <li>
-              <strong>Recurrences</strong>: salary, rent, the fixed bills, the monthly transfer to savings, the monthly contribution with its default split. Apply them from Review each month.
+              <strong>Recurrences</strong>: salary, rent, the fixed bills, the monthly transfer to savings, the monthly contribution with its default split. Apply them from Home each month.
             </li>
           </ol>
         </section>

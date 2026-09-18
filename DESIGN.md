@@ -13,7 +13,7 @@ Where an idea would deviate, it is flagged and needs a decision.
 ## Keep as is
 
 - The palette (neutral dark, monochrome: no brand accent, decided 2026-09-14) and dark-first look.
-- Bottom nav with five items: Today · Review · Add · Net worth · More (§7; Portfolio moved under More on 2026-09-18).
+- Bottom nav with five items: Home · Entries · Add · Net worth · More (§7; since 2026-09-18 — Today and Review were the first two until then, Portfolio the fourth).
 - English UI, pt-BR formatting.
 
 ## Theme
@@ -521,6 +521,18 @@ each of the other two as a way in, never as a second home. What did change:
   stops at its last month with spending). A run of months is a question
   about the year. `monthSummary` no longer fetches six months of expenses,
   only the previous month for the comparison and the grey daily line.
+- **Today goes; the month is the home** (later the same day, by the
+  owner). Once Today was down to the agenda, its "Still planned" twin on
+  Review made it redundant; the owner chose one screen. Review moved to
+  `/` under the name Home with the house icon (`/review` and `/month`
+  redirect), keeping exactly its own parts plus one: **what was already
+  settled this month**, newest first, ten rows and a link to the rest.
+  Its cards read income, expense, contributions, fixed cost on the first
+  row, then savings rate, leftover, budget. Statements to pay are on
+  Cards; an entry left planned in an earlier month is on Entries. Entries
+  took the second slot in the nav (the list the month is made of, and the
+  most used screen after it), leaving More with Cards, Accounts,
+  Recurrences, Portfolio and the guide.
 
 Interface-polish pass (the `make-interfaces-feel-better` guide, full
 review, 2 medium + 7 low findings, all applied the same day):

@@ -6,7 +6,6 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 
 const DESCRIPTIONS: Record<string, string> = {
-  "/entries": "Every entry, filter and bulk settle",
   "/cards": "Statements per credit card",
   "/accounts": "Each account's balance and its entries",
   "/recurrences": "Fixed cost and month generation",

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { AlertTriangle, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { generateMonthWithAmountsAction } from "@/app/(app)/review/actions";
+import { generateMonthWithAmountsAction } from "@/app/(app)/actions";
 import { CurrencyInput } from "@/components/forms/currency-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -27,7 +27,7 @@ export interface PreviewRow {
 /**
  * What "generate month" would create, with this month's amounts editable
  * before they exist (a variable bill keeps its estimate on the template).
- * Sits on /review as a card and on /recurrences (DESIGN.md).
+ * Sits on the home (the month) as a card and on /recurrences (DESIGN.md).
  */
 export function GenerateMonth({
   period,
@@ -180,7 +180,7 @@ function OtherPending({ months }: { months: { period: Period; count: number }[] 
       {months.map((m, i) => (
         <span key={m.period}>
           {i > 0 && ", "}
-          <Link href={`/review?month=${m.period}`} className="underline-offset-4 hover:underline">
+          <Link href={`/?month=${m.period}`} className="underline-offset-4 hover:underline">
             {formatPeriodLong(m.period)} · {m.count}
           </Link>
         </span>

@@ -442,30 +442,30 @@ not have `auth.uid()`.
 ## 7. Screens
 
 Bottom nav on mobile, sidebar on desktop.
-Nav: **Today · Month · Add · Net worth · More** (net worth is looked at more
-often than the portfolio, which sits under More).
+Nav: **Home · Entries · Add · Net worth · More** (decided 2026-09-18: the
+month is the home screen, Entries is the list it is made of, net worth is
+looked at more often than the portfolio, which sits under More).
 
 ### `/login`
 Email/password plus magic link. Middleware protects everything except `/login`
 and `/auth/callback`.
 
-### `/` — Today
-Answers "what do I need to do right now" — the agenda, and nothing else
-(decided 2026-09-18; the month is Review's, the accounts are Accounts',
-the wealth is Net worth's).
-
-- **Needs you** first, when non-empty: closed card statements to pay (with
-  Pay) and the **overdue** block, however old the entries.
-- **Cash on hand**, the one borrowed number — what the due money comes out
-  of — linking to Accounts.
-- **Due by <today + 7>** (planned cash entries plus statements due by then,
-  the late ones included) and **to receive**, each opening the entries
-  behind it.
-- **Next 7 days** list with one-tap settle and an undo toast. Settling
-  a contribution opens its allocation first (pre-filled from the recurrence's
-  default split), so it is never left without a destination.
-- The actions those call for: settle everything due today, apply the
-  month's recurring entries. Nothing to do, nothing shown.
+### `/` — Home
+The month (a separate Today screen existed until 2026-09-18 and was
+removed: what it showed was the month's, the accounts' or the cards'
+already). Month picker; the recurring entries still to apply; the summary
+as one grid of cards — income, expense, contributions and fixed cost first,
+then savings rate (with its ex-earmarked twin), leftover and budget; the
+list of what is still planned this month, with one-tap settle and an undo
+toast (settling a contribution opens its allocation first, pre-filled from
+the recurrence's default split, so it is never left without a
+destination); what was already settled this month, newest first, the
+first ten with a link to the rest; spending through the month against
+last month; per-category table with cap progress bars, red on overflow.
+A switch opens a calendar year or the last 12 months instead: totals,
+month by month, the budget month by month (capped spending against the
+caps, within / at risk / over — discipline over months is a question
+about the year), and the categories.
 
 ### `/add`
 Fast entry form. Opens focused on the amount, numeric keyboard, kind as a
@@ -488,15 +488,6 @@ Remember the last used category and account to speed up repetition.
 Infinite list grouped by day, sticky month header. Filters: month, kind, status,
 account, category, text search. Multi-select for bulk settle. Swipe right to
 settle, left to edit.
-
-### `/month`
-Month picker. Summary as one grid of cards, the verdict first (savings rate
-with its ex-earmarked twin, leftover, budget), then income, expense,
-contributions and fixed cost. List of what is still planned this month.
-Per-category table with cap progress bars, red on overflow. The year and
-12-month views add the budget month by month (capped spending against the
-caps, within / at risk / over) — discipline over months is a question
-about the year, not about one month.
 
 ### `/portfolio`
 Total balance, total contributed, total earned, return on contributions. Donut

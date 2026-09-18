@@ -11,7 +11,7 @@ import { addMovement, deleteMovement, recordBatch, updateMovement } from "@/lib/
 export type MovementActionResult = { ok: true; assetId: string; id: string } | { ok: false; error: string };
 
 function revalidate() {
-  for (const path of ["/portfolio", "/portfolio/[id]", "/", "/entries", "/review", "/net-worth"]) revalidatePath(path, "page");
+  for (const path of ["/portfolio", "/portfolio/[id]", "/", "/entries", "/net-worth"]) revalidatePath(path, "page");
 }
 
 export async function addMovementAction(formData: FormData): Promise<MovementActionResult> {

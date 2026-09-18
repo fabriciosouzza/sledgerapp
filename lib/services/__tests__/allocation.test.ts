@@ -12,7 +12,6 @@ import { netWorthOverview } from "../netWorth";
 import { createAsset, deleteMovement, portfolioOverview, updateMovement } from "../portfolio";
 import { createRecurrence, generateMonth } from "../recurrences";
 import { seedUserIfEmpty } from "../seed";
-import { todayOverview } from "../today";
 import { fakeRepositories, type FakeRepositories } from "./fakes";
 import { movementUpdateSchema } from "@/lib/schemas/assets";
 
@@ -84,10 +83,6 @@ describe("settling a contribution", () => {
     await settleEntry(repos, U, entries[0].id, TODAY, [{ assetId: btc, amountCents: 100_000 }]);
     await unsettleEntries(repos, U, [entries[0].id]);
     expect(await repos.movements.list(U)).toEqual([]);
-    // Today never offers a contribution for blind settling.
-    const overview = await todayOverview(repos, U, TODAY);
-    expect(overview.dueToday).toEqual([]);
-    expect(overview.upcoming.map((e) => e.id)).toEqual([entries[0].id]);
   });
 });
 
