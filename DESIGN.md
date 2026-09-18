@@ -395,7 +395,8 @@ is still open):
   and is settled by its payment.
 - **Inactive accounts that still hold money stay on Today** (badged), so
   cash on hand and the tiles agree. An account with entries cannot change
-  between card and cash.
+  between card and cash. (Since 2026-09-18 Today has no tiles; the money
+  still counts in cash on hand and the account shows, badged, on Accounts.)
 - Net worth counts a movement from its own date, not its month.
 - **The seed has income categories** — Salário, Extras, Reembolso, Cashback,
   and Vale-refeição (in and out under one name, earmarked). Categories
@@ -503,6 +504,23 @@ each of the other two as a way in, never as a second home. What did change:
 - **Months of runway moves to Net worth** (beside the headline, with the
   fixed cost it divides by): cash ÷ fixed cost is about what you hold, not
   about one month. Investments and Debt there link to Portfolio and Cards.
+- **Today is the agenda** (deviation from §7's dashboard, decided by the
+  owner). An inventory showed only the agenda had no other home: statements
+  to pay, overdue across months, the next 7 days across the month's end,
+  what is due and to receive, and their actions. The rest was borrowed and
+  went: leftover and the month sentence (Review — `lib/domain/insights.ts`
+  and its tests deleted; the blown-cap warning stays on Review's Budget
+  card), the account and card tiles (Accounts and Cards; cash on hand now
+  links to Accounts, and an inactive account with money still counts in
+  it), the Expense/Income/Transfer shortcuts (the FAB), the net-worth
+  sparkline (Net worth). Today no longer runs the month summary or the
+  12-month series. In a quiet week it says "Nothing due until dd/MM" and
+  the cash.
+- **"Last 6 months" leaves the month view for the year views** as "Budget,
+  month by month" (twelve bars against today's caps; a year in progress
+  stops at its last month with spending). A run of months is a question
+  about the year. `monthSummary` no longer fetches six months of expenses,
+  only the previous month for the comparison and the grey daily line.
 
 Interface-polish pass (the `make-interfaces-feel-better` guide, full
 review, 2 medium + 7 low findings, all applied the same day):

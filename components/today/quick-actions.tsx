@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { ArrowDownLeft, ArrowLeftRight, ArrowUpRight, CheckCheck, Sparkles } from "lucide-react";
+import { CheckCheck, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { settleManyAction, unsettleManyAction } from "@/app/(app)/entries/actions";
 import { periodOf, today } from "@/lib/domain/dates";
@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 const base =
   "flex h-11 shrink-0 items-center gap-1.5 rounded-full border border-border bg-card px-3.5 text-sm font-medium transition-colors hover:bg-muted focus-visible:outline-2 focus-visible:outline-ring";
 
-/** One row of the things a weekly visit usually needs (DESIGN.md §2). */
+/** The agenda's own actions: settle what is due today, apply the month's recurring entries. Adding an entry is the FAB's job. Nothing to do, nothing shown. */
 export function QuickActions({ dueToday, pending: pendingMonths }: { dueToday: { id: string; description: string; kind: string; amountCents: number }[]; pending: PendingMonth[] }) {
   const dueTodayIds = dueToday.map((e) => e.id);
   const names = dueToday.map((e) => e.description);
@@ -25,6 +25,7 @@ export function QuickActions({ dueToday, pending: pendingMonths }: { dueToday: {
   const past = pendingMonths.filter((m) => m.period !== current);
   const toGenerate = pendingMonths.reduce((n, m) => n + m.count, 0);
   const pastCount = past.reduce((n, m) => n + m.count, 0);
+  if (dueTodayIds.length === 0 && toGenerate - pastCount <= 0) return null;
 
   function settleDueToday() {
     startTransition(async () => {
@@ -50,18 +51,6 @@ export function QuickActions({ dueToday, pending: pendingMonths }: { dueToday: {
 
   return (
     <div className="flex flex-wrap gap-2" role="group" aria-label="Quick actions">
-      <Link href="/add?kind=expense" className={base}>
-        <ArrowUpRight className="size-4 text-muted-foreground" aria-hidden />
-        Expense
-      </Link>
-      <Link href="/add?kind=income" className={base}>
-        <ArrowDownLeft className="size-4 text-positive" aria-hidden />
-        Income
-      </Link>
-      <Link href="/add?kind=transfer" className={base}>
-        <ArrowLeftRight className="size-4" aria-hidden />
-        Transfer
-      </Link>
       {dueTodayIds.length > 0 && (
         <button type="button" onClick={settleDueToday} disabled={pending} title={names.join(", ")} className={cn(base, "border-primary/40")}>
           <CheckCheck className="size-4" aria-hidden />

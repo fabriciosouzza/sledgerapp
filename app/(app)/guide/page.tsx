@@ -20,12 +20,12 @@ const SECTIONS: Section[] = [
   {
     title: "Screens",
     terms: [
-      { term: "Today", meaning: "What needs you first — closed card statements to pay, overdue entries — then cash on hand, one sentence about the month, the next 7 days, your accounts and cards, and quick actions. Tap a number to open the entries behind it." },
+      { term: "Today", meaning: "The agenda. What needs you first — closed card statements to pay, overdue entries — then cash on hand (the money it comes out of), what is due within 7 days and what is still to receive, the next 7 days one by one, and the actions they call for. Tap a number to open the entries behind it; the month is on Review, the accounts on Accounts." },
       { term: "Add", meaning: "The fast form: amount first, with the numeric keyboard up. Expense, income, transfer or contribution; already paid or planned; installments and repeat monthly behind a disclosure. Enter saves; the confirmation offers Undo and Edit." },
-      { term: "Review", meaning: "How a month went — or a calendar year, or the last 12 months: savings rate, leftover, budget, the recurring entries still to apply, what is still planned, spending by category against the caps, and the charts. Every tile opens the matching list in Entries." },
+      { term: "Review", meaning: "How a month went — or a calendar year, or the last 12 months: savings rate, leftover, budget, the recurring entries still to apply, what is still planned, spending by category against the caps, and the charts. The year views add the budget month by month. Every tile opens the matching list in Entries." },
       { term: "Entries", meaning: "Everything, a month at a time: tabs All · Spending · Income · Moves (transfers, contributions, redemptions), search, more filters, and Settle several… for a batch." },
       { term: "Portfolio", meaning: "Your assets as the sum of their movements: balance, contributed versus earned, by class, over time. Record month enters every asset's yield in one pass. It also warns when a contribution has no asset behind it." },
-      { term: "Cards · Accounts · Recurrences · Net worth", meaning: "Under More on the phone, in the sidebar on a wide screen. Accounts is your money by account — each balance today and, one tap in, the entries behind it." },
+      { term: "Net worth · Cards · Accounts · Recurrences · Portfolio", meaning: "Net worth sits in the bottom nav; the rest is under More on the phone, in the sidebar on a wide screen. Accounts is your money by account — each balance today and, one tap in, the entries behind it." },
       { term: "Settings", meaning: "At the foot of the sidebar, at the end of More: your profile, the accounts themselves (starting balances, closing and due days, goals), the categories with their caps, the assets you invest in, the theme, sign out." },
     ],
   },
@@ -111,7 +111,7 @@ const SECTIONS: Section[] = [
     title: "Balances and net worth",
     terms: [
       { term: "Starting point", meaning: "Each cash account has a balance on the day you start tracking it (Settings → Accounts). From then on, every settled entry moves it: income in, expenses out, transfers between accounts, contributions out, redemptions in." },
-      { term: "Account screen", meaning: "Accounts in the menu, or tap an account on Today or on Net worth: balance today, starting point, what changed since, and only that account's entries. If the bank shows a different number, the missing entry is somewhere in that list — or not yet recorded." },
+      { term: "Account screen", meaning: "Accounts in the menu, or tap an account on Net worth: balance today, starting point, what changed since, and only that account's entries. If the bank shows a different number, the missing entry is somewhere in that list — or not yet recorded." },
       { term: "Cash on hand", meaning: "The sum of your cash accounts today, derived from what you recorded. Savings accounts are part of it, shown apart." },
       { term: "Net worth", meaning: "cash + investments − debt, for any month, each part derived: cash from accounts and entries, investments from movements, debt from unpaid statements. Months before your first account stay empty, never zero." },
     ],
@@ -129,7 +129,6 @@ const SECTIONS: Section[] = [
       { term: "Fixed cost", meaning: "Σ active expense recurrences, whatever was applied this month. Example: R$ 2.500. Installment parts are shown next to it: committed too, but they end." },
       { term: "Months of runway", meaning: "cash on hand ÷ fixed cost: how long the cash would last with no income at all. Example: 10.000 ÷ 2.500 = 4,0 months." },
       { term: "vs last month", meaning: "The change in income or expense against the previous month, up to the same day of the month, so a month in progress is compared fairly — and not at all in its first week." },
-      { term: "The sentence on Today", meaning: "Picks the most useful true statement: a category over its cap first; then spending up or down vs last month when both months have expenses; otherwise the savings rate; otherwise what is still planned." },
       { term: "—", meaning: "Unknown. It appears when a number cannot be computed yet (no cash account, no income this month, no fixed cost). It is never a zero in disguise." },
     ],
   },

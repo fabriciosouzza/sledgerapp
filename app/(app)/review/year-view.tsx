@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { BudgetBars } from "@/components/charts/budget-bars";
 import { Donut } from "@/components/charts/donut";
 import { YearBars } from "@/components/charts/year-bars";
 import { CategoryTable } from "@/components/month/category-table";
@@ -49,6 +50,12 @@ export function YearView({ summary, title, prevHref, nextHref }: { summary: Year
       <section className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
         <h2 className="mb-2 text-sm font-semibold">Month by month</h2>
         <YearBars months={summary.months} />
+      </section>
+
+      {/* Discipline month after month is a question about the year, not about one month (DESIGN.md 2026-09-18). */}
+      <section className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+        <h2 className="mb-2 text-sm font-semibold">Budget, month by month</h2>
+        <BudgetBars months={summary.budget} />
       </section>
 
       {summary.categories.length > 0 && (

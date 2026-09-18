@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { BudgetBars } from "@/components/charts/budget-bars";
 import { Donut } from "@/components/charts/donut";
 import { SpendLine } from "@/components/charts/spend-line";
 import { EntryList } from "@/components/entries/entry-list";
@@ -72,8 +71,7 @@ export default async function MonthPage(props: PageProps<"/review">) {
   const isCurrent = month === periodOf(now);
   const budgetPct = summary.budgetCents ? Math.round((summary.budgetSpentCents / summary.budgetCents) * 100) : 0;
   const budgetWord = summary.budgetStatus === "over" ? "over" : summary.budgetStatus === "risk" ? "at risk" : "within";
-  const thisMonth = summary.history[summary.history.length - 1];
-  const uncappedCents = thisMonth ? thisMonth.expenseCents - thisMonth.spentCents : 0;
+  const uncappedCents = m.expenseCents - summary.budgetSpentCents;
   // The verdict names blown caps, not only the overall share.
   const overCount = capsOver(summary.categories).length;
 
@@ -193,11 +191,6 @@ export default async function MonthPage(props: PageProps<"/review">) {
             </div>
           )}
           <CategoryTable lines={summary.categories} href={(id) => `/entries?month=${month}&kind=expense&category=${id}`} />
-        </section>
-
-        <section className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-          <h2 className="mb-2 text-sm font-semibold">Last 6 months</h2>
-          <BudgetBars months={summary.history} />
         </section>
       </div>
     </>

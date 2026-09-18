@@ -52,15 +52,13 @@ export interface MonthSummary {
   budgetStatus: BudgetStatus | null;
   /** Settled expense accumulated per day, this month and the previous one. */
   dailySpend: { current: number[]; previous: number[] };
-  /** The last six months, oldest first, against today's caps. */
-  history: BudgetMonth[];
   /**
    * Change vs the previous month, `null` when that month has nothing to compare.
    * For the current month the previous one is cut at the same day (`throughDay`), so
    * a half month is not compared with a whole one.
    */
   delta: { income: number | null; expense: number | null; throughDay: number | null };
-  /** Last month's metrics, cut the same way, for the insight. `null` when it has no entries. */
+  /** Last month's metrics, cut the same way. `null` when it has no entries. */
   previous: PeriodMetrics | null;
 }
 
@@ -72,23 +70,19 @@ export function capsOver(lines: CategoryLine[]): { name: string; overCents: numb
     .map((line) => ({ name: line.name, overCents: line.settledCents - (line.capCents ?? 0) }));
 }
 
-const HISTORY_MONTHS = 6;
-
 export async function monthSummary(
   repos: Repositories,
   userId: string,
   period: Period,
   options: { today?: IsoDate; cashCents?: number | null } = {},
 ): Promise<MonthSummary> {
-  const historyFrom = addMonths(period, -(HISTORY_MONTHS - 1));
   const previousPeriod = addMonths(period, -1);
-  const [entries, categories, recurrences, cashCents, past, previousAll] = await Promise.all([
+  const [entries, categories, recurrences, cashCents, previousAll] = await Promise.all([
     repos.entries.list(userId, { period }),
     repos.categories.list(userId),
     repos.recurrences.list(userId),
     options.cashCents !== undefined ? options.cashCents : cashAtPeriod(repos, userId, period, options.today ?? todayInSaoPaulo()),
-    // One bounded range for the history and last month's daily line (§4.5).
-    repos.entries.list(userId, { from: periodStart(historyFrom), to: periodEnd(previousPeriod), kind: "expense", status: "settled" }),
+    // The previous month, whole: the comparison and the grey daily line (the year views hold longer runs).
     repos.entries.list(userId, { period: previousPeriod }),
   ]);
   // A month in progress is compared with the previous one up to the same day.
@@ -114,14 +108,6 @@ export async function monthSummary(
   const lines = spendingByCategory(entries, categories).map(named).sort(bySize);
 
   const budgetCents = budgetFromCaps(categories);
-  const byPeriod = new Map<Period, Entry[]>();
-  for (const e of past) byPeriod.set(periodOf(e.date), [...(byPeriod.get(periodOf(e.date)) ?? []), e]);
-  const history: BudgetMonth[] = periodRange(historyFrom, period).map((p) => {
-    const rows = p === period ? entries : (byPeriod.get(p) ?? []);
-    const expenseCents = rows.filter((e) => e.kind === "expense" && e.status === "settled").reduce((sum, e) => sum + e.amountCents, 0);
-    const spentCents = cappedExpenseCents(rows, categories);
-    return { period: p, expenseCents, spentCents, budgetCents, status: budgetStatus(spentCents, budgetCents) };
-  });
   const budgetSpentCents = cappedExpenseCents(entries, categories);
 
   return {
@@ -136,9 +122,8 @@ export async function monthSummary(
     budgetStatus: budgetStatus(budgetSpentCents, budgetCents),
     dailySpend: {
       current: dailyCumulativeExpense(entries, period),
-      previous: dailyCumulativeExpense(byPeriod.get(addMonths(period, -1)) ?? [], addMonths(period, -1)),
+      previous: dailyCumulativeExpense(previousAll, previousPeriod),
     },
-    history,
     delta: {
       income: previous && previous.incomeCents > 0 ? (metrics.incomeCents - previous.incomeCents) / previous.incomeCents : null,
       expense: previous && previous.expenseCents > 0 ? (metrics.expenseCents - previous.expenseCents) / previous.expenseCents : null,
@@ -160,6 +145,8 @@ export interface YearSummary {
   /** Totals over the range, computed from every row at once. */
   totals: PeriodMetrics;
   categories: CategoryLine[];
+  /** Each month's capped spending against today's caps (caps have no history), oldest first. */
+  budget: BudgetMonth[];
 }
 
 /**
@@ -178,6 +165,13 @@ export async function yearSummary(repos: Repositories, userId: string, from: Per
     period,
     metrics: computeMetrics({ entries: byPeriod.get(period) ?? [], categories, recurrences: [], cashCents: null }),
   }));
+  const budgetCents = budgetFromCaps(categories);
+  const budget: BudgetMonth[] = periodRange(from, to).map((period) => {
+    const rows = byPeriod.get(period) ?? [];
+    const expenseCents = rows.filter((e) => e.kind === "expense" && e.status === "settled").reduce((sum, e) => sum + e.amountCents, 0);
+    const spentCents = cappedExpenseCents(rows, categories);
+    return { period, expenseCents, spentCents, budgetCents, status: budgetStatus(spentCents, budgetCents) };
+  });
   const byId = new Map<string, Category>(categories.map((c) => [c.id, c]));
   const bySize = (a: CategoryLine, b: CategoryLine) => b.settledCents + b.plannedCents - (a.settledCents + a.plannedCents);
   const named = (line: CategorySpending): CategoryLine => {
@@ -199,5 +193,6 @@ export async function yearSummary(repos: Repositories, userId: string, from: Per
     months,
     totals: computeMetrics({ entries, categories, recurrences: [], cashCents: null }),
     categories: spendingByCategory(entries, categories).map(named).sort(bySize),
+    budget,
   };
 }

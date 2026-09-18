@@ -141,14 +141,14 @@ describe("a statement in credit (B7)", () => {
 });
 
 describe("accounts (B3, B4)", () => {
-  it("keeps an inactive account with money in it on Today, so cash on hand and the tiles agree", async () => {
+  it("counts an inactive account with money in it in Today's cash on hand, and offers it to pay a statement from", async () => {
     const savings = (await repos.accounts.list(U)).find((a) => a.name === "Reserva")!.id;
     await repos.accounts.update(U, savings, { openingBalanceCents: 50_000, openingOn: "2026-01-01", isActive: false });
     const cash = (await repos.accounts.list(U)).find((a) => a.name === "Dinheiro")!.id;
     await repos.accounts.update(U, cash, { isActive: false });
     const overview = await todayOverview(repos, U, TODAY);
     expect(overview.cashCents).toBe(1_050_000);
-    expect(overview.accounts.map((t) => t.account.name).sort()).toEqual(["Conta Corrente", "Reserva"]);
+    expect(overview.cashAccounts.filter((b) => b.balanceCents !== null && b.balanceCents !== 0).map((b) => b.account.name).sort()).toEqual(["Conta Corrente", "Reserva"]);
   });
 
   it("refuses to turn an account with entries into a card, or a card with entries into cash", async () => {

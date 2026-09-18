@@ -450,17 +450,22 @@ Email/password plus magic link. Middleware protects everything except `/login`
 and `/auth/callback`.
 
 ### `/` — Today
-Answers "what do I need to do right now".
+Answers "what do I need to do right now" — the agenda, and nothing else
+(decided 2026-09-18; the month is Review's, the accounts are Accounts',
+the wealth is Net worth's).
 
-- Cards: **cash on hand**, **due in the next 7 days**, **leftover this month**,
-  **savings rate**.
-- **Overdue** block, prominent, when non-empty.
-- **Upcoming (7 days)** list with one-tap settle and an undo toast. Settling
+- **Needs you** first, when non-empty: closed card statements to pay (with
+  Pay) and the **overdue** block, however old the entries.
+- **Cash on hand**, the one borrowed number — what the due money comes out
+  of — linking to Accounts.
+- **Due by <today + 7>** (planned cash entries plus statements due by then,
+  the late ones included) and **to receive**, each opening the entries
+  behind it.
+- **Next 7 days** list with one-tap settle and an undo toast. Settling
   a contribution opens its allocation first (pre-filled from the recurrence's
   default split), so it is never left without a destination.
-- **Cards** strip: one tile per credit card with open statement total and days
-  to due date.
-- 12-month net-worth sparkline.
+- The actions those call for: settle everything due today, apply the
+  month's recurring entries. Nothing to do, nothing shown.
 
 ### `/add`
 Fast entry form. Opens focused on the amount, numeric keyboard, kind as a
@@ -488,7 +493,10 @@ settle, left to edit.
 Month picker. Summary as one grid of cards, the verdict first (savings rate
 with its ex-earmarked twin, leftover, budget), then income, expense,
 contributions and fixed cost. List of what is still planned this month.
-Per-category table with cap progress bars, red on overflow.
+Per-category table with cap progress bars, red on overflow. The year and
+12-month views add the budget month by month (capped spending against the
+caps, within / at risk / over) — discipline over months is a question
+about the year, not about one month.
 
 ### `/portfolio`
 Total balance, total contributed, total earned, return on contributions. Donut
