@@ -21,10 +21,10 @@ import { cn } from "@/lib/utils";
 /** How many settled rows the month shows before pointing at Entries. */
 const SETTLED_SHOWN = 10;
 
-/** "Hi, Ana" — the first name, unless the name is short or shared ("Carla e Bruno"), which stays whole. */
+/** "Hi, Ana!" — the first name, unless the name is short or shared ("Carla e Bruno"), which stays whole; "Hello!" with none saved. */
 function greeting(name: string | null): string {
-  if (!name) return "Hello";
-  return `Hi, ${name.length <= 20 ? name : name.split(" ")[0]}`;
+  if (!name) return "Hello!";
+  return `Hi, ${name.length <= 20 ? name : name.split(" ")[0]}!`;
 }
 
 /** "+5% vs last month · + R$ 100,00 planned", or whichever half exists; `—` is never faked as 0%. */

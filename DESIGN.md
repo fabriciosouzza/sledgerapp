@@ -543,6 +543,12 @@ each of the other two as a way in, never as a second home. What did change:
   planned" is the month's. On the current month, `leftBehind` lists
   planned cash entries dated before it, in the red block above "Still
   planned". Closed unpaid statements stay on Cards only.
+- **The date picker is a day grid in the month picker's idiom**: ‹ month ›
+  over seven columns of 44px cells, the chosen day filled, today ringed,
+  neighbouring months' days dimmed, "Today" underneath — no more
+  react-day-picker (its dropdown caption read "set." from the browser's
+  locale, and its box sat inside the sheet). `data-day="dd/MM/yyyy"` stays
+  on every day. The greeting ends with "!" ("Hi, Ana!", "Hello!").
 - After the removals: "Go to Today" reads "Go home"; Recurrences and the
   category form say Home, not Review; the name saved on Profile greets
   at once (`updateName` refreshes the session, since the name is read
