@@ -17,7 +17,8 @@ export interface RecurrenceFormState {
 const LIST = "/recurrences";
 
 function revalidate() {
-  for (const path of [LIST, "/recurrences/[id]", "/", "/review", "/entries"]) revalidatePath(path, "page");
+  // Net worth shows the runway, which the fixed cost sizes.
+  for (const path of [LIST, "/recurrences/[id]", "/", "/review", "/entries", "/net-worth"]) revalidatePath(path, "page");
 }
 
 export async function createRecurrenceAction(_prev: RecurrenceFormState, formData: FormData): Promise<RecurrenceFormState> {

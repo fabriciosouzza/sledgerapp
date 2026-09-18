@@ -83,7 +83,7 @@ export async function todayOverview(repos: Repositories, userId: string, today: 
     cashCents: netWorth.cashCents,
     // "Due by <date>" includes whatever is late: overdue entries as well as overdue statements.
     dueSoonCents:
-      [...overdue, ...upcoming].filter((e) => e.kind !== "income").reduce((sum, e) => sum + e.amountCents, 0) +
+      [...overdue, ...upcoming].filter((e) => e.kind !== "income" && e.kind !== "redemption").reduce((sum, e) => sum + e.amountCents, 0) +
       cards.toPay.filter((s) => s.daysToDue <= UPCOMING_DAYS).reduce((sum, s) => sum + s.view.totalCents, 0),
     statementsDue: cards.toPay,
     toReceiveCents: toSettle.filter((e) => e.kind === "income").reduce((sum, e) => sum + e.amountCents, 0),

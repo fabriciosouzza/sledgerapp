@@ -19,20 +19,20 @@ export function Stat({
   rate?: number | null;
   /** Preformatted text, when neither cents nor a rate fits. */
   text?: string | null;
-  /** "signed": green above zero, red below (§8). Otherwise plain: the label already says which way the money goes. */
-  tone?: "neutral" | "signed";
+  /** "signed": green above zero, red below (§8). "negative" / "caution" / "positive" colour the value whatever it reads, for a verdict the caller already knows ("2 caps over"). Otherwise plain: the label already says which way the money goes. */
+  tone?: "neutral" | "signed" | "positive" | "negative" | "caution";
   hint?: string;
   className?: string;
   /** Makes the tile a link to the rows behind the number. */
   href?: string;
 }) {
   let value: string;
-  let color = "";
+  let color = tone === "negative" ? "text-negative" : tone === "caution" ? "text-caution" : tone === "positive" ? "text-positive" : "";
   if (text !== undefined) {
     value = text ?? "—";
   } else if (rate !== undefined) {
     value = rate === null ? "—" : formatPercent(rate);
-    if (rate !== null && tone === "signed") color = rate < 0 ? "text-negative" : "text-positive";
+    if (rate !== null && tone === "signed") color = rate < 0 ? "text-negative" : rate > 0 ? "text-positive" : "";
   } else {
     value = cents === null || cents === undefined ? "—" : formatBRLWrap(cents);
     if (cents !== null && cents !== undefined) {

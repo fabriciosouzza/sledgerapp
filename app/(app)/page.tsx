@@ -39,6 +39,8 @@ export default async function TodayPage() {
   // "Due by" also counts statements and what is already late, which sit in the block above, not in the list it links to: say so.
   const dueStatements = overview.statementsDue.filter((s) => s.daysToDue <= UPCOMING_WINDOW);
   const lateEntries = overview.overdue.filter((e) => e.kind !== "income").length;
+  // The tile opens every planned entry paid from cash up to the horizon, the late ones included, so the list starts at the oldest of them.
+  const dueFrom = overview.overdue.reduce<string>((min, e) => (e.date < min ? e.date : min), now);
   const dueIncludes = [
     dueStatements.length === 1
       ? `${dueStatements[0].card.name} ${formatPeriodShort(periodOf(dueStatements[0].view.statement.cycleEnd))}`
@@ -147,7 +149,7 @@ export default async function TodayPage() {
                 label={`Due by ${formatDayMonth(addDays(now, UPCOMING_WINDOW))}`}
                 hint={dueIncludes.length > 0 ? `incl. ${dueIncludes.join(" · ")}` : undefined}
                 cents={overview.dueSoonCents}
-                href="#upcoming"
+                href={`/entries?status=planned&account=cash&from=${dueFrom}&to=${addDays(now, UPCOMING_WINDOW)}`}
               />
               {overview.toReceiveCount > 0 && (
                 <Stat
@@ -168,7 +170,7 @@ export default async function TodayPage() {
         </div>
 
         <div className="space-y-6 min-w-0">
-          <section aria-label="Upcoming" id="upcoming" className="scroll-mt-4">
+          <section aria-label="Upcoming">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="text-sm font-semibold">Next 7 days</h2>
               <Link

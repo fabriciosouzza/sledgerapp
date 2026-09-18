@@ -5,6 +5,7 @@ import { EntryList } from "@/components/entries/entry-list";
 import { buildLookups } from "@/components/entries/lookups";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
+import { isCashAccount } from "@/lib/domain/accounts";
 import { addDays, formatDate, isIsoDate, isPeriod, periodOf, today } from "@/lib/domain/dates";
 import { isMove } from "@/lib/domain/entries";
 import type { Entry, EntryKind, EntryStatus } from "@/lib/domain/types";
@@ -37,11 +38,14 @@ export default async function EntriesPage(props: PageProps<"/entries">) {
   const [accounts, categories] = await Promise.all([listAccounts(repos, userId), listCategories(repos, userId)]);
   // A parent category stands for itself and its children.
   const categoryIds = values.category ? [values.category, ...categories.filter((c) => c.parentId === values.category).map((c) => c.id)] : undefined;
+  // `account=cash` is every cash account on either side: what is paid from cash, card purchases left out (they go through their statement).
+  const cashOnly = values.account === "cash";
   const filters = {
     kind,
     kinds: moves ? (["transfer", "contribution", "redemption"] as EntryKind[]) : undefined,
     status,
-    accountId: values.account || undefined,
+    accountId: cashOnly ? undefined : values.account || undefined,
+    touchingAccountIds: cashOnly ? accounts.filter(isCashAccount).map((a) => a.id) : undefined,
     categoryIds,
     search: values.q || undefined,
   };

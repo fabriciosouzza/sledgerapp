@@ -1,27 +1,27 @@
 import { BookOpen, CalendarDays, CreditCard, Home, Landmark, LineChart, List, MoreHorizontal, PieChart, Plus, Repeat, Settings, type LucideIcon } from "lucide-react";
 
 export interface NavItem {
-  href: "/" | "/add" | "/review" | "/portfolio" | "/more";
+  href: "/" | "/add" | "/review" | "/net-worth" | "/more";
   label: string;
   icon: LucideIcon;
 }
 
-/** Bottom nav on mobile, sidebar on desktop (PROMPT.md §7); the add button sits in the middle as a FAB. */
+/** Bottom nav on mobile, sidebar on desktop (PROMPT.md §7); the add button sits in the middle as a FAB. Net worth is looked at more often than the portfolio, so it holds the fourth slot (DESIGN.md 2026-09-18). */
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Today", icon: Home },
   { href: "/review", label: "Review", icon: CalendarDays },
   { href: "/add", label: "Add", icon: Plus },
-  { href: "/portfolio", label: "Portfolio", icon: PieChart },
+  { href: "/net-worth", label: "Net worth", icon: LineChart },
   { href: "/more", label: "More", icon: MoreHorizontal },
 ];
 
 /** What "More" holds on mobile; the desktop sidebar lists these directly. Accounts here is the money view (balances, entries); adding and editing accounts is in Settings. */
-export const MORE_ITEMS: { href: "/entries" | "/cards" | "/accounts" | "/recurrences" | "/net-worth" | "/guide"; label: string; icon: LucideIcon }[] = [
+export const MORE_ITEMS: { href: "/entries" | "/cards" | "/accounts" | "/recurrences" | "/portfolio" | "/guide"; label: string; icon: LucideIcon }[] = [
   { href: "/entries", label: "Entries", icon: List },
   { href: "/cards", label: "Cards", icon: CreditCard },
   { href: "/accounts", label: "Accounts", icon: Landmark },
   { href: "/recurrences", label: "Recurrences", icon: Repeat },
-  { href: "/net-worth", label: "Net worth", icon: LineChart },
+  { href: "/portfolio", label: "Portfolio", icon: PieChart },
   { href: "/guide", label: "How it works", icon: BookOpen },
 ];
 
@@ -33,7 +33,7 @@ export function isSettingsActive(pathname: string): boolean {
 }
 
 /** Screens reachable from "More" that share its highlighted nav item. */
-export const MORE_PATHS = ["/more", "/entries", "/cards", "/recurrences", "/net-worth", "/settings", "/guide", "/accounts"];
+export const MORE_PATHS = ["/more", "/entries", "/cards", "/recurrences", "/portfolio", "/settings", "/guide", "/accounts"];
 
 /** Screens whose form pins its Save bar above the nav: the raised "+" would sit on it, so it lies flat there. */
 export function isFormScreen(pathname: string): boolean {

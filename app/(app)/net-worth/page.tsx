@@ -5,16 +5,19 @@ import { PageHeader } from "@/components/layout/page-header";
 import { Stat } from "@/components/month/stat";
 import { accountTypeLabel } from "@/lib/domain/accounts";
 import { formatDate, formatPeriodLong, today } from "@/lib/domain/dates";
-import { formatBRL } from "@/lib/domain/money";
+import { formatBRL, ratio } from "@/lib/domain/money";
 import { getContext } from "@/lib/services/context";
 import { netWorthOverview } from "@/lib/services/netWorth";
+import { fixedCost } from "@/lib/services/recurrences";
 
 export default async function NetWorthPage() {
   const now = today();
   const { userId, repos } = await getContext();
-  const overview = await netWorthOverview(repos, userId, now);
+  const [overview, fixedCostCents] = await Promise.all([netWorthOverview(repos, userId, now), fixedCost(repos, userId)]);
   const current = overview.current;
   const active = overview.balances.filter((b) => b.account.isActive);
+  // Runway is a stock-side number (cash ÷ fixed cost), so it sits with the cash, not on Review (§5.10).
+  const runway = current.cashCents === null ? null : ratio(current.cashCents, fixedCostCents);
 
   return (
     <>
@@ -22,9 +25,14 @@ export default async function NetWorthPage() {
       <div className="space-y-6">
         <section className="grid grid-cols-2 gap-2 md:grid-cols-3" aria-label="Current">
           <Stat label={`Net worth · ${formatPeriodLong(current.period)}`} cents={current.netWorthCents} tone="signed" className="col-span-2" />
+          <Stat
+            label="Months of runway"
+            text={runway === null ? null : `${runway.toFixed(1)} mo`}
+            hint={runway === null ? "needs a cash account and a fixed cost" : `cash ÷ ${formatBRL(fixedCostCents)} fixed cost`}
+          />
           <Stat label="Cash" cents={current.cashCents} hint="accounts below" />
-          <Stat label="Debt" cents={current.debtCents} hint="unpaid statements" />
-          <Stat label="Investments" cents={current.investmentsCents} hint="from movements" className="col-span-2" />
+          <Stat label="Investments" cents={current.investmentsCents} hint="from movements" href="/portfolio" />
+          <Stat label="Debt" cents={current.debtCents} hint="unpaid statements" href="/cards" />
         </section>
 
         <section className="rounded-xl bg-card p-4 ring-1 ring-foreground/10">

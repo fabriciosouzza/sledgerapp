@@ -158,6 +158,8 @@ export function EntryFilters({
               <Field label="Account" htmlFor="f-account">
                 <NativeSelect id="f-account" value={draft.account} onChange={(e) => setDraft({ ...draft, account: e.target.value })} className="w-full [&>select]:h-11">
                   <NativeSelectOption value="">Any account</NativeSelectOption>
+                  {/* "cash": every cash account, either side — what Today's "Due by" counts (card purchases are paid through their statement). */}
+                  <NativeSelectOption value="cash">Any cash account</NativeSelectOption>
                   {accounts.map((a) => (
                     <NativeSelectOption key={a.id} value={a.id}>
                       {accountLabel(a)}

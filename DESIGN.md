@@ -13,7 +13,7 @@ Where an idea would deviate, it is flagged and needs a decision.
 ## Keep as is
 
 - The palette (neutral dark, monochrome: no brand accent, decided 2026-09-14) and dark-first look.
-- Bottom nav with five items: Today · Add · Month · Portfolio · More (§7).
+- Bottom nav with five items: Today · Review · Add · Net worth · More (§7; Portfolio moved under More on 2026-09-18).
 - English UI, pt-BR formatting.
 
 ## Theme
@@ -313,7 +313,8 @@ After a design critique of the signed-in app:
   category disc.
 - Review leads with the month's verdict (savings rate, leftover, budget) and
   what is still planned; the other numbers and every chart follow, and the
-  formulas live in the guide ("The numbers").
+  formulas live in the guide ("The numbers"). (Since 2026-09-18 the verdict
+  and the other numbers are one grid of cards, before "Still planned".)
 - After the third critique (29/40): totals show settled and planned apart
   (Entries as on Review), and "Due by" says what it includes. Saves, bulk
   settles and statement payments say what and how much, with Undo (a save
@@ -474,3 +475,38 @@ and a migration recipe. Decided and left as is: no transactions across
 writes (Postgres stays storage, §4.1 — `payStatement` and `addMovement` do
 two writes and a failure between them is visible, not silent); statements
 are paid whole, from one account (split it with a transfer first).
+
+## Decisions (2026-09-18)
+
+Thinking through whether Today, Review and Net worth should be one screen —
+they should not. They answer three questions on three time axes: *what do I
+need to do* (now, no picker), *how did the month go* (a chosen period —
+flow), *what do I hold* (month ends — stock). Today borrows a number from
+each of the other two as a way in, never as a second home. What did change:
+
+- **Net worth takes Portfolio's slot in the nav**; Portfolio goes under
+  More. The portfolio is visited to record, the net worth to look.
+- **The theme switch lives in Settings only**; the sidebar and More lost
+  theirs.
+- **"Due by" on Today opens the entries behind it**: planned, paid from
+  cash, from the oldest overdue day to the horizon, on Entries — the anchor
+  to "Next 7 days" it had was a no-op on desktop, where that list is beside
+  the tile. Entries gained "Any cash account" in its account filter for
+  that (card purchases go through their statement, so they are not due).
+  Card statements in the sum stay on Today's "Needs you" (the tile's hint
+  names them). A planned redemption is money coming in, not due.
+- **Review's summary is one grid of cards, before "Still planned"**: the
+  verdict row (savings rate wide, with its ex-earmarked twin as the hint;
+  leftover; budget, red or amber as before), then income, expense,
+  contributions and fixed cost. The month in numbers, then the month in
+  rows, then the charts.
+- **Months of runway moves to Net worth** (beside the headline, with the
+  fixed cost it divides by): cash ÷ fixed cost is about what you hold, not
+  about one month. Investments and Debt there link to Portfolio and Cards.
+
+Raised and left open: Net worth and Accounts both list the cash accounts
+with their balances — one screen for "what do I hold" (net worth headline,
+line, cash accounts, investments → Portfolio, debt → Cards) would remove
+the duplicate; Today's cash on hand and leftover could link to their
+screens; the net-worth sparkline is the least actionable thing on Today.
+

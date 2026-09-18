@@ -442,7 +442,8 @@ not have `auth.uid()`.
 ## 7. Screens
 
 Bottom nav on mobile, sidebar on desktop.
-Nav: **Today · Add · Month · Portfolio · More**.
+Nav: **Today · Month · Add · Net worth · More** (net worth is looked at more
+often than the portfolio, which sits under More).
 
 ### `/login`
 Email/password plus magic link. Middleware protects everything except `/login`
@@ -484,9 +485,10 @@ account, category, text search. Multi-select for bulk settle. Swipe right to
 settle, left to edit.
 
 ### `/month`
-Month picker. Summary (income, expense, contributions, leftover, both savings
-rates). Per-category table with cap progress bars, red on overflow. List of what
-is still planned this month.
+Month picker. Summary as one grid of cards, the verdict first (savings rate
+with its ex-earmarked twin, leftover, budget), then income, expense,
+contributions and fixed cost. List of what is still planned this month.
+Per-category table with cap progress bars, red on overflow.
 
 ### `/portfolio`
 Total balance, total contributed, total earned, return on contributions. Donut
@@ -497,6 +499,8 @@ A warning, with a link to each entry, when a settled contribution or
 redemption has no allocation or one that does not add up.
 
 ### `/net-worth`
+Net worth (cash + investments − debt) with **months of runway** beside it —
+cash ÷ fixed cost is a question about what you hold, not about one month.
 Net worth line. Monthly snapshot form listing every active account at once.
 Banner when the current month has no snapshot.
 

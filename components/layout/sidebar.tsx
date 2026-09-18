@@ -6,7 +6,6 @@ import { cn } from "@/lib/utils";
 import { LogOut } from "lucide-react";
 import { isSettingsActive, MORE_ITEMS, NAV_ITEMS, SETTINGS_ITEM } from "./nav-items";
 import { signOutAction } from "@/app/(auth)/actions";
-import { ThemeToggle } from "./theme-toggle";
 
 const linkClass = (active: boolean) =>
   cn(
@@ -14,7 +13,7 @@ const linkClass = (active: boolean) =>
     active ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
   );
 
-/** Desktop: the primary screens, then everything "More" holds on mobile, then theme and profile. */
+/** Desktop: the primary screens, then everything "More" holds on mobile, then settings (the theme lives there) and sign out. */
 export function Sidebar({ email }: { email: string | null }) {
   const pathname = usePathname();
   const primary = NAV_ITEMS.filter((item) => item.href !== "/more");
@@ -47,7 +46,6 @@ export function Sidebar({ email }: { email: string | null }) {
         </ul>
       </nav>
       <div className="space-y-2">
-        <ThemeToggle compact />
         <Link href={SETTINGS_ITEM.href} className={cn(linkClass(isSettingsActive(pathname)), "h-11")} title={email ?? undefined}>
           <SETTINGS_ITEM.icon className="size-4 shrink-0" aria-hidden />
           <span className="truncate">{SETTINGS_ITEM.label}</span>
