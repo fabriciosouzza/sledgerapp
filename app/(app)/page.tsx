@@ -21,6 +21,12 @@ import { cn } from "@/lib/utils";
 /** How many settled rows the month shows before pointing at Entries. */
 const SETTLED_SHOWN = 10;
 
+/** "Hi, Ana" — the first name, unless the name is short or shared ("Carla e Bruno"), which stays whole. */
+function greeting(name: string | null): string {
+  if (!name) return "Hello";
+  return `Hi, ${name.length <= 20 ? name : name.split(" ")[0]}`;
+}
+
 /** "+5% vs last month · + R$ 100,00 planned", or whichever half exists; `—` is never faked as 0%. */
 function deltaHint(delta: number | null, plannedCents: number, throughDay: number | null): string | undefined {
   const parts: string[] = [];
@@ -40,7 +46,7 @@ export default async function HomePage(props: PageProps<"/">) {
   const now = today();
   const current = periodOf(now);
   const month = typeof sp.month === "string" && isPeriod(sp.month) ? sp.month : current;
-  const { userId, repos } = await getContext();
+  const { user, userId, repos } = await getContext();
 
   const isCurrent = month === current;
   const [summary, accounts, categories, generation, pendingAll] = await Promise.all([
@@ -61,7 +67,7 @@ export default async function HomePage(props: PageProps<"/">) {
 
   return (
     <>
-      <PageHeader title="Home" />
+      <PageHeader title={greeting(user.name)} />
       <div className="space-y-6">
         <MonthPicker period={month} basePath="/" />
 

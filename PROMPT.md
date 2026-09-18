@@ -442,9 +442,11 @@ not have `auth.uid()`.
 ## 7. Screens
 
 Bottom nav on mobile, sidebar on desktop.
-Nav: **Home · Entries · Add · Net worth · More** (decided 2026-09-18: the
-month is the home screen, Entries is the list it is made of, net worth is
-looked at more often than the portfolio, which sits under More).
+Nav: **Home · Entries · Add · Net worth · More** in the sidebar; the
+phone's bar has four flat tabs, **Home · Add · Net worth · More**, with
+Entries first under More (decided 2026-09-18: the month is the home
+screen, Entries is the list it is made of, net worth is looked at more
+often than the portfolio, which sits under More).
 
 ### `/login`
 Email/password plus magic link. Middleware protects everything except `/login`

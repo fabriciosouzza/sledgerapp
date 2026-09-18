@@ -14,8 +14,8 @@ const KINDS: { kind: EntryKind; label: string; hint: string; icon: typeof Plus; 
   { kind: "contribution", label: "Contribution", hint: "Cash that becomes an investment", icon: PiggyBank, tone: "text-foreground" },
 ];
 
-/** The raised "+" in the bottom nav: a sheet with the four kinds, then /add pre-set (DESIGN.md §1). Flat, as a plain "Add" tab, on screens with a pinned Save bar. */
-export function AddSheet({ flat = false, current = false }: { flat?: boolean; current?: boolean }) {
+/** The "Add" tab in the bottom nav, a plain tab like the others: a sheet with the four kinds, then /add pre-set (DESIGN.md §1, 2026-09-18). */
+export function AddSheet({ current = false }: { current?: boolean }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
@@ -28,32 +28,18 @@ export function AddSheet({ flat = false, current = false }: { flat?: boolean; cu
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         render={
-          flat ? (
-            <button
-              type="button"
-              aria-current={current ? "page" : undefined}
-              className={cn(
-                "flex h-14 w-full min-w-0 flex-col items-center justify-center gap-0.5 text-[0.6875rem] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
-                current ? "text-foreground" : "text-muted-foreground",
-              )}
-            />
-          ) : (
-            <button
-              type="button"
-              aria-label="Add"
-              className="flex size-[56px] -translate-y-[16px] items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg ring-4 ring-background transition-transform active:scale-[0.96] focus-visible:outline-2 focus-visible:outline-ring"
-            />
-          )
+          <button
+            type="button"
+            aria-current={current ? "page" : undefined}
+            className={cn(
+              "flex h-14 w-full min-w-0 flex-col items-center justify-center gap-0.5 text-[0.6875rem] font-medium transition-colors focus-visible:outline-2 focus-visible:outline-ring",
+              current ? "text-foreground" : "text-muted-foreground",
+            )}
+          />
         }
       >
-        {flat ? (
-          <>
-            <Plus className="size-5 shrink-0" aria-hidden />
-            <span className="max-w-full truncate px-0.5">Add</span>
-          </>
-        ) : (
-          <Plus className="size-[28px]" aria-hidden />
-        )}
+        <Plus className="size-5 shrink-0" aria-hidden />
+        <span className="max-w-full truncate px-0.5">Add</span>
       </SheetTrigger>
       <SheetContent>
         <SheetHeader>

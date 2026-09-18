@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { ChevronRight, LogOut } from "lucide-react";
 import { signOutAction } from "@/app/(auth)/actions";
-import { MORE_ITEMS, SETTINGS_ITEM } from "@/components/layout/nav-items";
+import { ENTRIES_ITEM, MORE_ITEMS, SETTINGS_ITEM } from "@/components/layout/nav-items";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 
 const DESCRIPTIONS: Record<string, string> = {
+  "/entries": "Every entry, filter and bulk settle",
   "/cards": "Statements per credit card",
   "/accounts": "Each account's balance and its entries",
   "/year": "A calendar year or the last 12 months",
@@ -14,7 +15,8 @@ const DESCRIPTIONS: Record<string, string> = {
   "/settings": "Profile, accounts, categories, assets, theme",
   "/guide": "The terms and the weekly routine",
 };
-const LINKS = [...MORE_ITEMS, SETTINGS_ITEM].map((item) => ({ ...item, description: DESCRIPTIONS[item.href] ?? "" }));
+// This screen is the phone's: Entries leads here, since the four-tab bar has no room for it.
+const LINKS = [ENTRIES_ITEM, ...MORE_ITEMS, SETTINGS_ITEM].map((item) => ({ ...item, description: DESCRIPTIONS[item.href] ?? "" }));
 
 export default function MorePage() {
   return (

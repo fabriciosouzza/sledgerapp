@@ -537,6 +537,10 @@ each of the other two as a way in, never as a second home. What did change:
   the year views moved to `/year` under More (calendar year or last 12
   months, a two-way switch there). The month and year arrows lost their
   box: bare ghost circles beside the title.
+- **The phone's bar has four flat tabs: Home · Add · Net worth · More.**
+  Entries stays in the sidebar and leads the More screen on the phone.
+  The raised "+" is gone: Add is a tab like the others (it still opens
+  the kind picker sheet). Home's title is a short greeting ("Hi, Ana").
 
 Interface-polish pass (the `make-interfaces-feel-better` guide, full
 review, 2 medium + 7 low findings, all applied the same day):

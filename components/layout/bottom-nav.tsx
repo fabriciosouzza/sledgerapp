@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { AddSheet } from "./add-sheet";
-import { NAV_ITEMS, isFormScreen, isNavActive } from "./nav-items";
+import { BOTTOM_NAV_ITEMS, isNavActive } from "./nav-items";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -15,12 +15,12 @@ export function BottomNav() {
       aria-label="Main"
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
     >
-      <ul className="grid grid-cols-5">
-        {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+      <ul className="grid grid-cols-4">
+        {BOTTOM_NAV_ITEMS.map(({ href, label, icon: Icon }) => {
           if (href === "/add") {
             return (
-              <li key={href} className="flex min-w-0 items-start justify-center">
-                <AddSheet flat={isFormScreen(pathname)} current={pathname === "/add"} />
+              <li key={href} className="min-w-0">
+                <AddSheet current={pathname === "/add"} />
               </li>
             );
           }
